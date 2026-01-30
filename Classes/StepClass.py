@@ -108,10 +108,20 @@ class BiddingMenuStep(Step):
 
     key = 'bid_menu'
 
-    def prompt(self,
-                player: Player, trump_suit: str,
-                  current_bids: dict,
-                  args: dict = {}) -> str:
+    prompt_required_arguments = {"player", 
+                                 "trump_suit",
+                                 "current_bids",}
+    
+    def prompt(self, args: dict = {}) -> str:
+
+        missing = self.prompt_required_arguments - args.keys()
+        if missing:
+            raise RuntimeError(f"Missing context f{missing}")
+
+        player = args['player']        
+        trump_suit = args['trump_suit']        
+        current_bids = args['current_bids']
+
         return f"""{player}'s TURN BIDDING
 
                 CURRENT BIDS: {current_bids}
@@ -145,15 +155,15 @@ class BiddingStep(Step):
     validate_required_arguments = {"forbidden_bid"}
 
     def prompt(self,
-               args: dict) -> str:
+               args: dict = {}) -> str:
         
         #ensure the arguments passed suitable for the function
         missing = self.prompt_required_arguments - args.keys()
         if missing:
             raise RuntimeError(f"Missing context: {missing}")
         
-        forbidden_bid = self.args['forbidden_bid']
-        player = self.args['player']
+        forbidden_bid = args['forbidden_bid']
+        player = args['player']
         
         return (f"ENTER BID (BANNED: {forbidden_bid})\n" 
                 if player.handicapped_bid and forbidden_bid > -1 
@@ -162,8 +172,8 @@ class BiddingStep(Step):
 
     
     def validate(self,
-                 args: dict,  
-                 user_input: str):
+                 user_input: str,
+                 args: dict = {}):
         
         #ensure the arguments passed suitable for the function
         missing = self.validate_required_arguments - args.keys()
@@ -178,10 +188,16 @@ class BiddingStep(Step):
         if not user_input.isdigit():
             raise ValueError("Must enter a number")
         
-        if user_input != forbidden_bid:
-            raise ValueError("Illegal bid, enter a bid within the correct range")
+        value = int(user_input)  # can convert as input must be a number
         
-        return '' 
+        if value == forbidden_bid:
+            raise ValueError("Illegal bid, enter a legal bid")
+        
+        if 8 < value or value < 0:
+            raise ValueError("Must enter a number from 0-8")
+        
+        
+        return value
         
     
     def feedback(self, value, args: dict = {}) -> str:
@@ -208,7 +224,7 @@ class TrumpSelectionStep(Step):
             return "BACK"
         
         if user_input.lower() in ('y', 'n', ''):
-            return 
+            return user_input
         else:
             raise ValueError("Enter 'y' or 'n'") 
                 
@@ -216,7 +232,7 @@ class TrumpSelectionStep(Step):
     def feedback(self, value, args: dict = {}) -> str:
 
         option = 'Manual input'
-        if value:
+        if value == 'n':
             option = 'Automatic generation'
         return f'{option} option chosen'
         
@@ -227,7 +243,7 @@ class ManualTrumpStep(Step):
 
     key = 'manual_trump'
     
-    validate_required_arguments = {"card_initials"}
+    validate_required_arguments = {"valid_card_initials"}
 
     def prompt(self,
                args: dict) -> str:
@@ -258,6 +274,9 @@ class ManualTrumpStep(Step):
         
         if len(user_input) < 2 or len(user_input) > 3:
             raise ValueError("Invalid card initial - must be 2-3 characters long")
+        
+        if user_input == '':
+            raise ValueError("Must enter a value")
         
         return user_input
         

@@ -65,19 +65,6 @@ class BiddingManager:
         banned_number = max_cards - total_bids 
         return banned_number if banned_number > -1 else -1
 
-    def start_bidding(self, trump_suit:str, player_queue: List[Player], round_no:int = 1, max_cards: int = 8):
-            """
-            Function for the functionality of the bidding round
-            """
-            clear_screen()
-            
-            #Bidding output begins
-            self.UIManager.display_message(f"""\nBIDDING BEGINS\n""")
-
-            #end bidding information
-            clear_screen()
-
-            self.display_round_difference(max_cards=max_cards)
 
     def display_round_difference(self, max_cards):
                 
@@ -95,23 +82,6 @@ class BiddingManager:
         difference = total_bids-max_cards
 
         print(f"{'+' if total_bids > max_cards else '-'}{abs(difference)} ROUND")
-
-                
-    def player_bid(self, player_queue: List[Player], player:Player=None, max_cards: int = 8):
-        """
-        High level block of player making bid, handles validation of input
-
-        Returns TRUE or FALSE based on whether the bid was valid
-
-        Args:
-            player (Player): The player instance which is performing the bidding
-        """
-
-        #need to calculate handicapped here
-        #reorders the dictionary 
-        self.update_current_bids(player_queue)
-        
-        forbidden_bid = self.calculate_banned_number(max_cards)
 
         
 

@@ -40,8 +40,8 @@ class Game:
         self.round = 1
         self.cards_per_round = [8,7,6,6,7,8]
         self.phases = {
-            "player_selection": self.player_selection,
-            "trump_selection": self.trump_selection,
+            "player_selection": self.handle_player_selection,
+            "trump_selection": self.handle_trump_selection,
             "bidding": self.handle_bidding_phase,
             "playing": self.handle_playing_phase,
             "scoring": self.handle_scoring_phase,
@@ -96,7 +96,7 @@ class Game:
                     raise ValueError(f"Unknown game phase: {self.phase}") 
 
         
-    def player_selection(self):
+    def handle_player_selection(self):
         """
         Player selection logic
 
@@ -120,7 +120,7 @@ class Game:
 
         self.phase = "trump_selection"
         
-    def trump_selection(self):
+    def handle_trump_selection(self):
         """
         Docstring for trump_selection
         
@@ -145,7 +145,7 @@ class Game:
                         integer_trump_value = trump_value
 
                     self.deck.remove_card(suit[0][0], integer_trump_value)
-                    self.trump_suit = suit[0][0]
+                    self.trump_suit = suit[0]
 
 
         # automatic trump generation
@@ -158,7 +158,7 @@ class Game:
             # choose the trump after cards have been assinged to players
             self.trump_suit = trump_card.suit[0]
             print("\nDECIDING INITIAL TRUMP")
-            print("CARD RANDOMLY CHOSEN:: ", self.deck.deck[0])
+            print("CARD RANDOMLY CHOSEN:: ", str(trump_card))
             print("TRUMP SUIT:: ", self.trump_suit, "\n")
 
         self.phase = 'bidding'
@@ -173,7 +173,7 @@ class Game:
         self.max_cards = self.cards_per_round[self.round-1]
         self.playerStateManager.reset_players_handicap()
 
-        #dealer shifts eveery time bidding starts
+        #dealer shifts every time bidding starts
         if self.round > 1:
             self.original_queue = self.playerStateManager.update_dealer_order(self.original_queue)
             self.player_queue = self.original_queue
@@ -181,12 +181,17 @@ class Game:
         self.player_queue[-1].handicapped_bid = True
         self.biddingManager.reset_bids(self.player_queue)
         self.biddingManager.update_current_bids(self.player_queue)
-        self.deck.generate_deck()
 
         #starts the bidding process
-        self.biddingManager.start_bidding(trump_suit=self.trump_suit,
-                                        round_no=self.round, player_queue=self.player_queue,
-                                        max_cards=self.max_cards)
+        self.biddingFlow.run(
+            round_no=self.round,
+            max_cards=self.max_cards,
+            players = self.player_queue,
+            bidding_manager=self.biddingManager,
+            trump_suit=self.trump_suit,
+            player_queue=self.player_queue
+        )
+
         self.phase = "playing"
 
     def handle_playing_phase(self):

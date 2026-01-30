@@ -20,10 +20,8 @@ class InitialTrumpFlow:
             print(f"""Determine Intial Trump""")
 
             result = self.stepManager.run_step(TrumpSelectionStep())
-            if result != 'BACK':
-                break
 
-            if result == True:
+            if result in ('y', ''):
                 self.context['manual_trump_generation'] = True
             else:
                 self.context['manual_trump_generation'] = False
@@ -40,8 +38,11 @@ class InitialTrumpFlow:
                 if self.context["trump_card_initials"]:
                     self.context["trump_card_initials"].pop()
                 continue
+            else:
+                self.context['trump_card_initials'] = trump_card_initials
+                return self.context
             
-        return self.context
+        
     
 
 

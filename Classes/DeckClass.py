@@ -25,9 +25,9 @@ class Deck:
         for index, item in enumerate(self.single_value_gen):
             self.value_gen.add((item,index+2))
 
-        self.suit_gen = (("Diamond","♦"), ("Spade","♠"),("Club","♣"),("Heart","♥"))
+        self.suit_gen = (("Diamonds","♦"), ("Spades","♠"),("Clubs","♣"),("Hearts","♥"))
         self.deck = self.generate_deck()
-        self.valid_card_initials = self.generate_valid_card_initials
+        self.valid_card_initials = self.generate_valid_card_initials()
         
     def generate_deck(self):
         """
