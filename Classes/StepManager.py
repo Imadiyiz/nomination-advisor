@@ -33,7 +33,7 @@ class StepManager:
                     
                     try:
                       value = step.validate(
-                            input(step.prompt(args = prompt_args)),
+                            user_input = input(step.prompt(args = prompt_args)),
                             args = validate_args)
 
                       if value == 'BACK':

@@ -133,7 +133,7 @@ class Game:
 
         # need to allocate trump and selected card from deck
         if manual_trump_generation:
-            for suit in self.deck.deck.suit_gen:
+            for suit in self.deck.suit_gen:
                 if trump_card_initials[-1].upper() == suit[0][0]:
                     trump_value = trump_card_initials[:-1]  # removes last character to leave just the number
                     if trump_value.isalpha():
@@ -151,7 +151,7 @@ class Game:
         # automatic trump generation
         else:
             trump_card = self.deck.deck[0]
-            self.deck.deck.remove_card(trump_card.suit[0], trump_card.value[0])
+            self.deck.remove_card(trump_card.suit[0], trump_card.value[0])
 
             #determine trump
             #since deck is already shuffled, pick first card
