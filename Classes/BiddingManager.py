@@ -2,7 +2,6 @@
 
 from .PlayerClass import Player
 from typing import List
-import random
 from Utils.tools import clear_screen
 
 
@@ -13,7 +12,6 @@ class BiddingManager:
 
     def __init__(self, UIManager):
         self.current_bids = dict()
-        self.current = 0
         self.forbidden_bid = -1
         self.UIManager = UIManager
 
@@ -66,10 +64,13 @@ class BiddingManager:
         return banned_number if banned_number > -1 else -1
 
 
-    def display_round_difference(self, max_cards):
+    def get_round_difference(self, max_cards: int) -> int:
                 
         """
         Displays the difference between the possible winning hands and the amount bidded by players
+
+        Args:
+            max_cards(int): maximum ammount of cards available in current round
         """
 
         #calculate + or - round
@@ -81,7 +82,14 @@ class BiddingManager:
                 total_bids += bid
         difference = total_bids-max_cards
 
+        # 10, 6 +4
+        # 6, 6 0
+        # 4, 7 -3
+        # 7, 8 -1
+        
+
         print(f"{'+' if total_bids > max_cards else '-'}{abs(difference)} ROUND")
+        return difference
 
         
 

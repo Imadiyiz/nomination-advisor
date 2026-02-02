@@ -189,7 +189,6 @@ class Game:
             players = self.player_queue,
             bidding_manager=self.biddingManager,
             trump_suit=self.trump_suit,
-            player_queue=self.player_queue
         )
 
         self.phase = "playing"

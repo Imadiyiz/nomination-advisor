@@ -38,8 +38,17 @@ class Player:
                 return True
         return False
     
-    def display_hand_str(self):
+    def display_hand_str(self, max_cards: int = 8): # currently the hands are empty
+        """
+        Displays the user's hand depending on whether the player is an opponent
         
+        Args:
+            max_cards(int): Maximum amount of cards possible for current round
+        """
+
+        if not self.hand:
+            return ['X' for _ in range(max_cards)]
+
         # Keeps opponent's hands hidden
         if self.opponent == False:
             return [str(card) for card in self.hand]

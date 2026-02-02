@@ -110,23 +110,25 @@ class BiddingMenuStep(Step):
 
     prompt_required_arguments = {"player", 
                                  "trump_suit",
-                                 "current_bids",}
+                                 "current_bids",
+                                 "max_cards",}
     
     def prompt(self, args: dict = {}) -> str:
 
         missing = self.prompt_required_arguments - args.keys()
         if missing:
-            raise RuntimeError(f"Missing context f{missing}")
+            raise RuntimeError(f"Missing context {missing}")
 
         player = args['player']        
         trump_suit = args['trump_suit']        
         current_bids = args['current_bids']
+        max_cards = args['max_cards']
 
         return f"""{player}'s TURN BIDDING
 
                 CURRENT BIDS: {current_bids}
                 TRUMP: {trump_suit.upper()}
-                HAND: {player.display_hand_str()}
+                HAND: {player.display_hand_str(max_cards)}
                 
                 PRESS ENTER TO CONTINUE...
                 """
@@ -186,7 +188,7 @@ class BiddingStep(Step):
             return "BACK"
         
         if not user_input.isdigit():
-            raise ValueError("Must enter a number")
+            raise ValueError("Must enter a positive number")
         
         value = int(user_input)  # can convert as input must be a number
         
