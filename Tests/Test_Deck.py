@@ -11,4 +11,15 @@ class Test_Scoreboard():
         
         self.deck = Deck()
         assert self.deck.generate_valid_card_initials()
+
+    def test_card_initial_lookup(self):
+        self.deck = Deck()
+        self.deck.generate_deck()
+
+        assert str(self.deck.get_card_from_initials("10D")) == "10 ♦"
+        assert str(self.deck.get_card_from_initials("AD")) == "A ♦"
+        assert str(self.deck.get_card_from_initials("JD")) == "J ♦"
+        assert str(self.deck.get_card_from_initials("2S")) == "2 ♠"
+        
+
         
