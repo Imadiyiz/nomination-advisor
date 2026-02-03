@@ -61,6 +61,9 @@ class Player:
             return [str(card) for card in self.hand]
         else:
             return ['X' for _ in self.hand]
+        
+    def choose_card(self, trump_suit):
+        return self.hand[0]
 
 
     def set_trump_decider(self, boolean: bool):

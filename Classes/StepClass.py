@@ -8,8 +8,6 @@ class Step:
     Abstract representation of a CLI step
 
     """
-    key = None # used for state storage
-
     def prompt(self, args: dict = {}) -> str:
         raise NotImplementedError
 
@@ -23,8 +21,6 @@ class NumPlayerStep(Step):
     """
     Docstring for NumPlayerStep
     """
-
-    key = 'num_players'
 
     def prompt(self, args: dict = {}) -> str:
         return "Enter number of players (3-6): "
@@ -54,8 +50,6 @@ class PlayerNameStep(Step):
     Docstring for NamePlayerStep
     """
 
-    key = 'player_name'
-
     def prompt(self, args: dict = {}) -> str:
         return "Enter player name: "
     
@@ -82,8 +76,6 @@ class OpponentBooleanStep(Step):
     Docstring for OpponentBooleanStep
     """
 
-    key = 'is_opponent'
-
     def prompt(self, args: dict = {}) -> str:
         return "Is this player an opponent? (Y/n): "
     
@@ -105,8 +97,6 @@ class BiddingMenuStep(Step):
     """
     Docstring for BiddingMenuStep
     """
-
-    key = 'bid_menu'
 
     prompt_required_arguments = {"player", 
                                  "trump_suit",
@@ -150,7 +140,6 @@ class BiddingStep(Step):
     Docstring for BiddingStep
     """
 
-    key = 'choose_bid'
     prompt_required_arguments = {"player", 
                                  "forbidden_bid",}
     
@@ -210,8 +199,6 @@ class TrumpSelectionStep(Step):
     Docstring for TrumpSelectionStep
     """
 
-    key = 'trump_selected'
-
     def prompt(self,
                args: dict) -> str:
         
@@ -219,8 +206,8 @@ class TrumpSelectionStep(Step):
 
     
     def validate(self,
-                 args: dict,  
-                 user_input: str):
+                 user_input: str,
+                 args: dict):
                 
         if user_input.lower() == "b":
             return "BACK"
@@ -242,8 +229,6 @@ class ManualTrumpStep(Step):
     """
     Docstring for ManualTrumpStep
     """
-
-    key = 'manual_trump'
     
     validate_required_arguments = {"valid_card_initials"}
 
@@ -258,8 +243,8 @@ class ManualTrumpStep(Step):
 
     
     def validate(self,
-                 args: dict,  
-                 user_input: str):
+                 user_input: str,
+                 args: dict):
         
         #ensure the arguments passed suitable for the function
         missing = self.validate_required_arguments - args.keys()
@@ -292,8 +277,6 @@ class PlayerPlayCard(Step):
 
     Local player playing
     """
-
-    key = 'play_card'
     
     prompt_required_arguments = {"player", 
                                    "trump_suit",
@@ -304,8 +287,7 @@ class PlayerPlayCard(Step):
     ""}
 
     feedback_required_arguments = {
-        "player", "card"
-    }
+        "player"}
 
     def prompt(self,
                args: dict) -> str:
@@ -315,7 +297,7 @@ class PlayerPlayCard(Step):
         if missing:
             raise RuntimeError(f"Missing context: {missing}")
         
-        round_scoreboard = args['scoreboard']
+        scoreboard = args['scoreboard']
         player = args['player']
         trump_suit = args['trump_suit']
         stack_str = args['stack']
@@ -323,7 +305,9 @@ class PlayerPlayCard(Step):
         return (f"""
                 {player.name} STARTS PLAYING
 
-                ROUND SCOREBOARD{round_scoreboard}
+                PLAYER IS OPPONENT {player.opponent}
+
+                ROUND SCOREBOARD {scoreboard.round_scoreboard}
                 TRUMP: {trump_suit}
                 HAND:\n {player.display_hand_str()}
                 STACK: {stack_str}
@@ -334,8 +318,8 @@ class PlayerPlayCard(Step):
 
     
     def validate(self,
-                 args: dict,  
-                 user_input: str):
+                 user_input: str,
+                 args: dict):
         
         #ensure the arguments passed suitable for the function
         missing = self.validate_required_arguments - args.keys()
@@ -350,7 +334,9 @@ class PlayerPlayCard(Step):
         if not user_input.isdigit():
             raise ValueError("Must enter a number")
 
-        if user_input not in range(1, len(player.hand)+1):
+        index = int(user_input)
+
+        if  index < 1 or index > len(player.hand):
             raise ValueError(f"Must enter a valid number ({1}-{len(player.hand)})")
         
         if user_input == '':
@@ -366,9 +352,8 @@ class PlayerPlayCard(Step):
             raise RuntimeError(f"Missing context: {missing}")
         
         player = args['player']
-        card = args['card']
 
-        return (f"{player.name} played {card}")
+        return (f"{player.name} successfully played a card")
     
 class OpponentPlayCard(Step):
     """
@@ -376,8 +361,6 @@ class OpponentPlayCard(Step):
 
     Opponent player playing
     """
-
-    key = 'play_card'
     
     prompt_required_arguments = {"opponent", 
                                    "trump_suit",
@@ -387,7 +370,7 @@ class OpponentPlayCard(Step):
     validate_required_arguments = {"valid_card_initials"}
 
     feedback_required_arguments = {
-        "opponent", "card"}
+        "opponent"}
 
     def prompt(self,
                args: dict) -> str:
@@ -415,8 +398,8 @@ class OpponentPlayCard(Step):
 
     
     def validate(self,
-                 args: dict,  
-                 user_input: str):
+                 user_input: str,
+                 args: dict):
         
         #ensure the arguments passed suitable for the function
         missing = self.validate_required_arguments - args.keys()
@@ -450,6 +433,5 @@ class OpponentPlayCard(Step):
             raise RuntimeError(f"Missing context: {missing}")
         
         opponent = args['opponent']
-        card = args['card']
 
-        return (f"{opponent.name} played {card}")
+        return (f"{opponent.name} successfully played a card")

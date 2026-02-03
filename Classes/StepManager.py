@@ -20,7 +20,8 @@ class StepManager:
     def run_step(self, 
                  step: Step,
                  prompt_args: dict = {},
-                 validate_args: dict = {}): 
+                 validate_args: dict = {},
+                 feedback_args: dict = {}): 
             """
             Controls flow of CLI steps taken for player setup phase
 
@@ -39,8 +40,8 @@ class StepManager:
                       if value == 'BACK':
                            return 'BACK'
                       
-                      if step.feedback(value):
-                           print(step.feedback(value))
+                      if step.feedback(value, feedback_args):
+                           print(step.feedback(value, feedback_args))
 
                       self.history.append(step)
                       return value

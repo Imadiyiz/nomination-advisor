@@ -13,7 +13,8 @@ class PlayingFlow:
     def __init__(self, 
                  player_queue: list[Player],
                  table: Table,
-                 scoreboard: Scoreboard):
+                 scoreboard: Scoreboard,
+                 valid_card_initials: set):
         
         self.context = {
             "player_results": [],
@@ -23,6 +24,7 @@ class PlayingFlow:
         self.player_queue = player_queue
         self.table = table
         self.scoreboard = scoreboard
+        self.valid_card_initials = valid_card_initials
     
     def run(self, players: list[Player], trump_suit: str):
         
@@ -102,13 +104,16 @@ class PlayingFlow:
         while True:
                 
             result = self.stepManager.run_step(
-                        step = PlayerPlayCard(),
+                        step = OpponentPlayCard(),
                         prompt_args={
-                            "player": player,
+                            "opponent": player,
                             "trump_suit": trump_suit,
-                            "scorboard": self.table.sc,
-                            "stack_str": self.table.stack},
-                        validate_args={"player": player}
+                            "scoreboard": self.scoreboard,
+                            "stack": self.table.stack},
+
+                        validate_args={"valid_card_initials": self.valid_card_initials},
+                        feedback_args={
+                            "opponent": player}
                         )
 
             clear_screen(0)

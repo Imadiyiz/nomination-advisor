@@ -97,7 +97,8 @@ class Game:
         self.playingFlow = PlayingFlow(
             self.player_queue,
             self.table,
-            self.scoreboard
+            self.scoreboard,
+            self.deck.generate_valid_card_initials()
         )
 
     def run_game_phases(self):
