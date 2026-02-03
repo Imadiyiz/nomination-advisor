@@ -22,17 +22,24 @@ class Player:
     handicapped_bid:bool = False
 
     def collect_hand(self, hand: List[Card]):
+        """
+        Ensures that the cards in the hand are assigned to the player
+        """
         for card in hand:
             card.owner = self
         self.hand = hand
 
     def remove_card(self, card: Card):
+        """
+        Discards card from player's hand
+        """
         for _card in self.hand:
             if card == _card:
                 self.hand.remove(_card)
                 return
 
     def find_card(self, selected_suit: str, selected_value: str) -> bool:
+        """Determies whether the selectd card is present in player's hand"""
         for card in self.hand:
             if card.suit[0].lower() == selected_suit.lower() and card.value[0].lower() == selected_value.lower():
                 return True

@@ -32,7 +32,26 @@ class Card:
         self.suit = suit
         self.value = value
         self.owner = owner
-    
+
+    @classmethod
+    def from_initials(cls, initials: str):
+        """
+        Convert initials like '10H' or 'QS' into (value_str, suit_letter)
+
+        e.g ("10", "H")
+        """
+
+        if not initials or len(initials) < 2:
+            raise ValueError("Invalid card initials")
+        
+        value_part = initials[:-1].upper()  # removes the end character
+        suit_part = initials[-1].upper()  # suit part is the last character
+
+        return value_part, suit_part
+
+
+
+
     def __eq__(self, other):
         return self.suit == other.suit and self.value == other.value
     

@@ -5,3 +5,4 @@ from Classes.PlayerClass import Player
 
                  
 game = Game()
+game.start()

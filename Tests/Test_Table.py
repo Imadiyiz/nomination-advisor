@@ -65,6 +65,28 @@ class Test_Table():
             'Diamond',
             Card(suit=("Diamond", "♦"), value=("Ace", 14))
         ),
+
+        (
+            [
+                Card(suit=("Club", "♣"), value=("Ace", 14)),
+                Card(suit=("Spade", "♠"), value=("10", 10)),
+                Card(suit=("Club", "♣"), value=("5", 5)),
+                Card(suit=("Heart", "♥"), value=("10", 10)),
+            ],
+            'Diamond',
+            Card(suit=("Club", "♣"), value=("Ace", 14))
+        ),
+
+        (
+            [
+                Card(suit=("Club", "♣"), value=("5", 5)),
+                Card(suit=("Spade", "♠"), value=("10", 10)),
+                Card(suit=("Club", "♣"), value=("Ace", 14)),
+                Card(suit=("Heart", "♥"), value=("10", 10)),
+            ],
+            'Diamond',
+            Card(suit=("Club", "♣"), value=("Ace", 14))
+        ),
         (
             [],
             'Heart',

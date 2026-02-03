@@ -1,6 +1,7 @@
 # Contents for the table class in the Nomination game
 
 from .CardClass import Card
+from .PlayerClass import Player
 
 class Table:
     """
@@ -21,18 +22,13 @@ class Table:
         """
 
         self.stack = list()
-        self.winning_suit = None
         self.UIManager = UIManager
 
     
-    def display_stack(self, visual: bool = False) -> str:
+    def display_stack(self) -> str:
         """
         Returns the string representation of the current stack
-        
-        Args:
-        visual (bool): If True, returns ASCII-style card pictures.
-        If False, returns simple string names.
-
+    
         Returns: 
             str: Formatted representation of the stack,
             or a message if the stack is empty 
@@ -40,8 +36,8 @@ class Table:
 
         if self.stack:
             string = ""
-            for card in self.stack:
-                string += f"{card.picture if visual else str(card)}\n"
+            for index, card in enumerate(self.stack):
+                string += f"[{index}] {str(card)}\n"
             return string
         return "Stack is currently empty" 
 
@@ -57,7 +53,7 @@ class Table:
         self.stack.append(card)
 
     
-    def valid_add_to_stack(self, card: Card = None, player_hand: list = []) -> bool:
+    def valid_add_to_stack(self, card: Card, player_hand: list = [Card]) -> bool:
         """
         Validates whether a card can be played based on suit-following rules.
         
@@ -72,12 +68,12 @@ class Table:
 
         if self.stack: 
             first_card = self.stack[0] # gets the first card in stack
+
+            first_suit = first_card.suit[0].lower()
             
-            must_follow_suit = any(
-                hand_card.suit[0].lower() == first_card.suit[0].lower()
-                for hand_card in player_hand
-            ) # True if any of the cards' suits match the first card
-            
+            # True if any of the cards' suits match the first card
+            must_follow_suit = self._has_suit(hand=player_hand,
+                                              suit=first_suit)
             #must play first card suit
             if must_follow_suit and card.suit[0].lower() != first_card.suit[0].lower():
                 self.UIManager.display_message(
@@ -88,7 +84,9 @@ class Table:
 
     def verify_winner(self, trump_suit: str) -> Card:
         """
-        Determines who is currently winning the stack on the table
+        Rules:
+        1. Trump suit beats all other suits
+        2. If no trump is played, highest card of the leading suit wins
 
         Args:
             trump_suit (str): The trump suit used to prioritise winning cards
@@ -96,34 +94,55 @@ class Table:
         Returns: 
             Card: The winning card based on the rules. Returns None if stack is empty
         """
-        #reset winning card and suits
-        winning_card = None
 
-        #checks whether the stack has been trumped
-        trumped = any(card.suit[0].lower() == trump_suit.lower() for card in self.stack)
+        if not self.stack:
+            return None
+        
+        trump_suit = trump_suit.lower()
+        first_suit = self.stack[0].suit[0].lower()
 
-        #trumped cards are in the stack
-        if trumped:
-            for card in self.stack:
-                if card.suit[0].lower() == trump_suit.lower():
-                    if winning_card is None or card.value[1] > winning_card.value[1]:
-                        winning_card = card
-        else:
-        #No trumps in stack
-            for card in self.stack:
-                if winning_card:
-                    if card.suit[0].lower() == self.winning_suit.lower() and card.value[1] > winning_card.value[1]:
-                        winning_card = card
-                else:
-                    winning_card = card
-                    self.winning_suit = card.suit[0].lower()
+        #gets all the trump cards in the current stack
+        trump_cards = [c for c in self.stack if c.suit[0].lower() == trump_suit]
 
-        return winning_card
+        if trump_cards:
+            return max(trump_cards, key=lambda c: c.value[1])
+        
+        follow_suit_cards = [
+        c for c in self.stack if c.suit[0].lower() == first_suit]
+
+        return max(follow_suit_cards, key=lambda c: c.value[1])
 
     def reset(self):
         """
-        Resets the table by clearing the stack and winning suit
+        Resets the table by clearing the stack
         """
 
-        self.winning_suit = None
         self.stack = list()
+
+    def _has_suit(self, hand: list[Card], suit: str):
+        """
+        Returns boolean value depending on whether
+        the suit is present in the hand
+        """
+
+        return any(
+            card.suit[0].lower() == suit for card in hand)
+
+    def play_card_to_table(self, card: Card, 
+                        player: Player):
+        """
+        Docstring for play_card
+
+        Given the card and player, adds the card to the stack and
+        removes the card from the players hand
+        
+        :param self: Description
+        """
+
+        if self.valid_add_to_stack(
+                    card=card, 
+                    player_hand = player.hand):
+                    
+                    #if valid then add it to the queue
+                    self.table.add_to_stack(card=card)
+                    player.remove_card(card=player.card)
