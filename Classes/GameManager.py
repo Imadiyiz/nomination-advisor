@@ -95,7 +95,6 @@ class Game:
         self.biddingFlow = BiddingFlow(self.player_queue)
         self.initialTrumpFlow = InitialTrumpFlow()
         self.playingFlow = PlayingFlow(
-            self.player_queue,
             self.table,
             self.scoreboard,
             self.deck.generate_valid_card_initials()
@@ -127,9 +126,12 @@ class Game:
             )
 
         opponents_flags = [player['opponent'] for player in context['player_names']]
+        print(opponents_flags, "Opponent flag")
+        print("player names dict", context)
 
         # creating player queue
         for index, name in enumerate(verified_names):
+            print("loop", opponents_flags[index])
             self.player_queue.append( Player(
                 name=name,
                 opponent=opponents_flags[index])
@@ -248,10 +250,12 @@ class Game:
         #determine cards for players
         for player, choice in context['player_results']:
             
-            if player.opponent:
+            if player.opponent is True:
                 selected_card = self.deck.get_card_from_initials(choice)
-            else:
+            elif player.opponent is False:
                 selected_card = player.hand[choice-1]
+            else:
+                raise RuntimeError("player opponent boolean is not set")
             
             self.table.play_card_to_table(
                 selected_card, player

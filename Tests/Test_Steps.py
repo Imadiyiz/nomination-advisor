@@ -147,12 +147,11 @@ class Test_PlayerPlayCard():
         assert step.validate("b", args) == "BACK"
 
 class TestOpponentPlaysCard():
-    def test_opponent_plays_card(self, player_queue, tb, sb, vci):
+    def test_opponent_plays_card(self, tb, sb, vci):
         
         opponent = Player(name="CPU", opponent=True)
 
         playing_flow = PlayingFlow(
-            player_queue=player_queue,
             table=tb,
             scoreboard=sb,
             valid_card_initials=vci

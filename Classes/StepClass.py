@@ -3,6 +3,7 @@
 from Utils.tools import clear_screen
 from .PlayerClass import Player
 
+
 class Step:
     """
     Abstract representation of a CLI step
@@ -85,7 +86,7 @@ class OpponentBooleanStep(Step):
             return "BACK"
         
         if user_input.lower() in ('y', 'n', ''):
-            return ''
+            return user_input
         else:
             raise ValueError("Enter 'y' or 'n'")            
         

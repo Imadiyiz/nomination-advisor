@@ -11,7 +11,6 @@ class PlayingFlow:
     Returns context
     """
     def __init__(self, 
-                 player_queue: list[Player],
                  table: Table,
                  scoreboard: Scoreboard,
                  valid_card_initials: set):
@@ -21,7 +20,6 @@ class PlayingFlow:
             }
         
         self.stepManager = StepManager()
-        self.player_queue = player_queue
         self.table = table
         self.scoreboard = scoreboard
         self.valid_card_initials = valid_card_initials

@@ -39,10 +39,15 @@ class PlayerSetupFlow:
                 continue
             
             # runs the opponent boolean step and returns a boolean
-            is_opponent = self.stepManager.run_step(OpponentBooleanStep())
-            if is_opponent == "BACK":
+            is_opponent_response = self.stepManager.run_step(OpponentBooleanStep())
+            if is_opponent_response == "BACK":
                 continue
 
+            if is_opponent_response in ('y', ''):
+                is_opponent = True
+            else:
+                is_opponent = False
+                
             self.context["player_names"].append({
                 "name": name, 
                 "opponent": is_opponent

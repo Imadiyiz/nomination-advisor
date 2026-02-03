@@ -17,8 +17,8 @@ class Player:
     round_score: int = 0
     bid: int = -1 # must be -1 because 0 is a valid bid
     trump_decider:bool = False
-    computer: bool = False,
-    opponent: bool = True,
+    computer: bool = False
+    opponent: bool = True
     handicapped_bid:bool = False
 
     def collect_hand(self, hand: List[Card]):
