@@ -24,32 +24,18 @@ class PlayingFlow:
         self.scoreboard = scoreboard
         self.valid_card_initials = valid_card_initials
     
-    def run(self, players: list[Player], trump_suit: str):
-        
-        i = 0 
+    def play_turn(self, player: Player, trump_suit: str):
+        """
+        Logic for prompting the player to play their cards
 
-        while i < len(players):
-                player = players[i]
+        Returns context object as
+        {"players" : {"player" : "2"}, {"opponent" : "10D"}}
+        """
                 
-                if player.opponent:
-                    user_choice = self._prompt_for_opponent_play_card(
-                         player=player,
-                         trump_suit=trump_suit)
-                    
-                else:
-                    user_choice = self._prompt_for_local_play_card(
-                        player=player, trump_suit=trump_suit)
-                
-                if user_choice == "BACK":
-                    if self.context["player_results"]:
-                        self.context["player_results"].pop()
-                    i -=1
-                    continue
-
-                self.context['players'].append({player: user_choice})
-                i += 1
-
-        return self.context   
+        if player.opponent:
+            return self._prompt_for_opponent_play_card(player, trump_suit)
+        else:
+            return self._prompt_for_local_play_card(player, trump_suit)
 
                 
     def _prompt_for_local_play_card(self,
@@ -65,24 +51,20 @@ class PlayingFlow:
         Returns
             int: index of legal card played in hand
         """
-        while True:
                
-            result = self.stepManager.run_step(
-                        step = PlayerPlayCard(),
-                        prompt_args={
-                            "player": player,
-                            "trump_suit": trump_suit,
-                            "scoreboard": self.scoreboard,
-                            "stack": self.table.stack},
-                        validate_args={"player": player}
-                        )
+        result = self.stepManager.run_step(
+                    step = PlayerPlayCardStep(),
+                    prompt_args={
+                        "player": player,
+                        "trump_suit": trump_suit,
+                        "scoreboard": self.scoreboard,
+                        "table": self.table},
+                    validate_args={"player": player}
+                    )
 
-            clear_screen(0)
-
-            if result != 'BACK':
-                return 'BACK'
-            
-            return result
+        # clear_screen(0)
+        
+        return result
 
     def _prompt_for_opponent_play_card(self,
                                        player:Player,
@@ -102,21 +84,19 @@ class PlayingFlow:
         while True:
                 
             result = self.stepManager.run_step(
-                        step = OpponentPlayCard(),
+                        step = OpponentPlayCardStep(),
                         prompt_args={
                             "opponent": player,
                             "trump_suit": trump_suit,
                             "scoreboard": self.scoreboard,
-                            "stack": self.table.stack},
+                            "table": self.table},
 
                         validate_args={"valid_card_initials": self.valid_card_initials},
                         feedback_args={
                             "opponent": player}
                         )
 
-            clear_screen(0)
-
-            if result != 'BACK':
-                return 'BACK'
+            #clear_screen(0)
             
             return result
+        

@@ -15,10 +15,13 @@ from .PlayerSetupFlow import PlayerSetupFlow
 from .BiddingFlow import BiddingFlow
 from .InitialTrumpFlow import InitialTrumpFlow
 from .PlayingFlow import PlayingFlow
+from .LocalCardAssignmentFlow import LocalCardAssignmentFlow
 from enum import Enum
+from .CardClass import Card
 
 class Phase(Enum):
         PLAYER_SELECTION = "player_selection"
+        HAND_ASSIGNMENT = 'hand_assignment'
         TRUMP_SELECTION = "trump_selection"
         BIDDING = "bidding"
         PLAYING = "playing"
@@ -51,6 +54,7 @@ class Game:
         self.cards_per_round = [8,7,6,6,7,8]
         self.phases = {
             Phase.PLAYER_SELECTION: self.handle_player_selection,
+            Phase.HAND_ASSIGNMENT: self.handle_hand_assignment,
             Phase.TRUMP_SELECTION: self.handle_trump_selection,
             Phase.BIDDING: self.handle_bidding_phase,
             Phase.PLAYING: self.handle_playing_phase,
@@ -97,8 +101,9 @@ class Game:
         self.playingFlow = PlayingFlow(
             self.table,
             self.scoreboard,
-            self.deck.generate_valid_card_initials()
-        )
+            self.deck.generate_valid_card_initials())
+        self.localCardAssignmentFlow = LocalCardAssignmentFlow(
+            self.deck.generate_valid_card_initials())
 
     def run_game_phases(self):
         """
@@ -126,19 +131,41 @@ class Game:
             )
 
         opponents_flags = [player['opponent'] for player in context['player_names']]
-        print(opponents_flags, "Opponent flag")
-        print("player names dict", context)
 
         # creating player queue
         for index, name in enumerate(verified_names):
-            print("loop", opponents_flags[index])
             self.player_queue.append( Player(
                 name=name,
                 opponent=opponents_flags[index])
             )
 
-        self.phase = Phase.TRUMP_SELECTION
+        self.phase = Phase.HAND_ASSIGNMENT
+
+    def handle_hand_assignment(self):
+        """
+        Docstring for handle_hand_assignment
         
+        """
+
+        for player in self.player_queue:
+
+            if player.opponent is True:
+                continue
+            
+            #iterate for amount of cards in hand for the current round
+            for _ in range(self.cards_per_round[self.round-1]):
+                choice_of_initials = self.localCardAssignmentFlow.assign_card(
+                    player
+                )
+                
+                # choice of initials has already been sanitised
+                chosen_card = self.deck.get_card_from_initials(choice_of_initials)
+                player.hand.append(chosen_card)
+                player.own_hand()
+        
+
+        self.phase = Phase.TRUMP_SELECTION
+
     def handle_trump_selection(self):
         """
         Docstring for trump_selection
@@ -215,7 +242,6 @@ class Game:
         cards = self.cards_per_round[self.round-1]
         for _ in range(cards):
             self.start_round()
-            self.score_hand()
         self.phase = Phase.SCORING
         if self.round > 1:
             self.trump_suit = self.trumpManager.decide_trump(player_set=self.player_set, current_trump=self.trump_suit)
@@ -235,33 +261,49 @@ class Game:
 
     def start_round(self):
         """
-        Function for the functionality of the playing round
+        Logic for the functionality of the playing round
 
-        "Remember to shuffle the order of the player list so that the person in first position is now last"
         """
         self.table.reset()
         self.scoreboard.reorder_round_scoreboard(player_queue=self.player_queue)
          
-        context = self.playingFlow.run(players=self.player_queue,
-                             trump_suit=self.trump_suit)
+        for player in self.player_queue:
 
-        # {"player_results" : [{"player1": "10D"}, {"player2": "5"}]}
-
-        #determine cards for players
-        for player, choice in context['player_results']:
-            
-            if player.opponent is True:
-                selected_card = self.deck.get_card_from_initials(choice)
-            elif player.opponent is False:
-                selected_card = player.hand[choice-1]
+            choice = self.playingFlow.play_turn(
+                player=player,
+                trump_suit=self.trump_suit)
+                
+            if player.opponent:
+                selected_card = self._materialise_played_card(player, choice)
+                self._remote_play_card(player, selected_card)
             else:
-                raise RuntimeError("player opponent boolean is not set")
+                selected_card = player.hand[choice-1]
+                self._local_play_card(player, selected_card)  
+
+        self.score_hand()
+          
             
-            self.table.play_card_to_table(
+
+    def _local_play_card(self, player:Player, selected_card: Card):
+        """
+        Plays card to the table for local player and removes card from hand
+        """
+
+        self.table.play_card_to_table(
                 selected_card, player
             )
 
+        #after playing the card remove it from the player hand
+        player.remove_card(card=selected_card)
 
+    def _remote_play_card(self, player: Player, selected_card: Card):
+        """
+        Plays card to the table for remote player and removes it from the deck
+        """
+        self.deck.remove_card(selected_card)
+        self.table.play_card_to_table(selected_card, player)
+        
+        
     def score_hand(self):
         """
         Scores on a play by play basis (multiple times per round)
@@ -279,3 +321,15 @@ class Game:
             winner=winning_player, 
             player_queue=self.player_queue)
 
+    def _materialise_played_card(self, player:Player, choice: str):
+        """
+        Turns a declared card into a real Card instance and assigns
+        the card owner to the player
+        choice is the initials for the card
+        """
+        card = self.deck.get_card_from_initials(choice)
+        if not card:
+            raise ValueError(f"Card {choice} does not exist or already played")
+
+        card.owner = player
+        return card

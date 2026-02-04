@@ -128,23 +128,19 @@ class Test_ManualTrumpStep():
             step.validate("9H", args)
 
 
-class Test_PlayerPlayCard():
+class Test_PlayerPlayCardStep():
 
     def test_player_play_card_valid(self, player):
-        step = PlayerPlayCard()
+        step = PlayerPlayCardStep()
         args = {"player": player}
         assert step.validate("1", args) == "1"
 
     def test_player_play_card_out_of_range(self, player):
-        step = PlayerPlayCard()
+        step = PlayerPlayCardStep()
         args = {"player": player}
         with pytest.raises(ValueError):
             step.validate("5", args)
 
-    def test_player_play_card_back(self, player):
-        step = PlayerPlayCard()
-        args = {"player": player}
-        assert step.validate("b", args) == "BACK"
 
 class TestOpponentPlaysCard():
     def test_opponent_plays_card(self, tb, sb, vci):

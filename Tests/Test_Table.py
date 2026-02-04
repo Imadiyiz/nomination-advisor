@@ -19,7 +19,7 @@ def c():
 class Test_Table():
 
     def test_add_to_stack(self, tb, c):
-        tb.add_to_stack(card = c)
+        tb._add_to_stack(card = c)
         assert c in tb.stack
 
     @pytest.mark.parametrize(
@@ -204,7 +204,7 @@ class Test_Table():
                                 card, player_hand, expected_bool ):
         
         tb.stack = stack
-        valid = tb.valid_add_to_stack(card=card, player_hand = player_hand)
+        valid = tb._valid_add_to_stack(card=card, player_hand = player_hand)
 
         assert valid == expected_bool
 

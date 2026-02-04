@@ -272,7 +272,7 @@ class ManualTrumpStep(Step):
     def feedback(self, value, args: dict = {}) -> str:
         return ''
     
-class PlayerPlayCard(Step):
+class PlayerPlayCardStep(Step):
     """
     Docstring for PlayerPlayCard
 
@@ -281,7 +281,7 @@ class PlayerPlayCard(Step):
     
     prompt_required_arguments = {"player", 
                                    "trump_suit",
-                                   "stack",
+                                   "table",
                                    "scoreboard"}
     
     validate_required_arguments = {"player"
@@ -301,17 +301,15 @@ class PlayerPlayCard(Step):
         scoreboard = args['scoreboard']
         player = args['player']
         trump_suit = args['trump_suit']
-        stack_str = args['stack']
+        table = args['table']
         
         return (f"""
                 {player.name} STARTS PLAYING
 
-                PLAYER IS OPPONENT {player.opponent}
-
                 ROUND SCOREBOARD {scoreboard.round_scoreboard}
                 TRUMP: {trump_suit}
                 HAND:\n {player.display_hand_str()}
-                STACK: {stack_str}
+                STACK: {table.display_stack()}
 
                 ENTER THE INDEX VALUE OF THE CARD YOU WANT TO PLAY
                 INPUT RANGE: {1}-{len(player.hand)}\n"""
@@ -328,9 +326,6 @@ class PlayerPlayCard(Step):
             raise RuntimeError(f"Missing context: {missing}")
         
         player = args['player']
-        
-        if user_input.lower() == "b":
-            return "BACK"
         
         if not user_input.isdigit():
             raise ValueError("Must enter a number")
@@ -356,16 +351,16 @@ class PlayerPlayCard(Step):
 
         return (f"{player.name} successfully played a card")
     
-class OpponentPlayCard(Step):
+class OpponentPlayCardStep(Step):
     """
-    Docstring for OpponentPlayCard
+    Docstring for OpponentPlayCardStep
 
     Opponent player playing
     """
     
     prompt_required_arguments = {"opponent", 
                                    "trump_suit",
-                                   "stack",
+                                   "table",
                                    "scoreboard"}
     
     validate_required_arguments = {"valid_card_initials"}
@@ -384,7 +379,7 @@ class OpponentPlayCard(Step):
         scoreboard = args['scoreboard']
         opponent = args['opponent']
         trump_suit = args['trump_suit']
-        stack_str = args['stack']
+        table = args['table']
         
         return (f"""
                 {opponent.name} STARTS PLAYING
@@ -392,7 +387,7 @@ class OpponentPlayCard(Step):
                 ROUND SCOREBOARD {scoreboard.round_scoreboard}
                 TRUMP: {trump_suit}
                 HAND: {opponent.display_hand_str()}
-                STACK: {stack_str}
+                STACK: {table.display_stack()}
 
                 ENTER THE INITIALS OF THE CARD THE OPPONENT WANTS TO PLAY
         """)
@@ -406,14 +401,8 @@ class OpponentPlayCard(Step):
         missing = self.validate_required_arguments - args.keys()
         if missing:
             raise RuntimeError(f"Missing context: {missing}")
-                
-        if user_input.lower() == "b":
-            return "BACK"
         
         card_initials = args['valid_card_initials']
-        
-        if user_input.lower() == "b":
-            return "BACK"
         
         if user_input not in card_initials:
             raise ValueError("Must enter a valid card initial e.g '7H'")
@@ -436,3 +425,63 @@ class OpponentPlayCard(Step):
         opponent = args['opponent']
 
         return (f"{opponent.name} successfully played a card")
+    
+    
+class LocalAddCardStep(Step):
+    """
+    Docstring for LocalAddCardStep
+
+    Step for adding card to local player's hand
+    """
+    
+    prompt_required_arguments = {"player"}
+    
+    validate_required_arguments = {"valid_card_initials"}
+
+    def prompt(self,
+               args: dict) -> str:
+
+        #ensure the arguments passed suitable for the function
+        missing = self.prompt_required_arguments - args.keys()
+        if missing:
+            raise RuntimeError(f"Missing context: {missing}")
+        
+        player = args['player']
+        
+        return (f"""
+                {player.name} IS ADDING CARDS TO DECK
+
+                CURRENT PLAYER HAND: {player.hand}
+
+                ENTER THE INITIALS OF THE CARD YOU WANT TO ADD TO {player}'s HAND
+
+
+        """)
+
+    
+    def validate(self,
+                 user_input: str,
+                 args: dict):
+        
+        #ensure the arguments passed suitable for the function
+        missing = self.validate_required_arguments - args.keys()
+        if missing:
+            raise RuntimeError(f"Missing context: {missing}")
+        
+        card_initials = args['valid_card_initials']
+        
+        if user_input not in card_initials:
+            raise ValueError("Must enter a valid card initial e.g '7H'")
+        
+        if len(user_input) < 2 or len(user_input) > 3:
+            raise ValueError("Invalid card initial - must be 2-3 characters long")
+        
+        if user_input == '':
+            raise ValueError("Must enter a value")
+        
+        return user_input
+        
+    
+    def feedback(self, value, args: dict = {}) -> str:
+
+        return ''

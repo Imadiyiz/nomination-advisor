@@ -36,12 +36,12 @@ class Table:
 
         if self.stack:
             string = ""
-            for index, card in enumerate(self.stack):
-                string += f"[{index}] {str(card)}\n"
+            for card in self.stack:
+                string += f"{str(card)}\n"
             return string
         return "Stack is currently empty" 
 
-    def add_to_stack(self, card: Card = None):
+    def _add_to_stack(self, card: Card = None):
         """
         Adds a card to the table stack
 
@@ -53,7 +53,7 @@ class Table:
         self.stack.append(card)
 
     
-    def valid_add_to_stack(self, card: Card, player_hand: list = [Card]) -> bool:
+    def _valid_add_to_stack(self, card: Card, player_hand: list = [Card]) -> bool:
         """
         Validates whether a card can be played based on suit-following rules.
         
@@ -133,16 +133,15 @@ class Table:
         """
         Docstring for play_card
 
-        Given the card and player, adds the card to the stack and
-        removes the card from the players hand
+        Given the card and player, adds the card to the stack
         
         :param self: Description
         """
 
-        if self.valid_add_to_stack(
+        if self._valid_add_to_stack(
                     card=card, 
                     player_hand = player.hand):
                     
                     #if valid then add it to the queue
-                    self.table.add_to_stack(card=card)
-                    player.remove_card(card=player.card)
+                    self._add_to_stack(card=card)
+                    

@@ -21,13 +21,15 @@ class Player:
     opponent: bool = True
     handicapped_bid:bool = False
 
-    def collect_hand(self, hand: List[Card]):
+    def own_hand(self):
         """
         Ensures that the cards in the hand are assigned to the player
+
+        The player is now the owner of all of the cards in their hand
         """
-        for card in hand:
+        for card in self.hand:
             card.owner = self
-        self.hand = hand
+        self.hand = self.hand
 
     def remove_card(self, card: Card):
         """
@@ -58,11 +60,11 @@ class Player:
 
         # Keeps opponent's hands hidden
         if self.opponent == False:
-            return [str(card) for card in self.hand]
+            return [f"[{index}] {str(card)}" for index, card in enumerate(self.hand)]
         else:
             return ['X' for _ in self.hand]
         
-    def choose_card(self, trump_suit):
+    def choose_card(self):
         return self.hand[0]
 
 
