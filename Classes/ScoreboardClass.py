@@ -36,7 +36,12 @@ class Scoreboard:
             reverse = True
         )
 
-        return formatted_scoreboard
+        return " | ".join([
+            f"{name} {score}" 
+            for name, score in formatted_scoreboard
+        ]
+
+        )
     
     def update_round_scoreboard(self, player_list:list[Player], winner_card: Card):
         """

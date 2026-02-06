@@ -39,7 +39,7 @@ class Table:
             for card in self.stack:
                 string += f"{str(card)}\n"
             return string
-        return "Stack is currently empty" 
+        return "(Empty)" 
 
     def _add_to_stack(self, card: Card = None):
         """

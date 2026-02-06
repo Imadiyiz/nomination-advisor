@@ -149,6 +149,8 @@ class Game:
         
         """
 
+        max_cards = self.cards_per_round[self.round-1]
+
         for player in self.player_queue:
 
             if player.opponent:
@@ -157,12 +159,14 @@ class Game:
                     player.hand.append(card)
                     player.own_hand()
                 continue
+
+            self.localCardAssignmentFlow.generate_prompt(player)
             
             #iterate for amount of cards in hand for the current round
             while len(player.hand) < self.cards_per_round[self.round-1]:
 
                 choice_of_initials = self.localCardAssignmentFlow.assign_card(
-                    player
+                    player, max_cards
                 )
                 
                 # choice of initials has already been sanitised
@@ -171,7 +175,9 @@ class Game:
                     player.hand.append(chosen_card)
                     player.own_hand()
                 else:
-                    print(f"This card has already been played")
+                    print(f"{choice_of_initials} is no longer in the deck")
+                    print(len(self.deck.deck))
+
         
 
         self.phase = Phase.TRUMP_SELECTION
@@ -188,7 +194,7 @@ class Game:
 
         #   automatic trump generation
         if not manual_trump_generation:
-            self.select_trump_automatically()
+            card = self.select_trump_automatically()
         #   need to allocate trump and selected card from deck
 
         #   manual trump selection
@@ -199,15 +205,13 @@ class Game:
                 return
         
             self.trump_suit = card.suit[0]
-            self.deck.remove_card(card)
 
+        self.deck.remove_card(card)
         self.phase = Phase.BIDDING
     
     def select_trump_automatically(self):
 
         trump_card = self.deck.deck[0]
-        self.deck.remove_card(trump_card)
-
         #determine trump
         #since deck is already shuffled, pick first card
         # choose the trump after cards have been assinged to players
@@ -215,6 +219,8 @@ class Game:
         print("\nDECIDING INITIAL TRUMP")
         print("CARD RANDOMLY CHOSEN:: ", str(trump_card))
         print("TRUMP SUIT:: ", self.trump_suit, "\n")
+
+        return trump_card
     
 
     def handle_bidding_phase(self):

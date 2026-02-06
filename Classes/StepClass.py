@@ -2,6 +2,7 @@
 
 from Utils.tools import clear_screen
 from .PlayerClass import Player
+from Utils.ViewFormat import *
 
 
 class Step:
@@ -302,19 +303,28 @@ class PlayerPlayCardStep(Step):
         
         scoreboard = args['scoreboard']
         player = args['player']
-        trump_suit = args['trump_suit']
+        trump_suit_symbol = args['trump_suit_symbol']
         table = args['table']
+
+        player_headline_string = f"▶\t {player.name} to play \t|\t Trump: {trump_suit_symbol}"
+        round_scoreboard_string = f"Round score: {scoreboard}"
+        table_string = f"Table: {table.display_stack()}"
+        hand_string = f"Hand:\n{format_hand(player.hand)}"
+        choose_card_string = f"Choose card [1-{len(player.hand)}] > "
         
-        return (f"""
-                {player.name} STARTS PLAYING
-
-                ROUND SCOREBOARD {scoreboard.round_scoreboard}
-                TRUMP: {trump_suit}
-                HAND:\n {player.display_hand_str()}
-                STACK: {table.display_stack()}
-
-                ENTER THE INDEX VALUE OF THE CARD YOU WANT TO PLAY
-                INPUT RANGE: {1}-{len(player.hand)}\n"""
+        return (
+            player_headline_string.join([
+                "\n", 
+                round_scoreboard_string, 
+                "\n",
+                table_string,
+                "\n",
+                hand_string, 
+                "\n",
+                "\n",
+                choose_card_string
+            ]
+            )
         )
 
     
@@ -361,9 +371,9 @@ class OpponentPlayCardStep(Step):
     """
     
     prompt_required_arguments = {"opponent", 
-                                   "trump_suit",
+                                   "trump_suit_symbol",
                                    "table",
-                                   "scoreboard"}
+                                   "scoreboard",}
     
     validate_required_arguments = {"valid_card_initials"}
 
@@ -380,19 +390,28 @@ class OpponentPlayCardStep(Step):
         
         scoreboard = args['scoreboard']
         opponent = args['opponent']
-        trump_suit = args['trump_suit']
+        trump_suit_symbol = args['trump_suit_symbol']
         table = args['table']
         
-        return (f"""
-                {opponent.name} STARTS PLAYING
-
-                ROUND SCOREBOARD {scoreboard.round_scoreboard}
-                TRUMP: {trump_suit}
-                HAND: {opponent.display_hand_str()}
-                STACK: {table.display_stack()}
-
-                ENTER THE INITIALS OF THE CARD THE OPPONENT WANTS TO PLAY
-        """)
+        player_headline_string = f"▶ {opponent.name} to play   |  Trump: {trump_suit_symbol}"
+        round_scoreboard_string = f"Round score: {scoreboard.display()}"
+        table_string = f"Table: {table.display_stack()}"
+        hand_string = f"Hand:\n{format_hand(opponent.hand)}"
+        choose_card_string = f"Choose card [1-{len(opponent.hand)}] > "
+        
+        return (
+            player_headline_string.join([
+                "\n", 
+                round_scoreboard_string, 
+                "\n",
+                table_string,
+                "\n",
+                hand_string, 
+                "\n",
+                choose_card_string
+            ]
+            )
+        )
 
     
     def validate(self,
@@ -430,15 +449,53 @@ class OpponentPlayCardStep(Step):
 
         return (f"{opponent.name} successfully played a card")
     
-    
+
 class LocalAddCardStep(Step):
+
+    "First prompt for Local Add Card Step"
+
+    prompt_required_arguments = {"player"}
+
+    def prompt(self,
+               args: dict) -> str:
+
+        #ensure the arguments passed suitable for the function
+        missing = self.prompt_required_arguments - args.keys()
+        if missing:
+            raise RuntimeError(f"Missing context: {missing}")
+        
+        player = args['player']
+
+        player_assignment_line = f"Assigning cards to: {player}"
+        enter_line = f"Press Enter to continue > "
+
+        clear_screen()
+        
+        return "".join([
+            player_assignment_line, 
+            "\n",
+            enter_line
+            ])
+
+    def validate(self,
+                 user_input: str,
+                 args: dict):
+        
+        return ''
+        
+    
+    def feedback(self, value, args: dict = {}) -> str:
+
+        return ''
+
+class IterableLocalAddCardStep(Step):
     """
     Docstring for LocalAddCardStep
 
     Step for adding card to local player's hand
     """
     
-    prompt_required_arguments = {"player"}
+    prompt_required_arguments = {"player", "maximum_cards"}
     
     validate_required_arguments = {"valid_card_initials"}
 
@@ -451,18 +508,23 @@ class LocalAddCardStep(Step):
             raise RuntimeError(f"Missing context: {missing}")
         
         player = args['player']
+        max_cards = args['maximum_cards']
+
+        cards_remaining_line = f"Cards remaining: {max_cards-len(player.hand)}"
+        current_hand_line = f"Current Hand:\n {player.display_hand_str()} "
+        prompt_line = "Enter card initials (e.g. JH, 10D) > "
         
-        return (f"""
-                {player.name} IS ADDING CARDS TO THEIR DECK
-
-                CURRENT PLAYER HAND: {player.display_hand_str()}
-
-                ENTER THE INITIALS OF THE CARD YOU WANT TO ADD TO {player}'s HAND
-
-                (e.g 'JH' or '10D' ")
-
-
-        """)
+        return (
+            "".join([
+                "\n",
+                cards_remaining_line,
+                "\n",
+                current_hand_line,
+                "\n",
+                prompt_line
+                ]
+            )
+        )
 
     
     def validate(self,
