@@ -144,24 +144,34 @@ class Game:
     def handle_hand_assignment(self):
         """
         Docstring for handle_hand_assignment
+
+        Handles hand assingment for both types of players
         
         """
 
         for player in self.player_queue:
 
-            if player.opponent is True:
+            if player.opponent:
+                for _ in range(self.cards_per_round[self.round-1]):
+                    card = self.deck.deck.pop()
+                    player.hand.append(card)
+                    player.own_hand()
                 continue
             
             #iterate for amount of cards in hand for the current round
-            for _ in range(self.cards_per_round[self.round-1]):
+            while len(player.hand) < self.cards_per_round[self.round-1]:
+
                 choice_of_initials = self.localCardAssignmentFlow.assign_card(
                     player
                 )
                 
                 # choice of initials has already been sanitised
-                chosen_card = self.deck.get_card_from_initials(choice_of_initials)
-                player.hand.append(chosen_card)
-                player.own_hand()
+                chosen_card = self.deck.draw_card_from_initials(choice_of_initials)
+                if chosen_card:
+                    player.hand.append(chosen_card)
+                    player.own_hand()
+                else:
+                    print(f"This card has already been played")
         
 
         self.phase = Phase.TRUMP_SELECTION
@@ -183,7 +193,7 @@ class Game:
 
         #   manual trump selection
         else:
-            card = self.deck.get_card_from_initials(trump_card_initials)
+            card = self.deck.draw_card_from_initials(trump_card_initials)
             if not card:
                 print("Invalid card")
                 return
@@ -327,7 +337,7 @@ class Game:
         the card owner to the player
         choice is the initials for the card
         """
-        card = self.deck.get_card_from_initials(choice)
+        card = self.deck.draw_card_from_initials(choice)
         if not card:
             raise ValueError(f"Card {choice} does not exist or already played")
 

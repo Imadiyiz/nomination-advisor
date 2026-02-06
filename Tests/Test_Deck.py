@@ -16,10 +16,10 @@ class Test_Scoreboard():
         self.deck = Deck()
         self.deck.generate_deck()
 
-        assert str(self.deck.get_card_from_initials("10D")) == "10 ♦"
-        assert str(self.deck.get_card_from_initials("AD")) == "A ♦"
-        assert str(self.deck.get_card_from_initials("JD")) == "J ♦"
-        assert str(self.deck.get_card_from_initials("2S")) == "2 ♠"
+        assert str(self.deck.draw_card_from_initials("10D")) == "10 ♦"
+        assert str(self.deck.draw_card_from_initials("AD")) == "A ♦"
+        assert str(self.deck.draw_card_from_initials("JD")) == "J ♦"
+        assert str(self.deck.draw_card_from_initials("2S")) == "2 ♠"
         
 
         

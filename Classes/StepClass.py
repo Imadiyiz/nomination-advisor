@@ -257,6 +257,8 @@ class ManualTrumpStep(Step):
         if user_input.lower() == "b":
             return "BACK"
         
+        user_input = user_input.upper()
+
         if user_input not in card_initials:
             raise ValueError("Must enter a valid card initial e.g '7H'")
         
@@ -404,6 +406,8 @@ class OpponentPlayCardStep(Step):
         
         card_initials = args['valid_card_initials']
         
+        user_input = user_input.upper()
+
         if user_input not in card_initials:
             raise ValueError("Must enter a valid card initial e.g '7H'")
         
@@ -449,11 +453,13 @@ class LocalAddCardStep(Step):
         player = args['player']
         
         return (f"""
-                {player.name} IS ADDING CARDS TO DECK
+                {player.name} IS ADDING CARDS TO THEIR DECK
 
-                CURRENT PLAYER HAND: {player.hand}
+                CURRENT PLAYER HAND: {player.display_hand_str()}
 
                 ENTER THE INITIALS OF THE CARD YOU WANT TO ADD TO {player}'s HAND
+
+                (e.g 'JH' or '10D' ")
 
 
         """)
@@ -469,6 +475,8 @@ class LocalAddCardStep(Step):
             raise RuntimeError(f"Missing context: {missing}")
         
         card_initials = args['valid_card_initials']
+
+        user_input = user_input.upper()
         
         if user_input not in card_initials:
             raise ValueError("Must enter a valid card initial e.g '7H'")

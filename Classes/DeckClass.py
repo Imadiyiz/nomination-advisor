@@ -12,7 +12,9 @@ class Deck:
     Functions:
 
     generate_deck populates the local deck list
+    generate_valid_initials returns a set of valid initials
     remove_card removes the card selected and takes the suit and value as the parameter
+    draw_card_from_initials returns a card if the initials match to a card and removes the card from deck
     find_card returns boolean depending on whether the suit and value in the parameters are found
     
     """
@@ -58,7 +60,6 @@ class Deck:
                 valid_card_initials.add((character + suit))
         return valid_card_initials
         
-
     def remove_card(self, card: Card):
         """
         Function for removing card from current hand
@@ -80,10 +81,11 @@ class Deck:
         return False
 
 
-    def get_card_from_initials(self, initials: str) -> Card | None:
+    def draw_card_from_initials(self, initials: str) -> Card | None:
         """
         Function returns the card object from the card in the deck
-        with the correct initials
+        with the correct initials and removes it from the deck
+
         """
 
         value_str, suit_letter = Card.from_initials(initials)
@@ -93,6 +95,7 @@ class Deck:
                 card.value[0].upper() == value_str and
                 card.suit[0][0].upper() == suit_letter
             ):
+                self.remove_card(card)
                 return card
         return None
     

@@ -48,7 +48,11 @@ class Card:
         suit_part = initials[-1].upper()  # suit part is the last character
 
         return value_part, suit_part
-
+    
+    
+    def to_initials(self) -> str:
+        """Returns initials form for card"""
+        return f"{self.value[0]}{self.suit[0][0]}"
 
 
 

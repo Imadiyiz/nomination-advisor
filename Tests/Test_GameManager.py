@@ -30,6 +30,52 @@ def gm():
     return gm
 
 
+@pytest.fixture
+def game():
+    game = Game()
+    game.round = 1
+    game.cards_per_round = [3]  # keep test small
+
+    # fake deck with identifiable cards
+    game.deck = type("FakeDeck", (), {})()
+
+    game.deck.deck = [
+        Card(("Club", "♣"), ("Ace", 14)),
+        Card(("Club", "♣"), ("Queen", 12)),
+        Card(("Club", "♣"), ("King", 13)),
+        Card(("Club", "♣"), ("Jack", 11)), 
+        Card(("Club", "♣"), ("10", 10)),
+        Card(("Club", "♣"), ("9", 9))
+    ]
+
+    def pop(index=0):
+        return game.deck.deck.pop(index)
+
+    def draw_card_from_initials(initials):
+        for card in game.deck.deck:
+            if card.to_initials() == initials:
+                game.deck.deck.remove(card)
+                return card
+        return None
+
+    game.deck.pop = pop
+    game.deck.draw_card_from_initials = draw_card_from_initials
+
+    # players
+    local = Player(name="Local", opponent=False)
+    remote = Player(name="Remote", opponent=True)
+
+    game.player_queue = [local, remote]
+
+    # mock local assignment flow
+
+    # type dynamically creates a class
+    game.localCardAssignmentFlow = type("MockFlow", (), {})() 
+    game.localCardAssignmentFlow.assign_card = lambda player: game.deck.deck[0].to_initials()
+
+    return game
+
+
 
 def test_handle_player_selection_creates_players_and_sets_phase(gm):
     gm.handle_player_selection()
@@ -58,19 +104,19 @@ def test_materialise_played_card_assigns_owner():
     player = Player(name="Remote", opponent=True)
     card = Card(suit="Hearts", value="A")
 
-    game.deck.get_card_from_initials.return_value = card
+    game.deck.draw_card_from_initials.return_value = card
 
     result = game._materialise_played_card(player, "AH")
 
     assert result is card
     assert card.owner == player
-    game.deck.get_card_from_initials.assert_called_once_with("AH")
+    game.deck.draw_card_from_initials.assert_called_once_with("AH")
 
 
 def test_materialise_played_card_raises_if_missing():
     game = Game()
     game.deck = MagicMock()
-    game.deck.get_card_from_initials.return_value = None
+    game.deck.draw_card_from_initials.return_value = None
 
     player = Player(name="Remote", opponent=True)
 
@@ -104,3 +150,26 @@ def test_remote_play_card_removes_card_from_deck():
 
     game.deck.remove_card.assert_called_once_with(card)
     game.table.play_card_to_table.assert_called_once_with(card, player)
+
+def test_handle_hand_assignment(game):
+    game.handle_hand_assignment()
+
+    local, remote = game.player_queue
+
+    # correct hand sizes
+    assert len(local.hand) == 3
+    assert len(remote.hand) == 3
+
+    # deck reduced correctly
+    assert len(game.deck.deck) == 0
+
+    # all cards are unique
+    all_cards = local.hand + remote.hand
+    assert len(set(id(card) for card in all_cards)) == 6
+
+    # ownership assigned
+    for card in local.hand:
+        assert card.owner == local
+
+    for card in remote.hand:
+        assert card.owner == remote
