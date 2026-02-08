@@ -31,7 +31,7 @@ class PlayingFlow:
         Returns context object as
         {"players" : {"player" : "2"}, {"opponent" : "10D"}}
         """
-                
+        
         if player.opponent:
             return self._prompt_for_opponent_play_card(player, trump_suit)
         else:
@@ -60,19 +60,19 @@ class PlayingFlow:
         }
 
         trump_suit_symbol = suit_to_symbol[trump_suit.lower()]
-               
+        
+
         result = self.stepManager.run_step(
                     step = PlayerPlayCardStep(),
                     prompt_args={
                         "player": player,
-                        "trump_suit_symbol": trump_suit,
+                        "trump_suit_symbol": trump_suit_symbol,
                         "scoreboard": self.scoreboard,
                         "table": self.table},
                     validate_args={"player": player}
                     )
 
         # clear_screen(0)
-        
         return result
 
     def _prompt_for_opponent_play_card(self,
@@ -99,14 +99,14 @@ class PlayingFlow:
         }
 
         trump_suit_symbol = suit_to_symbol[trump_suit.lower()]
-        
+
         while True:
-                
+            
             result = self.stepManager.run_step(
                         step = OpponentPlayCardStep(),
                         prompt_args={
                             "opponent": player,
-                            "trump_suit_symbol": trump_suit,
+                            "trump_suit_symbol": trump_suit_symbol,
                             "scoreboard": self.scoreboard,
                             "table": self.table},
 
@@ -114,8 +114,9 @@ class PlayingFlow:
                         feedback_args={
                             "opponent": player}
                         )
-
+            
+            if result != 'BACK':
+                return result
             #clear_screen(0)
             
-            return result
         

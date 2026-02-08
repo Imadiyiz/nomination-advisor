@@ -20,6 +20,9 @@ class Test_Scoreboard():
         assert str(self.deck.draw_card_from_initials("AD")) == "A ♦"
         assert str(self.deck.draw_card_from_initials("JD")) == "J ♦"
         assert str(self.deck.draw_card_from_initials("2S")) == "2 ♠"
+
+    def test_card_initals_length_match(self):
+        assert len(self.deck) == len(self.deck.generate_valid_card_initials())
         
 
         

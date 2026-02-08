@@ -18,4 +18,4 @@ def format_hand(hand: list[Card], cols=4):
             )
             lines.append(line)
         
-        return "\n".join(lines)
+        return "\n".join(lines) if lines else '(Hidden)'

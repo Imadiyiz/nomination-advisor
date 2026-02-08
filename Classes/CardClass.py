@@ -32,6 +32,10 @@ class Card:
         self.suit = suit
         self.value = value
         self.owner = owner
+        self.initials = "".join([
+            self.value[0],
+            self.suit[0][0].upper(),
+        ])
 
     @classmethod
     def from_initials(cls, initials: str):
@@ -57,7 +61,7 @@ class Card:
 
 
     def __eq__(self, other):
-        return self.suit == other.suit and self.value == other.value
+        return self.initials == other.initials
     
     def __str__(self):
         return f"{self.value[0]} {self.suit[1]}"

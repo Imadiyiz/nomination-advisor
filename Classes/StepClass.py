@@ -290,8 +290,6 @@ class PlayerPlayCardStep(Step):
     validate_required_arguments = {"player"
     ""}
 
-    feedback_required_arguments = {
-        "player"}
 
     def prompt(self,
                args: dict) -> str:
@@ -306,14 +304,15 @@ class PlayerPlayCardStep(Step):
         trump_suit_symbol = args['trump_suit_symbol']
         table = args['table']
 
-        player_headline_string = f"▶\t {player.name} to play \t|\t Trump: {trump_suit_symbol}"
-        round_scoreboard_string = f"Round score: {scoreboard}"
+        player_headline_string = f"▶\t {player.name} to play\t|\tTrump: {trump_suit_symbol} "
+        round_scoreboard_string = f"Round score: {scoreboard.display()}"
         table_string = f"Table: {table.display_stack()}"
         hand_string = f"Hand:\n{format_hand(player.hand)}"
         choose_card_string = f"Choose card [1-{len(player.hand)}] > "
         
         return (
             player_headline_string.join([
+                "\n", 
                 "\n", 
                 round_scoreboard_string, 
                 "\n",
@@ -355,13 +354,8 @@ class PlayerPlayCardStep(Step):
     
     def feedback(self, value, args: dict = {}) -> str:
         #ensure the arguments passed suitable for the function
-        missing = self.feedback_required_arguments - args.keys()
-        if missing:
-            raise RuntimeError(f"Missing context: {missing}")
-        
-        player = args['player']
 
-        return (f"{player.name} successfully played a card")
+        return ''
     
 class OpponentPlayCardStep(Step):
     """
@@ -377,9 +371,6 @@ class OpponentPlayCardStep(Step):
     
     validate_required_arguments = {"valid_card_initials"}
 
-    feedback_required_arguments = {
-        "opponent"}
-
     def prompt(self,
                args: dict) -> str:
 
@@ -393,20 +384,26 @@ class OpponentPlayCardStep(Step):
         trump_suit_symbol = args['trump_suit_symbol']
         table = args['table']
         
-        player_headline_string = f"▶ {opponent.name} to play   |  Trump: {trump_suit_symbol}"
+        player_headline_string = f"▶\t{opponent.name} to play | Trump: {trump_suit_symbol}"
         round_scoreboard_string = f"Round score: {scoreboard.display()}"
-        table_string = f"Table: {table.display_stack()}"
+        table_string = f"Table:\n{table.display_stack()}"
         hand_string = f"Hand:\n{format_hand(opponent.hand)}"
-        choose_card_string = f"Choose card [1-{len(opponent.hand)}] > "
+        choose_card_string = f"Enter initials of card e.g. '7H' > "
         
+        #clear_screen()
         return (
-            player_headline_string.join([
+            "".join([
+                player_headline_string,
+                "\n", 
                 "\n", 
                 round_scoreboard_string, 
                 "\n",
+                "\n",
                 table_string,
                 "\n",
+                "\n",
                 hand_string, 
+                "\n",
                 "\n",
                 choose_card_string
             ]
@@ -441,13 +438,8 @@ class OpponentPlayCardStep(Step):
     
     def feedback(self, value, args: dict = {}) -> str:
         #ensure the arguments passed suitable for the function
-        missing = self.feedback_required_arguments - args.keys()
-        if missing:
-            raise RuntimeError(f"Missing context: {missing}")
-        
-        opponent = args['opponent']
 
-        return (f"{opponent.name} successfully played a card")
+        return ''
     
 
 class LocalAddCardStep(Step):

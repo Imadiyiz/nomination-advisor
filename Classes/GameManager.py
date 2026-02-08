@@ -153,30 +153,36 @@ class Game:
 
         for player in self.player_queue:
 
+            """
             if player.opponent:
                 for _ in range(self.cards_per_round[self.round-1]):
                     card = self.deck.deck.pop()
                     player.hand.append(card)
                     player.own_hand()
                 continue
+            """ 
+            # not required as the opponents will have unknown 
+            # irl hands. 
 
-            self.localCardAssignmentFlow.generate_prompt(player)
-            
-            #iterate for amount of cards in hand for the current round
-            while len(player.hand) < self.cards_per_round[self.round-1]:
-
-                choice_of_initials = self.localCardAssignmentFlow.assign_card(
-                    player, max_cards
-                )
+            # local players only
+            if not player.opponent: 
+                self.localCardAssignmentFlow.generate_prompt(player)
                 
-                # choice of initials has already been sanitised
-                chosen_card = self.deck.draw_card_from_initials(choice_of_initials)
-                if chosen_card:
-                    player.hand.append(chosen_card)
-                    player.own_hand()
-                else:
-                    print(f"{choice_of_initials} is no longer in the deck")
-                    print(len(self.deck.deck))
+                #iterate for amount of cards in hand for the current round
+                while len(player.hand) < self.cards_per_round[self.round-1]:
+
+                    choice_of_initials = self.localCardAssignmentFlow.assign_card(
+                        player, max_cards
+                    )
+                    
+                    # choice of initials has already been sanitised
+                    chosen_card = self.deck.draw_card_from_initials(choice_of_initials)
+                    if chosen_card:
+                        player.hand.append(chosen_card)
+                        player.own_hand()
+                    else:
+                        print(f"{choice_of_initials} is no longer in the deck")
+                        print(len(self.deck.deck))
 
         
 
@@ -268,7 +274,7 @@ class Game:
         """
         if self.round < 6:
             self.round += 1
-            self.phase = Phase.BIDDING
+            self.phase = Phase.HAND_ASSIGNMENT
             #display total scoreboard
             self.scoreboard.update_total_scoreboard(self.player_queue, max_cards=self.max_cards)
             self.UIManager.display_message(self.scoreboard.display(round=False))
@@ -281,21 +287,42 @@ class Game:
 
         """
         self.table.reset()
-        self.scoreboard.reorder_round_scoreboard(player_queue=self.player_queue)
-         
+        self.scoreboard.reorder_round_scoreboard(
+            player_queue=self.player_queue
+            )
+        
         for player in self.player_queue:
 
-            choice = self.playingFlow.play_turn(
-                player=player,
-                trump_suit=self.trump_suit)
-                
-            if player.opponent:
-                selected_card = self._materialise_played_card(player, choice)
-                self._remote_play_card(player, selected_card)
-            else:
-                selected_card = player.hand[choice-1]
-                self._local_play_card(player, selected_card)  
+            while True:
 
+
+                choice = self.playingFlow.play_turn(
+                    player=player,
+                    trump_suit=self.trump_suit)
+                
+                if player.opponent:
+                    selected_card = self._materialise_played_card(player, choice)
+                    print("selected card", selected_card)
+                    if not selected_card:
+                        print(f"invalid card input")
+                        continue
+                    
+                    self._remote_play_card(player, selected_card)
+                    break  # successful play
+
+                else:
+                    # local player
+
+                    try: 
+                        selected_card = player.hand[choice-1]  
+                    except:
+                        print("Invalid Card Index")
+                        continue
+                
+                    self._local_play_card(player, selected_card) 
+                    break 
+
+        print("scored hand")
         self.score_hand()
           
             
@@ -316,8 +343,10 @@ class Game:
         """
         Plays card to the table for remote player and removes it from the deck
         """
-        self.deck.remove_card(selected_card)
-        self.table.play_card_to_table(selected_card, player)
+        
+        if self.table.play_card_to_table(selected_card, player) == False:
+            raise ValueError("unable to play card to table")
+
         
         
     def score_hand(self):
@@ -344,8 +373,9 @@ class Game:
         choice is the initials for the card
         """
         card = self.deck.draw_card_from_initials(choice)
+
         if not card:
-            raise ValueError(f"Card {choice} does not exist or already played")
+            return None
 
         card.owner = player
         return card

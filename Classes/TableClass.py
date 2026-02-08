@@ -144,4 +144,6 @@ class Table:
                     
                     #if valid then add it to the queue
                     self._add_to_stack(card=card)
+                    return True
                     
+        return False

@@ -22,6 +22,7 @@ class Deck:
         
         self.single_value_gen = ("2","3","4","5","6","7","8","9","10","J","Q","K","A" )
         self.value_gen = set()
+        self.removed_suit_initials = set()
         
         #ensures that the picture cards still have a value
         for index, item in enumerate(self.single_value_gen):
@@ -58,17 +59,19 @@ class Deck:
         for character in self.single_value_gen:
             for suit in self.first_letter_suits.keys():
                 valid_card_initials.add((character + suit))
-        return valid_card_initials
+        return valid_card_initials - self.removed_suit_initials
         
     def remove_card(self, card: Card):
         """
-        Function for removing card from current hand
+        Function for removing card from current deck
 
         Requires card instance inside of current deck
         """
         if not card:
             raise ValueError("Card not found in deck")
+        
         self.deck.remove(card)
+        self.removed_suit_initials.add(card.initials)
 
     def find_card(self, selected_suit:str, selected_value:str):
         """
@@ -89,6 +92,7 @@ class Deck:
         """
 
         value_str, suit_letter = Card.from_initials(initials)
+        
 
         for card in self.deck:
             if (

@@ -60,7 +60,7 @@ class Player:
 
         # Keeps opponent's hands hidden
         if self.opponent == False:
-            return [f"{str(card)}, " for card in self.hand]
+            return [f"{str(card)}" for card in self.hand]
         else:
             return ['X' for _ in self.hand]
         
