@@ -68,11 +68,7 @@ def test_display_round_scoreboard_sorted(scoreboard):
 
     result = scoreboard.display(round=True)
 
-    assert result == [
-        ("Bob", 3),
-        ("Charlie", 2),
-        ("Alice", 1),
-    ]
+    assert result == 'Bob 3 | Charlie 2 | Alice 1'
 
 
 def test_display_total_scoreboard(scoreboard):

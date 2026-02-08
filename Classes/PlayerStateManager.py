@@ -14,7 +14,7 @@ class PlayerStateManager:
     ~ Resets player handicap states
     """
 
-    def __init__(self, players:set):
+    def __init__(self, players:list[Player]):
         """
         Initialises the PlayerStateManager with a set of players.
 

@@ -35,9 +35,13 @@ class Table:
         """
 
         if self.stack:
+
+            _reversed_stack = self.stack
+            reversed(_reversed_stack)
             string = ""
-            for card in self.stack:
-                string += f"{str(card)}\n"
+
+            for card in _reversed_stack:
+                string += f"{str(card) if len(card.initials) == 3 else " ".join(str(card))}   ~   {card.owner}\n"
             return string
         return "(Empty)" 
 

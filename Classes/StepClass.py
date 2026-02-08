@@ -283,7 +283,7 @@ class PlayerPlayCardStep(Step):
     """
     
     prompt_required_arguments = {"player", 
-                                   "trump_suit",
+                                   "trump_suit_symbol",
                                    "table",
                                    "scoreboard"}
     
@@ -306,17 +306,20 @@ class PlayerPlayCardStep(Step):
 
         player_headline_string = f"▶\t {player.name} to play\t|\tTrump: {trump_suit_symbol} "
         round_scoreboard_string = f"Round score: {scoreboard.display()}"
-        table_string = f"Table: {table.display_stack()}"
+        table_string = f"Table:\n{table.display_stack()}"
         hand_string = f"Hand:\n{format_hand(player.hand)}"
         choose_card_string = f"Choose card [1-{len(player.hand)}] > "
         
         return (
-            player_headline_string.join([
+            "".join([
+                player_headline_string,
                 "\n", 
                 "\n", 
                 round_scoreboard_string, 
                 "\n",
+                "\n",
                 table_string,
+                "\n",
                 "\n",
                 hand_string, 
                 "\n",
@@ -349,7 +352,7 @@ class PlayerPlayCardStep(Step):
         if user_input == '':
             raise ValueError("Must enter a value")
         
-        return user_input
+        return index
         
     
     def feedback(self, value, args: dict = {}) -> str:

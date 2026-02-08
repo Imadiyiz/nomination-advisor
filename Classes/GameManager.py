@@ -65,7 +65,6 @@ class Game:
         self.phase = Phase.PLAYER_SELECTION
         self.trump_suit = ''
 
-        self.player_set = set()
         self.player_queue = [] #queue for playing during rounds
         self.original_queue = [] #queue for after round when winning the hand does not affect the order
 
@@ -89,11 +88,11 @@ class Game:
         self.deck = Deck()
 
         #Generates objects for the game
-        self.scoreboard = Scoreboard(self.player_set)
+        self.scoreboard = Scoreboard()
         self.UIManager = UIManager()
         self.table = Table(self.UIManager)
         self.biddingManager = BiddingManager(self.UIManager)
-        self.playerStateManager = PlayerStateManager(self.player_set)
+        self.playerStateManager = PlayerStateManager(self.player_queue)
         self.trumpManager = TrumpManager(self.UIManager)
         self.playerSetupFlow = PlayerSetupFlow()
         self.biddingFlow = BiddingFlow(self.player_queue)
@@ -266,7 +265,7 @@ class Game:
             self.start_round()
         self.phase = Phase.SCORING
         if self.round > 1:
-            self.trump_suit = self.trumpManager.decide_trump(player_set=self.player_set, current_trump=self.trump_suit)
+            self.trump_suit = self.trumpManager.decide_trump(players=self.player_queue, current_trump=self.trump_suit)
     
     def handle_scoring_phase(self):
         """
@@ -319,7 +318,8 @@ class Game:
                         print("Invalid Card Index")
                         continue
                 
-                    self._local_play_card(player, selected_card) 
+                    if not self._local_play_card(player, selected_card):
+                        continue
                     break 
 
         print("scored hand")
@@ -330,14 +330,19 @@ class Game:
     def _local_play_card(self, player:Player, selected_card: Card):
         """
         Plays card to the table for local player and removes card from hand
+
+        returns False if unable to play the card
         """
 
-        self.table.play_card_to_table(
+        if not self.table.play_card_to_table(
                 selected_card, player
-            )
-
+            ):
+                return None
+        
         #after playing the card remove it from the player hand
         player.remove_card(card=selected_card)
+        return True
+
 
     def _remote_play_card(self, player: Player, selected_card: Card):
         """
@@ -359,7 +364,7 @@ class Game:
         print(f"DONE, {winning_player} is the winner with {winner_card}")
         
         self.scoreboard.update_round_scoreboard(
-            self.player_set, 
+            player_list=self.player_queue, 
             winner_card=winner_card)
     
         self.player_queue = self.playerStateManager.update_winner_order(

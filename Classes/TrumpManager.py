@@ -13,7 +13,7 @@ class TrumpManager:
     def __init__(self, UIManager):
         self.UIManager = UIManager
 
-    def decide_trump(self, player_set: set[Player], current_trump:str):
+    def decide_trump(self, players: list[Player], current_trump:str):
         """
         Determines which player is choosing trump for the next round
 
@@ -30,11 +30,11 @@ class TrumpManager:
         #find top scorers
         scores = dict()
         top_players = list()
-        for player in player_set:
+        for player in players:
             scores[player] = player.round_score
         top_score = max(scores.values())
         
-        for player in player_set:
+        for player in players:
             if scores[player] == top_score:
                 top_players.append(player)
 

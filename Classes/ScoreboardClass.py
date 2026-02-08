@@ -5,17 +5,11 @@ from Classes.CardClass import Card
 class Scoreboard:
     """
     Scoreboard class used to monitor and update the scores of multiple players.
-
-    Args:
-        player_list (list[Player]): Used to initialise the scoreboard with current players
     """
 
-    def __init__(self, player_list: list[Player]):
+    def __init__(self):
         self.round_scoreboard = {}
         self.total_scoreboard = {}
-        for player in player_list:
-            self.round_scoreboard[player.name] = 0 #sets score to 0
-            self.total_scoreboard[player.name] = 0 #sets score to 0
         
     def display(self, round: bool = True) -> list:
         """
@@ -53,9 +47,11 @@ class Scoreboard:
         """
         #update round score winner 
         for _player in player_list:
+            print(_player, winner_card.owner)
             if _player == winner_card.owner:
+                print("score added")
                 _player.round_score +=1 
-                self.round_scoreboard[_player.name] = _player.round_score
+            self.round_scoreboard[_player.name] = _player.round_score
     
     def update_total_scoreboard(self, player_list:list[Player], max_cards: int = 8):
         """
