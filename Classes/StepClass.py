@@ -309,7 +309,8 @@ class PlayerPlayCardStep(Step):
         table_string = f"Table:\n{table.display_stack()}"
         hand_string = f"Hand:\n{format_hand(player.hand)}"
         choose_card_string = f"Choose card [1-{len(player.hand)}] > "
-        
+        clear_screen(0)
+
         return (
             "".join([
                 player_headline_string,
@@ -393,7 +394,7 @@ class OpponentPlayCardStep(Step):
         hand_string = f"Hand:\n{format_hand(opponent.hand)}"
         choose_card_string = f"Enter initials of card e.g. '7H' > "
         
-        #clear_screen()
+        clear_screen(0)
         return (
             "".join([
                 player_headline_string,

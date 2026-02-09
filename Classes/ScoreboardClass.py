@@ -11,6 +11,7 @@ class Scoreboard:
         self.round_scoreboard = {}
         self.total_scoreboard = {}
         
+        
     def display(self, round: bool = True) -> list:
         """
         Function for outputting the scores in the game
@@ -47,9 +48,7 @@ class Scoreboard:
         """
         #update round score winner 
         for _player in player_list:
-            print(_player, winner_card.owner)
             if _player == winner_card.owner:
-                print("score added")
                 _player.round_score +=1 
             self.round_scoreboard[_player.name] = _player.round_score
     
@@ -58,12 +57,17 @@ class Scoreboard:
         Updates the total scoreboard using the player bids and the player score from the round
 
         Args:
-            player_list (List[Player]): Requires the players in order to update the scoreboard
-            max_Cards (int): Enables function to caluculate the new scores
+            player_list(list[Player]): Required to iterate throught every player
+            max_cards (int): Enables function to caluculate the new scores
         """
+
+        # initialise total_scoreboard if it does not exist
+        if not self.total_scoreboard:
+            for _player in player_list:
+                self.total_scoreboard[_player.name] = 0
+
         for _player in player_list:
             #check if they got their score correct
-
             multiplier = 2 if _player.bid == max_cards else 1
 
             if _player.bid == _player.round_score:

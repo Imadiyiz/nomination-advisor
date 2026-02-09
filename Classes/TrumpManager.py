@@ -21,7 +21,7 @@ class TrumpManager:
         If the player is a computer, the trump suit remains the same
 
         Args:
-            player_set (set[Player]): The player set is necessary to iterate through the players
+            players (list[Player]): The players list is necessary to iterate through the players
             current_trump (str): Ensures that the trump value does not change if the computer decides on the trump
 
         Returns:

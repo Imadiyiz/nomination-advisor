@@ -8,9 +8,9 @@ import random
 
 @pytest.fixture
 def computer_player_set():
-    players = set()
+    players = list()
     for i in range(5):
-        players.add(Player(name=f"Player{i}"))
+        players.append(Player(name=f"Player{i}"))
     return players
 
 @pytest.fixture
@@ -28,7 +28,7 @@ class Test_Decide_Trump():
                             trump_manager,
                             human_player):
         players = computer_player_set
-        players.add(human_player)
+        players.append(human_player)
 
         # Monkeypatch random.choice to always return the human
         monkeypatch.setattr(random, "choice", lambda x: human_player)
@@ -40,7 +40,7 @@ class Test_Decide_Trump():
 
         initial_trump = 'spade'
         new_trump = trump_manager.decide_trump(
-            player_set=players,
+            players=players,
             current_trump=initial_trump
         )
        
@@ -57,7 +57,7 @@ class Test_Decide_Trump():
         monkeypatch.setattr(trump_manager.UIManager, "display_message", lambda msg: None)
         monkeypatch.setattr(random, "choice", lambda x: human_player)
 
-        trump = trump_manager.decide_trump(player_set=players, current_trump="club")
+        trump = trump_manager.decide_trump(players=players, current_trump="club")
         assert trump == "heart", "Should retry input until a valid trump suit is entered"
 
     

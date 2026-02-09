@@ -13,4 +13,8 @@ class GameState():
         self.starting_card = ''
         self.winning_card = ''
         self.trumped = False
+        self.players = []
+        self.current_table = []
+        self.round_scores = {}
+        self.total_scores = {}
         

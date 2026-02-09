@@ -17,7 +17,7 @@ class InitialTrumpFlow:
         validate_args = {'valid_card_initials' : valid_card_initials}
         #step 1: Determine auto or manual trump selection
         while True:
-            print(f"""Determine Intial Trump""")
+            print(f"""Determine Initial Trump""")
 
             result = self.stepManager.run_step(TrumpSelectionStep())
 

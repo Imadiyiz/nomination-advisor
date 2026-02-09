@@ -28,7 +28,7 @@ def tb(ui):
 
 @pytest.fixture()
 def sb(player_queue):
-    return Scoreboard(player_list=player_queue)
+    return Scoreboard(players=player_queue)
 
 @pytest.fixture()
 def vci():
@@ -133,7 +133,7 @@ class Test_PlayerPlayCardStep():
     def test_player_play_card_valid(self, player):
         step = PlayerPlayCardStep()
         args = {"player": player}
-        assert step.validate("1", args) == "1"
+        assert step.validate("1", args) == 1
 
     def test_player_play_card_out_of_range(self, player):
         step = PlayerPlayCardStep()

@@ -22,7 +22,9 @@ class Test_Scoreboard():
         assert str(self.deck.draw_card_from_initials("2S")) == "2 ♠"
 
     def test_card_initals_length_match(self):
-        assert len(self.deck) == len(self.deck.generate_valid_card_initials())
+        self.deck = Deck()
+        deck = self.deck.generate_deck()
+        assert len(deck) == len(self.deck.generate_valid_card_initials())
         
 
         

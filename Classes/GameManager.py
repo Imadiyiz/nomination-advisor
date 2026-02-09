@@ -51,7 +51,7 @@ class Game:
         }
 
         self.round = 1
-        self.cards_per_round = [8,7,6,6,7,8]
+        self.cards_per_round = [1,7,6,6,7,8] # just for demo
         self.phases = {
             Phase.PLAYER_SELECTION: self.handle_player_selection,
             Phase.HAND_ASSIGNMENT: self.handle_hand_assignment,
@@ -66,7 +66,6 @@ class Game:
         self.trump_suit = ''
 
         self.player_queue = [] #queue for playing during rounds
-        self.original_queue = [] #queue for after round when winning the hand does not affect the order
 
         #IF SHUFFLE IS NECEESARY
         #places the shuffled players into the actual list in their new order
@@ -138,6 +137,9 @@ class Game:
                 opponent=opponents_flags[index])
             )
 
+        # round player_queue
+        self.temp_player_queue = self.player_queue
+
         self.phase = Phase.HAND_ASSIGNMENT
 
     def handle_hand_assignment(self):
@@ -193,6 +195,7 @@ class Game:
         
         """
 
+        print(f"Round {self.round}: \n")
         context = self.initialTrumpFlow.run(self.deck.valid_card_initials)
         manual_trump_generation = context['manual_trump_generation']
         trump_card_initials = context['trump_card_initials']
@@ -211,7 +214,6 @@ class Game:
         
             self.trump_suit = card.suit[0]
 
-        self.deck.remove_card(card)
         self.phase = Phase.BIDDING
     
     def select_trump_automatically(self):
@@ -238,8 +240,7 @@ class Game:
 
         #dealer shifts every time bidding starts
         if self.round > 1:
-            self.original_queue = self.playerStateManager.update_dealer_order(self.original_queue)
-            self.player_queue = self.original_queue
+            self.player_queue = self.playerStateManager.update_dealer_order(self.player_queue)
         
         self.player_queue[-1].handicapped_bid = True
         self.biddingManager.reset_bids(self.player_queue)
@@ -275,7 +276,10 @@ class Game:
             self.round += 1
             self.phase = Phase.HAND_ASSIGNMENT
             #display total scoreboard
-            self.scoreboard.update_total_scoreboard(self.player_queue, max_cards=self.max_cards)
+            self.scoreboard.update_total_scoreboard(
+                player_list=self.player_queue,
+                max_cards=self.max_cards
+                )
             self.UIManager.display_message(self.scoreboard.display(round=False))
         else:
             self.phase = Phase.GAME_OVER
@@ -287,10 +291,10 @@ class Game:
         """
         self.table.reset()
         self.scoreboard.reorder_round_scoreboard(
-            player_queue=self.player_queue
+            player_queue=self.temp_player_queue
             )
         
-        for player in self.player_queue:
+        for player in self.temp_player_queue:
 
             while True:
 
@@ -367,7 +371,9 @@ class Game:
             player_list=self.player_queue, 
             winner_card=winner_card)
     
-        self.player_queue = self.playerStateManager.update_winner_order(
+        # used for updating the winner order at the end of each hand
+        # effective a round_player_queue
+        self.temp_player_queue = self.playerStateManager.update_winner_order(
             winner=winning_player, 
             player_queue=self.player_queue)
 
