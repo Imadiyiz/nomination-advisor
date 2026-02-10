@@ -1,6 +1,6 @@
 # contains variations of the Step class
 
-from Utils.tools import clear_screen
+from Utils.tools import *
 from .PlayerClass import Player
 from Utils.ViewFormat import *
 
@@ -103,7 +103,10 @@ class BiddingMenuStep(Step):
     prompt_required_arguments = {"player", 
                                  "trump_suit",
                                  "current_bids",
+                                 "forbidden_bid",
                                  "max_cards",}
+    
+    validate_required_arguments = {"forbidden_bid"}
     
     def prompt(self, args: dict = {}) -> str:
 
@@ -115,58 +118,22 @@ class BiddingMenuStep(Step):
         trump_suit = args['trump_suit']        
         current_bids = args['current_bids']
         max_cards = args['max_cards']
+        forbidden_bid = args['forbidden_bid']
 
-        return f"""{player}'s TURN BIDDING
+        if forbidden_bid > -1 and player.handicapped_bid:
+            bidding_line = f"""{player}, enter your bid (BANNED: {forbidden_bid}) > """
+        else:
+            bidding_line = f"{player} enter your bid > " 
 
-                CURRENT BIDS: {current_bids}
-                TRUMP: {trump_suit.upper()}
-                HAND: {player.display_hand_str(max_cards)}
-                
-                PRESS ENTER TO CONTINUE...
-                """
+        return f"""{player}'s turn bidding\n
+Current bids: {current_bids}
+Trump: {trump_suit}
+Hand: {player.display_hand_str(max_cards)}
+
+{bidding_line}"""
 
     
     def validate(self, user_input: str, args: dict = {}):
-        
-        if user_input.lower() == "b":
-            return "BACK"
-        
-        return '' 
-        
-    
-    def feedback(self, value, args: dict = {}) -> str:
-        return ''
-        
-class BiddingStep(Step):
-    """
-    Docstring for BiddingStep
-    """
-
-    prompt_required_arguments = {"player", 
-                                 "forbidden_bid",}
-    
-    validate_required_arguments = {"forbidden_bid"}
-
-    def prompt(self,
-               args: dict = {}) -> str:
-        
-        #ensure the arguments passed suitable for the function
-        missing = self.prompt_required_arguments - args.keys()
-        if missing:
-            raise RuntimeError(f"Missing context: {missing}")
-        
-        forbidden_bid = args['forbidden_bid']
-        player = args['player']
-        
-        return (f"ENTER BID (BANNED: {forbidden_bid})\n" 
-                if player.handicapped_bid and forbidden_bid > -1 
-                else "ENTER BID\n"
-        )
-
-    
-    def validate(self,
-                 user_input: str,
-                 args: dict = {}):
         
         #ensure the arguments passed suitable for the function
         missing = self.validate_required_arguments - args.keys()
@@ -179,16 +146,15 @@ class BiddingStep(Step):
             return "BACK"
         
         if not user_input.isdigit():
-            raise ValueError("Must enter a positive number")
+            raise ValueError("\nMust enter a positive number")
         
         value = int(user_input)  # can convert as input must be a number
         
         if value == forbidden_bid:
-            raise ValueError("Illegal bid, enter a legal bid")
+            raise ValueError("\nIllegal bid, enter a legal bid")
         
         if 8 < value or value < 0:
-            raise ValueError("Must enter a number from 0-8")
-        
+            raise ValueError("\nMust enter a number from 0-8")
         
         return value
         
@@ -204,7 +170,7 @@ class TrumpSelectionStep(Step):
     def prompt(self,
                args: dict) -> str:
         
-        return "Manually enter initial trump value? (Y/n)"
+        return "Manually enter initial trump value? (Y/n) "
 
     
     def validate(self,
@@ -217,7 +183,7 @@ class TrumpSelectionStep(Step):
         if user_input.lower() in ('y', 'n', ''):
             return user_input
         else:
-            raise ValueError("Enter 'y' or 'n'") 
+            raise ValueError("\nEnter 'y' or 'n'") 
                 
     
     def feedback(self, value, args: dict = {}) -> str:
@@ -226,6 +192,69 @@ class TrumpSelectionStep(Step):
         if value == 'n':
             option = 'Automatic generation'
         return f'{option} option chosen'
+    
+
+class IterativeTrumpSelectionStep(Step):
+    """
+    Docstring for IterativeTrumpSelectionStep
+
+    Used after round 1
+    """
+
+    prompt_required_arguments = {"player", 
+                                 "suits_map"}
+    
+    validate_required_arguments = {"suits_map"}
+    
+    feedback_required_arguments = {"player",
+                                   "suits_map"}
+
+    def prompt(self,
+               args: dict) -> str:
+        
+        #ensure the arguments passed suitable for the function
+        missing = self.prompt_required_arguments - args.keys()
+        if missing:
+            raise RuntimeError(f"Missing context: {missing}")
+
+        return """
+[C] Clubs
+[S] Spades
+[H] Hearts
+[D] Diamonds """
+
+    
+    def validate(self,
+                 user_input: str,
+                 args: dict):
+        #ensure the arguments passed suitable for the function
+        missing = self.validate_required_arguments - args.keys()
+        if missing:
+            raise RuntimeError(f"Missing context: {missing}")
+        
+        suits_map = args['suits_map']
+                
+        if user_input.lower() == "b":
+            return "BACK"
+        
+        if user_input.upper() in (suits_map.keys()):
+            return user_input
+        else:
+            raise ValueError("\nEnter a valid option e.g. 'C' or 'H' ") 
+                
+    
+    def feedback(self, value, args: dict = {}) -> str:
+
+
+        #ensure the arguments passed suitable for the function
+        missing = self.validate_required_arguments - args.keys()
+        if missing:
+            raise RuntimeError(f"Missing context: {missing}")
+
+        suits_map = args['suits_map']
+        player = args['player']
+
+        return f'\n{player} selected {suits_map[value.upper()]} as trump '
         
 class ManualTrumpStep(Step):
     """
@@ -237,10 +266,8 @@ class ManualTrumpStep(Step):
     def prompt(self,
                args: dict) -> str:
         
-        return (f"""Enter the initial trump card from the IRL game.\n 
-                (Format: '10D' = 10 of Diamonds)\n 
-                ('KS' = King of Spades)
-                """
+        return (f"""Enter the initial trump card from the IRL game
+(Format: '10D' = 10 of Diamonds, 'KS' = King of Spades) """
         )
 
     
@@ -261,13 +288,13 @@ class ManualTrumpStep(Step):
         user_input = user_input.upper()
 
         if user_input not in card_initials:
-            raise ValueError("Must enter a valid card initial e.g '7H'")
+            raise ValueError("\nMust enter a valid card initial e.g '7H'")
         
         if len(user_input) < 2 or len(user_input) > 3:
-            raise ValueError("Invalid card initial - must be 2-3 characters long")
+            raise ValueError("\nInvalid card initial - must be 2-3 characters long")
         
         if user_input == '':
-            raise ValueError("Must enter a value")
+            raise ValueError("\nMust enter a value")
         
         return user_input
         
@@ -304,7 +331,7 @@ class PlayerPlayCardStep(Step):
         trump_suit_symbol = args['trump_suit_symbol']
         table = args['table']
 
-        player_headline_string = f"▶\t {player.name} to play\t|\tTrump: {trump_suit_symbol} "
+        player_headline_string = f"▶\t {player.name} to play\t|\tTrump: {trump_suit_symbol}"
         round_scoreboard_string = f"Round score: {scoreboard.display()}"
         table_string = f"Table:\n{table.display_stack()}"
         hand_string = f"Hand:\n{format_hand(player.hand)}"
@@ -388,8 +415,8 @@ class OpponentPlayCardStep(Step):
         trump_suit_symbol = args['trump_suit_symbol']
         table = args['table']
         
-        player_headline_string = f"▶\t{opponent.name} to play | Trump: {trump_suit_symbol}"
-        round_scoreboard_string = f"Round score: {scoreboard.display()}"
+        player_headline_string = f"▶\t{opponent.name} to play\t|\tTrump: {trump_suit_symbol}"
+        round_scoreboard_string = f"Round score: {scoreboard.display(round=True)}"
         table_string = f"Table:\n{table.display_stack()}"
         hand_string = f"Hand:\n{format_hand(opponent.hand)}"
         choose_card_string = f"Enter initials of card e.g. '7H' > "
@@ -507,7 +534,7 @@ class IterableLocalAddCardStep(Step):
         max_cards = args['maximum_cards']
 
         cards_remaining_line = f"Cards remaining: {max_cards-len(player.hand)}"
-        current_hand_line = f"Current Hand:\n {player.display_hand_str()} "
+        current_hand_line = f"Current Hand:\n {player.display_hand_str(max_cards)} "
         prompt_line = "Enter card initials (e.g. JH, 10D) > "
         
         return (

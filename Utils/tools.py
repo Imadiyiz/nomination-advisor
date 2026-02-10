@@ -9,3 +9,9 @@ def clear_screen(delay: float = 1):
     """
     time.sleep(delay)
     os.system('cls' if os.name == 'nt' else 'clear')
+
+def print_lines():
+    """
+    Function for printing the line divider for text
+    """
+    print("-" * 40)

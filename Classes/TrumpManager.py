@@ -13,20 +13,17 @@ class TrumpManager:
     def __init__(self, UIManager):
         self.UIManager = UIManager
 
-    def decide_trump(self, players: list[Player], current_trump:str):
+    def decide_trump(self, players: list[Player]) -> Player:
         """
         Determines which player is choosing trump for the next round
 
-        If the player is a human, they get to choose 
-        If the player is a computer, the trump suit remains the same
-
         Args:
             players (list[Player]): The players list is necessary to iterate through the players
-            current_trump (str): Ensures that the trump value does not change if the computer decides on the trump
 
         Returns:
-            str: The trump suit - either newly selected by a human or the existing one if chosen by a computer.
+            Player: The player who decides trump
         """
+
         #find top scorers
         scores = dict()
         top_players = list()
@@ -42,12 +39,7 @@ class TrumpManager:
         if chosen_player is None:
             raise Exception("Unable to find Trump Decider")
         
-        #if player, let them choose trump
-        if not chosen_player.computer:
-            return self.player_picks_trump(chosen_player)
-        
-        self.UIManager.display_message(f"{chosen_player.name} SELECTED {current_trump}")
-        return current_trump
+        return chosen_player
     
     def player_picks_trump(self, player:Player):
         """

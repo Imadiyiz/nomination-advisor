@@ -37,11 +37,14 @@ class Table:
         if self.stack:
 
             _reversed_stack = self.stack
-            reversed(_reversed_stack)
+            _reversed_stack = reversed(_reversed_stack)
             string = ""
 
             for card in _reversed_stack:
-                string += f"{str(card) if len(card.initials) == 3 else " ".join(str(card))}   ~   {card.owner}\n"
+                if len(card.initials) >= 3:
+                     string += f"{str(card)}   ~  {card.owner}\n"
+                else:
+                     string += f" {str(card)}   ~  {card.owner}\n"
             return string
         return "(Empty)" 
 
@@ -57,13 +60,14 @@ class Table:
         self.stack.append(card)
 
     
-    def _valid_add_to_stack(self, card: Card, player_hand: list = [Card]) -> bool:
+    def _valid_add_to_stack(self, card: Card, player_hand: list[Card], trump_suit: str) -> bool:
         """
         Validates whether a card can be played based on suit-following rules.
         
         Args:
             card (Card): The card the player wants to play
             player_hand (list[Card]): The player's current hand.
+            trump_suit(str): Ensures that the player is able to override common rules if trumped
 
         Returns:
             bool: True if the play is valid, False otherwise.
@@ -71,6 +75,10 @@ class Table:
         """
 
         if self.stack: 
+
+            if card.suit[0] == trump_suit:
+                 return True
+            
             first_card = self.stack[0] # gets the first card in stack
 
             first_suit = first_card.suit[0].lower()
@@ -133,7 +141,8 @@ class Table:
             card.suit[0].lower() == suit for card in hand)
 
     def play_card_to_table(self, card: Card, 
-                        player: Player):
+                        player: Player,
+                        trump_suit: str):
         """
         Docstring for play_card
 
@@ -144,7 +153,8 @@ class Table:
 
         if self._valid_add_to_stack(
                     card=card, 
-                    player_hand = player.hand):
+                    player_hand = player.hand,
+                    trump_suit=trump_suit):
                     
                     #if valid then add it to the queue
                     self._add_to_stack(card=card)

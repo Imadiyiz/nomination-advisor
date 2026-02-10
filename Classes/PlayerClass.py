@@ -76,6 +76,7 @@ class Player:
         self.trump_decider = False
         self.handicapped_bid = False    
         self.hand = []    
+        self.round_score = 0
 
     def reset_bid(self):
         self.bid = -1

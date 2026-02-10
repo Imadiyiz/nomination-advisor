@@ -16,6 +16,7 @@ from .BiddingFlow import BiddingFlow
 from .InitialTrumpFlow import InitialTrumpFlow
 from .PlayingFlow import PlayingFlow
 from .LocalCardAssignmentFlow import LocalCardAssignmentFlow
+from .IterativeTrumpFlow import IterativeTrumpFlow
 from enum import Enum
 from .CardClass import Card
 
@@ -51,7 +52,7 @@ class Game:
         }
 
         self.round = 1
-        self.cards_per_round = [1,7,6,6,7,8] # just for demo
+        self.cards_per_round = [8,7,6,6,7,8] 
         self.phases = {
             Phase.PLAYER_SELECTION: self.handle_player_selection,
             Phase.HAND_ASSIGNMENT: self.handle_hand_assignment,
@@ -149,8 +150,13 @@ class Game:
         Handles hand assingment for both types of players
         
         """
-
+        
+        #initialise objects and reset
+        self.deck.deck = self.deck.generate_deck()
         max_cards = self.cards_per_round[self.round-1]
+        self.scoreboard.reset_round_scoreboard()
+
+
 
         for player in self.player_queue:
 
@@ -186,8 +192,10 @@ class Game:
                         print(len(self.deck.deck))
 
         
-
-        self.phase = Phase.TRUMP_SELECTION
+        if self.round == 1:
+            self.phase = Phase.TRUMP_SELECTION
+        else:
+            self.phase = Phase.BIDDING
 
     def handle_trump_selection(self):
         """
@@ -195,7 +203,11 @@ class Game:
         
         """
 
-        print(f"Round {self.round}: \n")
+        # resets the deck
+        clear_screen(0)
+        cards =  self.cards_per_round[self.round-1]
+        print(f"ROUND {self.round} - Bidding Phase ({cards} cards per hand)\n")
+
         context = self.initialTrumpFlow.run(self.deck.valid_card_initials)
         manual_trump_generation = context['manual_trump_generation']
         trump_card_initials = context['trump_card_initials']
@@ -218,14 +230,14 @@ class Game:
     
     def select_trump_automatically(self):
 
+        clear_screen()
         trump_card = self.deck.deck[0]
         #determine trump
         #since deck is already shuffled, pick first card
         # choose the trump after cards have been assinged to players
         self.trump_suit = trump_card.suit[0]
-        print("\nDECIDING INITIAL TRUMP")
-        print("CARD RANDOMLY CHOSEN:: ", str(trump_card))
-        print("TRUMP SUIT:: ", self.trump_suit, "\n")
+        print(f"Random trump card - {str(trump_card)}")
+        print("Trump suit: ", self.trump_suit)
 
         return trump_card
     
@@ -262,12 +274,24 @@ class Game:
         Playing logic
         """
         cards = self.cards_per_round[self.round-1]
+        self.scoreboard.reset_round_scoreboard()
+
         for _ in range(cards):
             self.start_round()
         self.phase = Phase.SCORING
+
+        # redecide trump
+
+        self.iterativeTrumpFlow = IterativeTrumpFlow()
+
         if self.round > 1:
-            self.trump_suit = self.trumpManager.decide_trump(players=self.player_queue, current_trump=self.trump_suit)
-    
+            chosen_player = self.trumpManager.decide_trump(
+                players=self.player_queue)
+            context = self.iterativeTrumpFlow.run(chosen_player)
+
+            self.trump_suit = context['trump_suit']
+            self.phase = Phase.HAND_ASSIGNMENT
+
     def handle_scoring_phase(self):
         """
         Scoring logic
@@ -280,7 +304,12 @@ class Game:
                 player_list=self.player_queue,
                 max_cards=self.max_cards
                 )
-            self.UIManager.display_message(self.scoreboard.display(round=False))
+            clear_screen(0)
+            print("Total score: ",(self.scoreboard.display(round=False)))
+            
+            #reset players
+            for player in self.player_queue:
+                player.reset() 
         else:
             self.phase = Phase.GAME_OVER
 
@@ -326,7 +355,6 @@ class Game:
                         continue
                     break 
 
-        print("scored hand")
         self.score_hand()
           
             
@@ -339,7 +367,7 @@ class Game:
         """
 
         if not self.table.play_card_to_table(
-                selected_card, player
+                selected_card, player, self.trump_suit
             ):
                 return None
         
@@ -353,7 +381,7 @@ class Game:
         Plays card to the table for remote player and removes it from the deck
         """
         
-        if self.table.play_card_to_table(selected_card, player) == False:
+        if self.table.play_card_to_table(selected_card, player, self.trump_suit) == False:
             raise ValueError("unable to play card to table")
 
         
@@ -365,7 +393,7 @@ class Game:
 
         winner_card = self.table.verify_winner(trump_suit=self.trump_suit)
         winning_player = winner_card.owner
-        print(f"DONE, {winning_player} is the winner with {winner_card}")
+        print(f"\n{winning_player} is the winner with {winner_card}\n")
         
         self.scoreboard.update_round_scoreboard(
             player_list=self.player_queue, 

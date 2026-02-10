@@ -17,6 +17,7 @@ class BiddingFlow:
     def run(self, round_no: int, max_cards: int,
             players: list[Player], 
             bidding_manager: BiddingManager, trump_suit: str):
+        
         for player in players:
 
             self._run_single_player_bid(
@@ -41,18 +42,18 @@ class BiddingFlow:
         else:
             forbidden_bid = -1
 
-        self._show_bidding_menu(
-                              player = player,
-                              round_no = round_no,
-                              max_cards = max_cards, 
-                              bidding_manager = bidding_manager,
-                              trump_suit = trump_suit
-            
-        )
-
         while True:
             bid_value = self._prompt_for_bid(
-                player=player, forbidden_bid=forbidden_bid)
+                player=player, 
+                forbidden_bid=forbidden_bid,
+                bidding_manager=bidding_manager, 
+                trump_suit=trump_suit,
+                round_no=round_no, 
+                max_cards=max_cards,
+                )
+            
+            if not bid_value and bid_value != 0:
+                raise ValueError("no bid value received")
             
             if bid_value == "BACK":
                 continue
@@ -67,24 +68,31 @@ class BiddingFlow:
                     player_queue=self.player_queue)
 
                 print(f"{player.name} bid {bid_value}")
-                return 
+                return bid_value
         
             print("Invalid bid, try again")
 
-    def _show_bidding_menu(self,
+    def _prompt_for_bid(self,
                             player: Player,
                             round_no: int,
                             max_cards: int, 
                             bidding_manager: BiddingManager,
-                            trump_suit: str       
+                            trump_suit: str,    
+                            forbidden_bid: int    
         ):
+        """
+        Private method which runs the prompt for bid and returns the value of the bid
+        
 
+        Returns
+            int: Legal bid made by player
+        """
+
+        print("Bidding Phase Commencing\n")
         while True:
+                clear_screen(0)
                 print(
-                    f"\nBIDDING BEGINS\n"
-                    f"ROUND {round_no}: {max_cards} CARDS PER HAND\n"
-                    f"{player} is bidding now"
-                    )
+f"""Round {round_no}: {max_cards} cards per hand""")
 
                 result = self.stepManager.run_step(
                     step = BiddingMenuStep(),
@@ -92,33 +100,9 @@ class BiddingFlow:
                         "player": player,
                         "trump_suit": trump_suit,
                         "current_bids": bidding_manager.current_bids,
-                        "max_cards": max_cards}
+                        "forbidden_bid": forbidden_bid,
+                        "max_cards": max_cards},
+                    validate_args={"forbidden_bid" : forbidden_bid}
                     )
-                    
-                if result != 'BACK':
-                    return
                 
-    def _prompt_for_bid(self, player: Player, forbidden_bid:int) -> int:
-        """
-        Private method which runs the prompt for bid and returns the value of the bid
-        
-        Args:
-            player(Player): The player object which is performing the bid
-            forbidden_bid(int): Invalid bid amount due to rules
-        
-
-        Returns
-            int: Legal bid made by player
-        """
-
-        # runs the bidding step and returns an integer
-        clear_screen(0)
-        return self.stepManager.run_step(
-            step = BiddingStep(),
-            prompt_args={
-                "player": player,
-                "forbidden_bid": forbidden_bid
-            },
-            validate_args={
-                "forbidden_bid": forbidden_bid},
-        )
+                return result

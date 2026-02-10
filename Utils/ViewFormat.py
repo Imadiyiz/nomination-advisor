@@ -8,14 +8,20 @@ def format_hand(hand: list[Card], cols=4):
         """
 
         lines = []
+
         for i in range(0, len(hand), cols):
 
             chunk = hand[i:i+cols]
+            row = []
 
-            line = "    ".join(
-                f"{idx+1}) {str(card)}"
-                for idx, card in enumerate(chunk, start=i)
-            )
-            lines.append(line)
+
+            for idx, card in enumerate(chunk, start=i):
+                card_string = str(card)
+                if len(card.initials) < 3:
+                     card_string = " " + str(card)
+
+                row.append(f"\t{idx + 1}) {card_string}")
+
+            lines.append("\t".join(row))
         
         return "\n".join(lines) if lines else '(Hidden)'

@@ -48,6 +48,7 @@ class Deck:
             for suit in self.suit_gen:
                 self.deck.append(Card(suit, value))
         random.shuffle(self.deck) #always shuffle deck after generation
+        self.removed_suit_initials = set()
 
         return self.deck
     
@@ -100,6 +101,7 @@ class Deck:
                 card.suit[0][0].upper() == suit_letter
             ):
                 self.remove_card(card)
+                self.removed_suit_initials.add(card.initials)
                 return card
         return None
     

@@ -27,7 +27,7 @@ class PlayerSetupFlow:
         #step 2: iterate players
         while len(self.context['player_names']) < self.context['num_players']:
             clear_screen(0)
-            print(f"\nConfiguring player {len(self.context['player_names']) + 1}")
+            print(f"Configuring player {len(self.context['player_names']) + 1}")
 
             # runs the player name step and returns a string
             name = self.stepManager.run_step(PlayerNameStep())

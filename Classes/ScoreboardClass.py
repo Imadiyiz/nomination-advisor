@@ -87,3 +87,7 @@ class Scoreboard:
         for player in player_queue:
             temp_dict[player.name] = player.round_score
         self.round_scoreboard = temp_dict
+
+    def reset_round_scoreboard(self):
+
+        self.round_scoreboard = {}
