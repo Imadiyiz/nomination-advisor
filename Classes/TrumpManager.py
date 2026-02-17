@@ -41,23 +41,3 @@ class TrumpManager:
         
         return chosen_player
     
-    def player_picks_trump(self, player:Player):
-        """
-        Human players pick their trump values
-
-        Args:
-            player (Player): The player object who chooses the trump suit
-        
-        Returns:
-            str: Trump suit which has been chosen by the player
-        """
-
-        suit_map = {'C': 'club', 'S': 'spade', 'H': 'heart', 'D': 'diamond'}
-        while True:
-            choice = self.UIManager.get_player_input("[C] Club,\n [S] Spade,\n [H] Heart,\n [D] Diamond\n").strip().upper()
-            if choice in suit_map:
-                trump = suit_map[choice]
-                self.UIManager.display_message(f"{player.name} selected {trump}")
-                return trump
-            else:
-                self.UIManager.display_message("Invalid choice. Try again.")

@@ -24,6 +24,7 @@ class Phase(Enum):
         PLAYER_SELECTION = "player_selection"
         HAND_ASSIGNMENT = 'hand_assignment'
         TRUMP_SELECTION = "trump_selection"
+        TRUMP_REDECIDING = "trump_redeciding"
         BIDDING = "bidding"
         PLAYING = "playing"
         SCORING = "scoring"
@@ -57,6 +58,7 @@ class Game:
             Phase.PLAYER_SELECTION: self.handle_player_selection,
             Phase.HAND_ASSIGNMENT: self.handle_hand_assignment,
             Phase.TRUMP_SELECTION: self.handle_trump_selection,
+            Phase.TRUMP_REDECIDING: self.handle_redeciding_trump,
             Phase.BIDDING: self.handle_bidding_phase,
             Phase.PLAYING: self.handle_playing_phase,
             Phase.SCORING: self.handle_scoring_phase,
@@ -203,8 +205,7 @@ class Game:
         
         """
 
-        # resets the deck
-        clear_screen(0)
+        clear_screen(2)
         cards =  self.cards_per_round[self.round-1]
         print(f"ROUND {self.round} - Bidding Phase ({cards} cards per hand)\n")
 
@@ -215,7 +216,6 @@ class Game:
         #   automatic trump generation
         if not manual_trump_generation:
             card = self.select_trump_automatically()
-        #   need to allocate trump and selected card from deck
 
         #   manual trump selection
         else:
@@ -278,19 +278,23 @@ class Game:
 
         for _ in range(cards):
             self.start_round()
+
         self.phase = Phase.SCORING
 
-        # redecide trump
+    def handle_redeciding_trump(self):
+        """
+        Docstring for handle_redeciding_trump
+        """
 
+        # redecide trump
         self.iterativeTrumpFlow = IterativeTrumpFlow()
 
-        if self.round > 1:
-            chosen_player = self.trumpManager.decide_trump(
-                players=self.player_queue)
-            context = self.iterativeTrumpFlow.run(chosen_player)
+        chosen_player = self.trumpManager.decide_trump(
+            players=self.player_queue)
+        context = self.iterativeTrumpFlow.run(chosen_player)
 
-            self.trump_suit = context['trump_suit']
-            self.phase = Phase.HAND_ASSIGNMENT
+        self.trump_suit = context['trump_suit']
+        self.phase = Phase.HAND_ASSIGNMENT
 
     def handle_scoring_phase(self):
         """
@@ -298,20 +302,21 @@ class Game:
         """
         if self.round < 6:
             self.round += 1
-            self.phase = Phase.HAND_ASSIGNMENT
             #display total scoreboard
             self.scoreboard.update_total_scoreboard(
                 player_list=self.player_queue,
                 max_cards=self.max_cards
                 )
-            clear_screen(0)
+            clear_screen(5)
             print("Total score: ",(self.scoreboard.display(round=False)))
             
             #reset players
             for player in self.player_queue:
                 player.reset() 
+            self.phase = Phase.TRUMP_REDECIDING
         else:
             self.phase = Phase.GAME_OVER
+            return
 
     def start_round(self):
         """
@@ -334,11 +339,11 @@ class Game:
                 
                 if player.opponent:
                     selected_card = self._materialise_played_card(player, choice)
-                    print("selected card", selected_card)
                     if not selected_card:
-                        print(f"invalid card input")
+                        print(f"invalid card input, card is not longer in the deck")
                         continue
-                    
+
+                    print(f"{player} selected card", selected_card)
                     self._remote_play_card(player, selected_card)
                     break  # successful play
 
@@ -346,7 +351,8 @@ class Game:
                     # local player
 
                     try: 
-                        selected_card = player.hand[choice-1]  
+                        selected_card = player.hand[choice-1]
+                        print(f"{player} selected card", selected_card)
                     except:
                         print("Invalid Card Index")
                         continue

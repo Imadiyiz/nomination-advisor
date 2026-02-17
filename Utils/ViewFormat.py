@@ -20,8 +20,8 @@ def format_hand(hand: list[Card], cols=4):
                 if len(card.initials) < 3:
                      card_string = " " + str(card)
 
-                row.append(f"\t{idx + 1}) {card_string}")
+                row.append(f"    {idx + 1}) {card_string}")
 
-            lines.append("\t".join(row))
+            lines.append("    ".join(row))
         
         return "\n".join(lines) if lines else '(Hidden)'

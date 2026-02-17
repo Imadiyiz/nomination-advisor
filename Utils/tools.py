@@ -3,7 +3,7 @@
 import os
 import time
 
-def clear_screen(delay: float = 1):
+def clear_screen(delay: float = 1.5):
     """
     Function for clearing the cmd screen of its content
     """

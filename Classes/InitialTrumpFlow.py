@@ -21,13 +21,13 @@ class InitialTrumpFlow:
 
             result = self.stepManager.run_step(TrumpSelectionStep())
 
-            if result in ('y', ''):
+            if result.lower() in ('y', ''):
                 self.context['manual_trump_generation'] = True
             else:
                 self.context['manual_trump_generation'] = False
                 return self.context  # can return here to avoid rest of script
 
-            clear_screen(0)
+            clear_screen(1)
 
         #step 2: Handle initial manual trump card selection
             trump_card_initials = self.stepManager.run_step(step = ManualTrumpStep(),

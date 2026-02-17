@@ -88,8 +88,8 @@ class Table:
                                               suit=first_suit)
             #must play first card suit
             if must_follow_suit and card.suit[0].lower() != first_card.suit[0].lower():
-                self.UIManager.display_message(
-                    f"INVALID CARD CHOICE - WRONG SUIT: MUST BE {first_card.suit[0]}")
+                print(
+                    f"Invalid card choice - Must be {first_card.suit[0]} or {trump_suit} suit")
                 return False
         return True
 

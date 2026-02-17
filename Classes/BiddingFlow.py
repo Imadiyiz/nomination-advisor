@@ -18,6 +18,8 @@ class BiddingFlow:
             players: list[Player], 
             bidding_manager: BiddingManager, trump_suit: str):
         
+        print("Bidding Phase Commencing\n")
+        
         for player in players:
 
             self._run_single_player_bid(
@@ -88,9 +90,8 @@ class BiddingFlow:
             int: Legal bid made by player
         """
 
-        print("Bidding Phase Commencing\n")
         while True:
-                clear_screen(0)
+                clear_screen()
                 print(
 f"""Round {round_no}: {max_cards} cards per hand""")
 
