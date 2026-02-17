@@ -90,7 +90,6 @@ class Game:
         self.deck = Deck()
 
         #Generates objects for the game
-        self.scoreboard = Scoreboard()
         self.UIManager = UIManager()
         self.table = Table(self.UIManager)
         self.biddingManager = BiddingManager(self.UIManager)
@@ -99,10 +98,6 @@ class Game:
         self.playerSetupFlow = PlayerSetupFlow()
         self.biddingFlow = BiddingFlow(self.player_queue)
         self.initialTrumpFlow = InitialTrumpFlow()
-        self.playingFlow = PlayingFlow(
-            self.table,
-            self.scoreboard,
-            self.deck.generate_valid_card_initials())
         self.localCardAssignmentFlow = LocalCardAssignmentFlow(
             self.deck.generate_valid_card_initials())
 
@@ -156,6 +151,7 @@ class Game:
         #initialise objects and reset
         self.deck.deck = self.deck.generate_deck()
         max_cards = self.cards_per_round[self.round-1]
+        self.scoreboard = Scoreboard(self.player_queue)
         self.scoreboard.reset_round_scoreboard()
 
 
@@ -327,6 +323,10 @@ class Game:
         self.scoreboard.reorder_round_scoreboard(
             player_queue=self.temp_player_queue
             )
+        self.playingFlow = PlayingFlow(
+            self.table,
+            self.scoreboard,
+            self.deck.permanent_valid_card_initials)
         
         for player in self.temp_player_queue:
 

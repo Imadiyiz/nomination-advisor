@@ -7,9 +7,12 @@ class Scoreboard:
     Scoreboard class used to monitor and update the scores of multiple players.
     """
 
-    def __init__(self):
+    def __init__(self, players):
         self.round_scoreboard = {}
         self.total_scoreboard = {}
+        self.players_by_name = {}
+        for player in players:
+            self.players_by_name[player.name] = player
         
         
     def display(self, round: bool = True) -> list:
@@ -32,7 +35,7 @@ class Scoreboard:
         )
 
         return " | ".join([
-            f"{name} {score}" 
+            f"{name} {score} ({self.players_by_name[name].bid})" 
             for name, score in formatted_scoreboard
         ]
 

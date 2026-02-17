@@ -348,7 +348,6 @@ class PlayerPlayCardStep(Step):
                 "\n",
                 table_string,
                 "\n",
-                "\n",
                 hand_string, 
                 "\n",
                 "\n",

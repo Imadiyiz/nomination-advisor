@@ -37,6 +37,9 @@ class Deck:
         }
         self.deck = self.generate_deck()
         self.valid_card_initials = self.generate_valid_card_initials()
+
+        # This does not change when cards are removed from the deck
+        self.permanent_valid_card_initials = self.valid_card_initials  
         
     def generate_deck(self):
         """
