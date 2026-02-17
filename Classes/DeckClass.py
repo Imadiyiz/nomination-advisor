@@ -11,11 +11,11 @@ class Deck:
 
     Functions:
 
-    generate_deck populates the local deck list
-    generate_valid_initials returns a set of valid initials
-    remove_card removes the card selected and takes the suit and value as the parameter
-    draw_card_from_initials returns a card if the initials match to a card and removes the card from deck
-    find_card returns boolean depending on whether the suit and value in the parameters are found
+    generate_deck: populates the local deck list
+    generate_valid_initials: returns a set of valid initials
+    remove_card: removes the card selected and takes the suit and value as the parameter
+    draw_card_from_initials: returns a card if the initials match to a card and removes the card from deck
+    find_card: returns boolean depending on whether the suit and value in the parameters are found
     
     """
     def __init__(self):
