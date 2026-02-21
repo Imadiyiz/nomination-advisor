@@ -90,18 +90,18 @@ class OpponentBooleanStep():
 
 class Test_BiddingStep():
     def test_bidding_valid(self):
-        step = BiddingStep()
+        step = BiddingMenuStep()
         args = {"forbidden_bid": 2}
         assert step.validate("3", args) == 3
 
     def test_bidding_forbidden(self):
-        step = BiddingStep()
+        step = BiddingMenuStep()
         args = {"forbidden_bid": 2}
         with pytest.raises(ValueError):
             step.validate("2", args)
 
     def test_bidding_missing_args(self):
-        step = BiddingStep()
+        step = BiddingMenuStep()
         with pytest.raises(RuntimeError):
             step.validate("3", {})
 

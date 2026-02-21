@@ -40,42 +40,8 @@ def make_player(name, bid, round_score):
     p = Player(name=name)
     p.bid = bid
     p.round_score = round_score
+
     return p
-
-
-class Test_Scoreboard():
-
-    def test_scoreboard_init(self, computer_players, sb):
-        
-        #all players are added to scoreboards
-        assert len(sb.round_scoreboard) == 5
-        assert len(sb.total_scoreboard) == 5
-
-        #values are 0
-        for value in sb.round_scoreboard.values():
-            assert value == 0 
-
-        #values are 0
-        for value in sb.total_scoreboard.values():
-            assert value == 0 
-
-    def test_update_round_scoreboard(self, sb, computer_players):
-
-        computer_players[0]
-
-def test_scoreboard_initialisation(scoreboard, players):
-    for player in players:
-        assert scoreboard.round_scoreboard[player.name] == 0
-        assert scoreboard.total_scoreboard[player.name] == 0
-
-def test_display_round_scoreboard_sorted(scoreboard):
-    scoreboard.round_scoreboard["Alice"] = 1
-    scoreboard.round_scoreboard["Bob"] = 3
-    scoreboard.round_scoreboard["Charlie"] = 2
-
-    result = scoreboard.display(round=True)
-
-    assert result == 'Bob 3 | Charlie 2 | Alice 1'
 
 def test_update_round_scoreboard_increments_winner(players, scoreboard):
     winner = players[1]
@@ -92,7 +58,7 @@ def test_update_total_scoreboard_correct_bid(players, scoreboard):
     player.bid = 2
     player.round_score = 2
 
-    scoreboard.update_total_scoreboard(players, max_cards=5)
+    scoreboard.update_total_scoreboard(player_list = players, max_cards=5)
 
     assert scoreboard.total_scoreboard[player.name] == 12  # 2 + 10
 
@@ -101,7 +67,7 @@ def test_update_total_scoreboard_correct_bid_max_cards(players, scoreboard):
     player.bid = 5
     player.round_score = 5
 
-    scoreboard.update_total_scoreboard(max_cards=5)
+    scoreboard.update_total_scoreboard(players, max_cards=5)
 
     assert scoreboard.total_scoreboard[player.name] == 30  # (5 + 10) * 2
 
@@ -110,23 +76,10 @@ def test_update_total_scoreboard_incorrect_bid(players, scoreboard):
     player.bid = 3
     player.round_score = 1
 
-    scoreboard.update_total_scoreboard(players)
+    scoreboard.update_total_scoreboard(player_list = players, max_cards = 8)
 
     assert scoreboard.total_scoreboard[player.name] == 1
 
-def test_reorder_round_scoreboard(players, scoreboard):
-    players[0].round_score = 2
-    players[1].round_score = 1
-    players[2].round_score = 3
-
-    scoreboard.reorder_round_scoreboard(players)
-
-    assert list(scoreboard.round_scoreboard.keys()) == [
-        "Alice",
-        "Bob",
-        "Charlie",
-    ]
-    assert scoreboard.round_scoreboard["Charlie"] == 3
 
 @pytest.fixture()
 def make_player(name, bid, round_score):

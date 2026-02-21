@@ -1,5 +1,7 @@
 # Class script for the cards in the deck
 
+# value tuple should probably just be an integer and should use encoding to decipher string value
+# e.g. 14 -> 'Ace' because it is // 10 == 1 and 7 -> '7'
 class Card:
 
     """
@@ -10,8 +12,8 @@ class Card:
     the card generates an ASCII representation of itself.
 
     Attributes:
-        suit (tuple): The suit of the card, e.g., ("Heart", "♥").
-        value (tuple): The value of the card, e.g., ("10", 10) or ("Ace", 14).
+        suit (tuple): The suit of the card, e.g., ("Hearts", "♥").
+        value (tuple): The value of the card, e.g., ("10", 10) or ("Ace", 14). 
         owner (Player, optional): The owner of the card.
 
     Methods:
@@ -22,7 +24,7 @@ class Card:
             Checks equality between two Card objects based on suit and value.
 
         __str__():
-            Returns a string representation of the card (e.g., "10 Heart").
+            Returns a string representation of the card (e.g., "10 Hearts").
 
         __hash__():
             Returns a hash value for the card, allowing it to be used in sets and dictionaries.

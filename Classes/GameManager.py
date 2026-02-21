@@ -31,6 +31,7 @@ class Phase(Enum):
         GAME_OVER = "game_over"
 
 
+
 class Game:
     """
     Class for managing the game state and orchestrating the gamee
@@ -290,6 +291,11 @@ class Game:
         context = self.iterativeTrumpFlow.run(chosen_player)
 
         self.trump_suit = context['trump_suit']
+
+        #reset players after selecting trump to ensure that round scores are valid
+        for player in self.player_queue:
+                player.reset() 
+
         self.phase = Phase.HAND_ASSIGNMENT
 
     def handle_scoring_phase(self):
@@ -305,10 +311,6 @@ class Game:
                 )
             clear_screen(5)
             print("Total score: ",(self.scoreboard.display(round=False)))
-            
-            #reset players
-            for player in self.player_queue:
-                player.reset() 
             self.phase = Phase.TRUMP_REDECIDING
         else:
             self.phase = Phase.GAME_OVER

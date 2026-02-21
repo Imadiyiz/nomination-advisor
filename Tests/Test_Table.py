@@ -201,10 +201,13 @@ class Test_Table():
     )
 
     def test_valid_add_to_stack(self, tb, stack,
-                                card, player_hand, expected_bool ):
+                                card, player_hand, 
+                                expected_bool):
         
         tb.stack = stack
-        valid = tb._valid_add_to_stack(card=card, player_hand = player_hand)
+        valid = tb._valid_add_to_stack(card=card, 
+                                       player_hand = player_hand,
+                                       trump_suit = 'diamonds')
 
         assert valid == expected_bool
 

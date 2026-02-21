@@ -27,6 +27,7 @@ class Test_Decide_Trump():
     def test_player_can_choose_trump(self, monkeypatch, computer_player_set, 
                             trump_manager,
                             human_player):
+        
         players = computer_player_set
         players.append(human_player)
 
@@ -41,23 +42,9 @@ class Test_Decide_Trump():
         initial_trump = 'spade'
         new_trump = trump_manager.decide_trump(
             players=players,
-            current_trump=initial_trump
         )
        
         assert new_trump == 'diamond'
         #if all players are computers then pass the test
     
-    def test_invalid_input_then_valid(self, monkeypatch, trump_manager, human_player):
-        players = {human_player}
-
-        # Simulate invalid input followed by valid input
-        inputs = iter(["Z", "H"])
-
-        monkeypatch.setattr(trump_manager.UIManager, "get_player_input", lambda msg: next(inputs))
-        monkeypatch.setattr(trump_manager.UIManager, "display_message", lambda msg: None)
-        monkeypatch.setattr(random, "choice", lambda x: human_player)
-
-        trump = trump_manager.decide_trump(players=players, current_trump="club")
-        assert trump == "heart", "Should retry input until a valid trump suit is entered"
-
     

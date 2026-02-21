@@ -1,0 +1,65 @@
+
+
+
+
+import pytest
+from Classes.CardClass import Card
+from game_state import GameState, SimulationState  # adjust import
+
+
+@pytest.fixture
+def base_state():
+    """
+    Creates a minimal valid GameState for testing get_legal_moves
+    """
+
+    state = GameState(
+        hands={},
+        played_cards={},
+        void_suits={"P1": set()},
+        unknown_cards={"10H", "2H", "AS", "KD"},
+        current_trick=["9H"],  # first card sets lead suit
+        leader="P1",
+        trump_suit="S",
+        player_order=["P1", "P2", "P3", "P4"],
+        round_scores={"P1": 0},
+        bids={"P1": 0},
+        cards_remaining=4,
+    )
+
+    return state
+
+
+def test_follow_suit_required(base_state):
+    """
+    Player must follow suit if possible.
+    Lead suit = Hearts.
+    Hearts in unknown_cards = 10H, 2H
+    """
+    moves = base_state.get_legal_moves("P1", base_state)
+
+    assert "10H" in moves
+    assert "2H" in moves
+    assert "KD" not in moves
+
+
+def test_trump_always_allowed(base_state):
+    """
+    Trump suit = Spades.
+    AS should always be legal.
+    """
+    moves = base_state.get_legal_moves("P1", base_state)
+
+    assert "AS" in moves
+
+
+def test_void_allows_any_card(base_state):
+    """
+    If player is void in lead suit,
+    they can play anything.
+    """
+    base_state.void_suits["P1"] = {"H"}  # void in hearts
+
+    moves = base_state.get_legal_moves("P1", base_state)
+
+    assert moves == base_state.unknown_cards
