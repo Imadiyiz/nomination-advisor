@@ -334,7 +334,6 @@ class Game:
 
             while True:
 
-
                 choice = self.playingFlow.play_turn(
                     player=player,
                     trump_suit=self.trump_suit)
