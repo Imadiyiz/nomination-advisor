@@ -44,14 +44,16 @@ class Card:
         """
         Convert initials like '10H' or 'QS' into (value_str, suit_letter)
 
-        e.g ("10", "H")
+        e.g ("10", "H"), ("Q", "S")
         """
 
         if not initials or len(initials) < 2:
+            print("ERROR", initials)
             raise ValueError("Invalid card initials")
         
         value_part = initials[:-1].upper()  # removes the end character
         suit_part = initials[-1].upper()  # suit part is the last character
+
 
         return value_part, suit_part
     

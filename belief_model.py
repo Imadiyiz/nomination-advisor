@@ -1,50 +1,72 @@
 # contents of belief model python file 
 
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Set
+import random
 
 
 @dataclass
 class BeliefModel():
+    """
+    Player belief model
+    Represents what one player believes about the game
+    """
 
-
-    void_suits: set[str]            #  set(suit)
+    void_suits: Dict[str, set[str]] # dict, player id, set(suit)
     known_cards: set[str]           # cards assigned
     unknown_cards: set[str]         # cards not yet assigned
-    played_cards: set[str]          # cards that have been played in previous rounds
-    hands: set[str]                 # player_id -> cards.initials
-    leader: str                     # player in question
+    hand_sizes: Dict[str, int]      # player -> cards remaining
+    perspective_player: str
 
-
-    def update_void_suits(self,
-                         player_hand: set[str],
-                         current_trick: List[str],
-                         leader: str):
+    def observe_play(self,
+                         player: str,
+                         card: str,
+                         lead_suit: str, 
+                         trump_suit: str):
         
         """
-        Updates the void suits dictionary to ensure trick ruling
+        Updates beliefs after watching a play
+        """
+
+        # removes card from unknown pool
+        self.unknown_cards.discard(card)
+        self.known_cards.add(card)
+        self.hand_sizes[player] -= 1
+
+        card_suit = card[-1]
+
+        # infer void
+        if card_suit != lead_suit:
+            self.void_suits[player].add(lead_suit)
+
+    def sample_world(self) -> Dict[str, Set[str]]:
+        """
+        Produce a concrete assignment of unknown cards
+        which are consistent with all the constraints
         
         """
 
-        # single letter of suit 'D', 'H'
-        first_card_suit = current_trick[0][-1]
-        player_hand_suits = set(
-            card[-1] for card in player_hand[leader]
-        )
+        assignments = {p: set() for p in self.hand_sizes}
 
-        # if the player doesnt have fcs then they can play anything
-        if first_card_suit not in player_hand_suits:
-            self.void_suits.add(first_card_suit)
+        remaining_cards = list(self.unknown_cards)
+        random.shuffle(remaining_cards)
+        for player, size in self.hand_sizes.items():
+            if player == self.perspective_player:
+                continue  # already known
 
-    
-    def reset_void_suits(self):
+            possible_cards = [
+                c for c in remaining_cards
+                if c[-1] not in self.void_suits[player]
+            ]
 
-        for player, _ in self.void_suits.items():
-            self.void_suits[player] = set()
+            if len(possible_cards) < size:
+                raise ValueError('No valid world exists')
 
-    def sample_world(self):
-        """
-        Creates instance of simulationState
-        
-        :param self: Description
-        """
+            # assigns cards to player consistent with world constraints
+            chosen_cards = random.sample(possible_cards, size)
+            assignments[player].update(chosen_cards)
+
+            for card in chosen_cards:
+                remaining_cards.remove(card)
+
+        return assignments

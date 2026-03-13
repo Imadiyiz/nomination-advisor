@@ -1,192 +1,178 @@
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Tuple, Set
 from Classes.DeckClass import Deck
 from Classes.CardClass import Card
 from belief_model import BeliefModel
 import random
 
-@dataclass
+CardStr = str
+PlayerStr = str
+TrumpStr = str
+
+@dataclass()
 class GameState():
 
     """
 
     Cards stored as ("10D", "3H")
     Suits are stored a 'D', 'S'
-    Only the Truth
+    Only the Truth, fully concrete
     Attributes:
         
     """
     
     #Cards 
 
-    hands: Dict[str, set[str]]           # player_id -> cards.initials
-    played_cards: Dict[str, set[str]] # player_id, [cards.initials]
-    current_trick: List[str]        # (player_id, card)
-
-    # Game structure
-    leader: str                     # player_id whose turn it is
-    trump_suit: str
-    player_order: List[str]         # fixed seating order
-
-    # Scores
-    round_scores = Dict[str, int]
-    bids: Dict[str, int]
-
-    # Trick tracking
+    hands: Tuple[Tuple[PlayerStr, frozenset[CardStr]], ...]           # player_id -> cards.initials
+    current_trick: Tuple[Tuple[PlayerStr, CardStr], ...]        # (player_id, card)
+    leader: PlayerStr                     # player_id whose turn it is
+    trump_suit: TrumpStr
+    player_order: Tuple[PlayerStr, ...]         # fixed seating order
+    round_scores: Dict[PlayerStr, int]
+    bids: Dict[PlayerStr, int]
     cards_remaining: int
 
     # Class constants
     valid_initials = Deck().generate_valid_card_initials()
 
-    def get_legal_moves(self, player: str, void_suits: dict[str, set]) -> set:
+    def _get_turn_order(self):
+    
+        start_index = self.player_order.index(self.leader)
+
+        return (
+        self.player_order[start_index:] +
+        self.player_order[:start_index]
+    )
+
+    def next_player(self) -> PlayerStr:
+        order = self._get_turn_order()
+        return order[len(self.current_trick)]
+
+    def get_legal_moves(self, player: PlayerStr) -> set[CardStr]:
         """
         Function for identifing legal moves given;
         it enforces follow-suit
         respects trump rules
-        respects void knowledge
         
         :returns set of legal moves
         """
 
-        legal_moves = set()
-        first_card = self.current_trick[0]
-        first_card_suit = Card.from_initials(first_card)
-
-        for card in self.hands[player]:
-
-            card_suit = Card.from_initials(card)[1]
-
-            # trump suits are always allowed
-            if card_suit == self.trump_suit:
-                legal_moves.add(card)
-                continue
-        
-            # must follow first suit
-            if card_suit == first_card_suit:
-                legal_moves.add(card)
-                continue
-
-            # is allowed if suit is void due to lack of cards
-            if first_card_suit in void_suits[player]:
-                legal_moves.add(card)
-                continue
-
-        return legal_moves
-
-
-
-
-@dataclass
-class SimulationState(GameState):
-
-    """
-
-    Cards stored as ("10", "D")
-    Suits are stored a 'D', 'S'
-    Attributes:
-        
-    """
-
-    def init_round(self,
-                   hands: Dict[str, str],
-                   player_order: List[str],
-                   trump_suit: str,
-                   bids: Dict[str, int],
-                   cards_remaining):
-        
-        """
-        Initialises the round ready to be simulated
-        """
-
-        self.unknown_cards = self.valid_initials
-
-        self.current_trick = []
-        self.player_order = player_order
-        self.leader = player_order[0]
-        self.trump_suit = trump_suit
-        self.hands = hands
-        self.bids = bids
-        self.cards_remaining = cards_remaining
-
-        #resets the played cards dictionary and round scores
-        for player in self.player_order:
-            self.played_cards[player] = set()
-            self.round_scores[player] = 0
-            self.unknown_cards -= self.hands[player]
-        
-    def sim_round(self):
-
-        while self.cards_remaining != 0:
-
-            for player in self.player_order:
-                self.leader = player
-                legal_moves = self.get_legal_moves(self.leader)
-                chosen_move = random.choice(legal_moves)
-                self._apply_move(chosen_move)
-
-            self.cards_remaining -=1
-            winning_player = self._verify_winner()
-
-    def _apply_move(self, card: str):
-
-        self.current_trick.append(card)
-        self.played_cards[self.leader].add(card)
-        self.unknown_cards -= card
-        self.hands[self.leader] -= card
-
-                
-    def _verify_winner(self) -> str:
-        """
-        Rules:
-        1. Trump suit beats all other suits
-        2. If no trump is played, highest card of the leading suit wins
-
-        returns winning players id
-        """
+        player_hand = self.hands[player]
 
         if not self.current_trick:
-            raise ValueError("No trick")
+            return set(player_hand)
         
-        suits_in_current_trick = set(
-            card[-1] for card in self.current_trick
+        
+        lead_suit = self.current_trick[0][1][-1]
+        
+        follow_cards = {card for card in player_hand 
+                        if card[-1] == lead_suit
+        }
+        
+        if follow_cards:
+            return set(follow_cards) 
+
+        # if no legal moves, any card can be discarded
+        return set(player_hand)
+    
+    def apply_move(self, player: PlayerStr, card: CardStr) -> "GameState":
+        """
+        Returns a NEW GameState after move
+        """
+
+        if card not in self.get_legal_moves(player):
+            raise ValueError("Illegal move")
+        
+
+        new_hands = {
+            p: (cards - {card}) if p == player else cards
+            for p, cards in self.hands.items()
+        }
+        new_scores = dict(self.round_scores)
+
+        new_trick = self.current_trick + ((player, card),)
+
+        new_leader = self.leader
+        new_cards_remaining = self.cards_remaining
+
+        # if trick complete, resolve it
+        if len(new_trick) == len(self.player_order):
+            winner = self._resolve_trick(new_trick)
+            new_scores[winner] += 1
+            new_trick = ()
+            new_leader = winner
+            new_cards_remaining -= 1
+
+
+        return GameState(
+            hands=new_hands,
+            current_trick=new_trick,
+            leader=new_leader,
+            trump_suit=self.trump_suit,
+            player_order= self.player_order,
+            round_scores=new_scores,
+            cards_remaining=new_cards_remaining,
+            bids=dict()
         )
 
-        if self.trump_suit in suits_in_current_trick:
 
-            possible_winning_cards = self._remove_cards_via_suit(
-                set(self.current_trick),
-                self.trump_suit
-            )
-
-            winning_card = max(possible_winning_cards, key=lambda c: int(Card.from_initials(c)[0]))
-        else:
-
-            first_card_suit = self.current_trick[0][-1]
-            possible_winning_cards = self._remove_cards_via_suit(
-                set(self.current_trick),
-                first_card_suit)
-            
-            winning_card = max(possible_winning_cards, key=lambda c: int(Card.from_initials(c)[0]))
-
+    def _resolve_trick(
+            self, trick: Tuple[Tuple[PlayerStr, CardStr], ...]
+    ) -> PlayerStr:
         
-        # determines who played the winning card returns winner
-        for card, index in enumerate(self.current_trick):
-            if card == winning_card:
-                return self.player_order[index]
+        """ Returns player who wins the trick"""
+        
+        lead_suit = trick[0][1][-1]
 
-        raise ValueError("No winning card in trick")
+        def _card_value(card_str: CardStr):
+            rank, suit = Card.from_initials(card_str)
+            picture_to_rank = {"J": 11,
+             "Q": 12,
+             "K": 13,
+             "A": 14}
+            
+            return int(rank) if rank.isnumeric() else picture_to_rank[rank]
+        
+        # trump first
+        trump_cards = [
+            (player, card) for player, card in trick
+            if card[-1] == self.trump_suit
+        ]
+
+        if trump_cards:
+            return max(trump_cards, key = lambda tc: _card_value(tc[1]))[0] ### error here
+        
+        # Otherwise lead suit, player card
+        lead_cards = [
+            (p, c) for p, c in trick if c[-1] == lead_suit
+        ]
+
+        return max(lead_cards, key=lambda x: _card_value(x[1]))[0]
+
     
-    def _remove_cards_via_suit(self, card_set: set, valid_suit: str)-> set:
-        """
-        Removes cards from card set which are not the valid suit
+    def is_terminal(self) -> bool:
+        return self.cards_remaining == 0
 
-        returns valid cards in a set
-        """
 
-        for card in card_set:
 
-            card_suit = card[-1]
-            if card_suit != valid_suit:
-                card_set.remove(card)
 
-        return card_set
+
+class RolloutSimulator:
+
+    def __init__(self, state: GameState):
+        # local mutable copy
+        self.state = state
+
+    def rollout(self) -> Dict[PlayerStr, int]:
+
+        state = self.state
+
+        while not state.is_terminal():
+            player = state.next_player()
+            legal_moves = state.get_legal_moves(player)
+            move = random.choice(tuple(legal_moves))
+
+            state = state.apply_move(player, move)
+
+        return state.round_scores
+        

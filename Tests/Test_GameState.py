@@ -4,7 +4,7 @@
 
 import pytest
 from Classes.CardClass import Card
-from game_state import GameState, SimulationState  # adjust import
+from game_engine import GameState, SimulationState  # adjust import
 
 
 @pytest.fixture
@@ -16,16 +16,21 @@ def base_state():
     state = GameState(
         hands={},
         played_cards={},
-        void_suits={"P1": set()},
-        unknown_cards={"10H", "2H", "AS", "KD"},
         current_trick=["9H"],  # first card sets lead suit
         leader="P1",
         trump_suit="S",
         player_order=["P1", "P2", "P3", "P4"],
-        round_scores={"P1": 0},
         bids={"P1": 0},
         cards_remaining=4,
     )
+
+    return state
+
+@pytest.fixture
+def sim_state(base_state):
+
+    base_state.current_trick = ["9H", "10C", "AC", "9C"]
+    state = SimulationState(base_state)
 
     return state
 
@@ -53,13 +58,10 @@ def test_trump_always_allowed(base_state):
     assert "AS" in moves
 
 
-def test_void_allows_any_card(base_state):
-    """
-    If player is void in lead suit,
-    they can play anything.
-    """
-    base_state.void_suits["P1"] = {"H"}  # void in hearts
+def test_valid_winning_player(sim_state):
 
-    moves = base_state.get_legal_moves("P1", base_state)
+    """
+    Determines whether the correct player is selected
+    """
 
-    assert moves == base_state.unknown_cards
+    assert sim_state._verify_winner() == 'P1'
