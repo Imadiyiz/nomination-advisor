@@ -1,7 +1,6 @@
 from game_engine import GameState, RolloutSimulator
 from belief_model import BeliefModel
 from typing import Dict, Set
-import random
 from collections import defaultdict
 
 
@@ -42,9 +41,9 @@ def run_monte_carlo(root_state: GameState, perspective: str, N_rollouts: int = 1
         # Sample a possible world consistent with beliefs
         sampled_hands: Dict[str, Set[str]] = belief_model.sample_world()
 
-        # Freeze hands as frozensets for GameState
+        # Freeze hands as sets for GameState
         determinized_hands = {
-            p: frozenset(cards) for p, cards in sampled_hands.items()
+            p: set(cards) for p, cards in sampled_hands.items()
         }
 
         # Overwrite perspective player's hand with truth
@@ -65,29 +64,18 @@ def run_monte_carlo(root_state: GameState, perspective: str, N_rollouts: int = 1
         # Run rollout until perspective is reached
         simulator = RolloutSimulator(determinized_state)
 
-        #determine move 
-        legal_moves = _get_legal_moves(perspective, determinized_state)
-        move = random.choice(list(legal_moves))
-
         final_scores = simulator.rollout()
         result = final_scores[perspective]
 
         total_score += result
-        distributions[result] += 1
 
 
     # calculations
 
-    bidding_estimation = total_score / N_rollouts
-
-    probabilities = {
-        tricks: count / N_rollouts
-        for tricks, count in distributions.items()
-    }
+    bidding_estimation = round(total_score / N_rollouts, 2) 
 
     # return context of distribution and expected tricks
     summary_context = {}
-    summary_context["distribution"] = probabilities
     summary_context["expected_tricks"] = bidding_estimation 
     return summary_context
 
@@ -95,20 +83,21 @@ def run_monte_carlo(root_state: GameState, perspective: str, N_rollouts: int = 1
 
 # Players
 players = ("A", "B", "C", "D")
+my_player = "D"
 
-# Hands (frozensets of card initials)
+# Hands (sets of card initials)
 hands = (
-    ("A", frozenset({"AS", "KS", "QS", "JS", "AH", "KH", "AD", "KD"})),  # very strong hand
-    ("B", frozenset({"2H", "4H", "6H", "8H", "9H", "JH", "QH", "KH"})),  # single-suit hand
-    ("C", frozenset({"3C", "5D", "7S", "9C", "10D", "JC", "QD", "KS"})), # mixed mid-strength
-    ("D", frozenset({"2C", "3D", "4S", "5C", "6D", "7C", "8D", "9S"})),  # very weak spread
+    ("A", set({"AS", "KS", "QS", "JS", "AH", "KH", "AD", "KD"})),  # very strong hand
+    ("B", set({"2H", "4H", "6H", "8H", "9H", "JH", "QH", "KH"})),  # single-suit hand
+    ("C", set({"3C", "5D", "7S", "9C", "10D", "JC", "QD", "KS"})), # mixed mid-strength
+    ("D", set({"2C", "3D", "4S", "5C", "6D", "7C", "8D", "9S"})),  # very weak spread
 )
 
 root_state = GameState(
     hands=dict(hands),                 # Convert tuple pairs to dict
     current_trick=(),                  # No cards played yet
-    leader="C",                        # A leads
-    trump_suit="H",                    # Hearts are trump
+    leader=my_player,                  # A leads
+    trump_suit="D",                    # Hearts are trump
     player_order=players,
     round_scores={p: 0 for p in players},
     bids={p: 1 for p in players},      # Arbitrary example bids
@@ -121,11 +110,13 @@ bidding_estimates = {}
 
 for player in players:
     bidding_estimates[player] = run_monte_carlo(
-        root_state, N_rollouts=2500, perspective=player)
+        root_state, N_rollouts=2000, perspective=player)
 
 
-print(f"Bidding estimation for {root_state.leader}:")
-print(f"{bidding_estimates.items()}")
+print(f"Bidding estimation for {my_player}:")
+
+for item in bidding_estimates.items():
+    print(item)
 
 
 

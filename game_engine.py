@@ -23,7 +23,7 @@ class GameState():
     
     #Cards 
 
-    hands: Tuple[Tuple[PlayerStr, frozenset[CardStr]], ...]           # player_id -> cards.initials
+    hands: Tuple[Tuple[PlayerStr, set[CardStr]], ...]           # player_id -> cards.initials
     current_trick: Tuple[Tuple[PlayerStr, CardStr], ...]        # (player_id, card)
     leader: PlayerStr                     # player_id whose turn it is
     trump_suit: TrumpStr
@@ -35,8 +35,8 @@ class GameState():
     # Class constants
     valid_initials = Deck().generate_valid_card_initials()
 
-    def _get_turn_order(self):
-    
+    def _get_turn_order(self) -> tuple[PlayerStr, ...]:
+        """Returns player order based on game leader's pos index """
         start_index = self.player_order.index(self.leader)
 
         return (
@@ -62,15 +62,19 @@ class GameState():
         if not self.current_trick:
             return set(player_hand)
         
-        
         lead_suit = self.current_trick[0][1][-1]
         
         follow_cards = {card for card in player_hand 
                         if card[-1] == lead_suit
         }
+
+        trump_cards = {trump_card for trump_card in player_hand
+                       if trump_card[-1] == self.trump_suit}
         
         if follow_cards:
             return set(follow_cards) 
+        elif trump_cards:
+            return set(trump_cards)
 
         # if no legal moves, any card can be discarded
         return set(player_hand)
@@ -88,12 +92,20 @@ class GameState():
             p: (cards - {card}) if p == player else cards
             for p, cards in self.hands.items()
         }
+
+        #print("New hands", new_hands)
+
         new_scores = dict(self.round_scores)
+        #print("New scores", new_scores)
 
         new_trick = self.current_trick + ((player, card),)
+        #print("New trick", new_trick)
 
         new_leader = self.leader
         new_cards_remaining = self.cards_remaining
+        #print("New leader", new_leader)
+        #print("New cards remaining", new_cards_remaining)
+
 
         # if trick complete, resolve it
         if len(new_trick) == len(self.player_order):
@@ -125,13 +137,17 @@ class GameState():
         lead_suit = trick[0][1][-1]
 
         def _card_value(card_str: CardStr):
-            rank, suit = Card.from_initials(card_str)
+            rank, suit = Card.from_initials(card_str) 
             picture_to_rank = {"J": 11,
              "Q": 12,
              "K": 13,
              "A": 14}
             
-            return int(rank) if rank.isnumeric() else picture_to_rank[rank]
+            if rank.isnumeric():
+                card_value_output = int(rank)
+                return card_value_output
+            
+            return picture_to_rank[rank]
         
         # trump first
         trump_cards = [
