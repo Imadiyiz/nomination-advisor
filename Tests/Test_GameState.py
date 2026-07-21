@@ -4,7 +4,7 @@
 
 import pytest
 from Classes.CardClass import Card
-from game_engine import GameState, SimulationState  # adjust import
+from game_engine import GameState  # adjust import
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ def base_state():
 def sim_state(base_state):
 
     base_state.current_trick = ["9H", "10C", "AC", "9C"]
-    state = SimulationState(base_state)
+    state = GameState(base_state)
 
     return state
 

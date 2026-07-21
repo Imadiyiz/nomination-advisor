@@ -2,6 +2,17 @@ from game_engine import GameState, RolloutSimulator
 from belief_model import BeliefModel
 from typing import Dict, Set
 
+def calculate_score(actual:int , bid:int) -> int:
+    """Based on nomination rules returns score"""
+
+    if actual != bid:
+        return actual
+
+    if actual == 8:
+        return 36
+
+    return actual + 10 
+
 def estimate_optimal_bid(root_state: GameState, perspective: str, N_rollouts: int = 100) -> dict:
     """
     Runs Monte Carlo evaluation for current hand and determines most optimal bid based on hand.
@@ -140,11 +151,3 @@ for i, v in bidding_estimates.items():
     print("Expected Scores", v["expected_scores"], "\n")
     print("Mode", v["mode"])
     print("Mode Probability", v["mode_probability"])
-
-
-
-# does work for me, it is calculating the wrong thing. 
-# it needs to work out who wins the current hand, not the full round
-
-
-# Write the whole logic flow on paper and see where the issues comes from
