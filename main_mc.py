@@ -13,7 +13,7 @@ def estimate_optimal_bid(root_state: GameState, perspective: str, N_rollouts: in
     root_state.leader = perspective
     summary_context = {}
     score_per_bid = {}
-    bid_accuracy = {}
+    bid_accuracy_distribution = {}
     
     # Initialize belief model for perspective player
     belief_model = BeliefModel(
@@ -28,6 +28,7 @@ def estimate_optimal_bid(root_state: GameState, perspective: str, N_rollouts: in
 
         bid_successes = 0
         total_nom_score = 0
+        mode = 0
 
 
         for _ in range(N_rollouts):
@@ -80,13 +81,20 @@ def estimate_optimal_bid(root_state: GameState, perspective: str, N_rollouts: in
             # calculations
 
             avg_nom_score = round(total_nom_score / N_rollouts, 2) 
-            bid_success_percentage = round(bid_successes / N_rollouts, 2) 
+            bid_success_percentage = round(bid_successes / N_rollouts, 3) 
             score_per_bid[_bid] = avg_nom_score
-            bid_accuracy[_bid] = bid_success_percentage 
+            bid_accuracy_distribution[_bid] = bid_success_percentage 
+            for i, v in bid_accuracy_distribution.items():
+                if max(list(bid_accuracy_distribution.values())) == v:
+                    mode = i
+                    continue
+            summary_context["mode"] = mode
+            
 
     # return context of ESPB and Bid accuracy
-    summary_context["Estimated Score Per Bid"] = score_per_bid
-    summary_context["Estimated Bid accuracy"] = bid_accuracy
+    summary_context["expected_scores"] = score_per_bid
+    summary_context["bid_accuracy_distribution"] = bid_accuracy_distribution
+    summary_context["mode_probability"] = bid_accuracy_distribution[mode]
     
     
     return summary_context
@@ -127,8 +135,11 @@ for player in players:
 
 print(f"Bidding estimation for {my_player}:")
 
-for item in bidding_estimates.items():
-    print(item)
+for i, v in bidding_estimates.items():
+    print("\n\nPlayer", i)
+    print("Expected Scores", v["expected_scores"], "\n")
+    print("Mode", v["mode"])
+    print("Mode Probability", v["mode_probability"])
 
 
 
