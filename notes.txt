@@ -1,0 +1,2 @@
+Win percentage does not always equal 100% across all the players as there isn't always a winner each game
+This is also due to the bidding ban which pervents everyone from winning
