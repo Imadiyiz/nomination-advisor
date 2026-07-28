@@ -13,7 +13,6 @@ class BeliefModel():
     """
 
     void_suits: Dict[str, set[str]] # dict, player id, set(suit)
-    known_cards: set[str]           # cards assigned
     unknown_cards: set[str]         # cards not yet assigned
     hand_sizes: Dict[str, int]      # player -> cards remaining
     perspective_player: str
@@ -30,7 +29,6 @@ class BeliefModel():
 
         # removes card from unknown pool
         self.unknown_cards.discard(card)
-        self.known_cards.add(card)
         self.hand_sizes[player] -= 1
 
         card_suit = card[-1]
@@ -50,6 +48,7 @@ class BeliefModel():
 
         remaining_cards = list(self.unknown_cards)
         random.shuffle(remaining_cards)
+
         for player, size in self.hand_sizes.items():
             if player == self.perspective_player:
                 continue  # already known

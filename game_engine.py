@@ -27,10 +27,11 @@ class GameState():
     current_trick: Tuple[Tuple[PlayerStr, CardStr], ...]        # (player_id, card)
     leader: PlayerStr                     # player_id whose turn it is
     trump_suit: TrumpStr
-    player_order: Tuple[PlayerStr, ...]         # fixed seating order
+    player_order: Tuple[PlayerStr, ...]   # fixed seating order
     round_scores: Dict[PlayerStr, int]
     bids: Dict[PlayerStr, int]
     cards_remaining: int
+    winner: PlayerStr = ''                # Winner of the previous trick
 
     # Class constants
     valid_initials = Deck().generate_valid_card_initials()
@@ -84,6 +85,9 @@ class GameState():
         Returns a NEW GameState after move
         """
 
+        # Initially there isn't a winner
+        winner = ''
+
         if card not in self.get_legal_moves(player):
             raise ValueError("Illegal move")
         
@@ -110,6 +114,7 @@ class GameState():
         # if trick complete, resolve it
         if len(new_trick) == len(self.player_order):
             winner = self._resolve_trick(new_trick)
+            #print("WINNER", winner)
             new_scores[winner] += 1
             new_trick = ()
             new_leader = winner
@@ -124,7 +129,8 @@ class GameState():
             player_order= self.player_order,
             round_scores=new_scores,
             cards_remaining=new_cards_remaining,
-            bids=dict()
+            bids=dict(), 
+            winner = winner
         )
 
 
@@ -166,8 +172,14 @@ class GameState():
         return max(lead_cards, key=lambda x: _card_value(x[1]))[0]
 
     
-    def is_terminal(self) -> bool:
-        return self.cards_remaining == 0
+    def is_terminal(self, round = True) -> bool:
+        """
+        round or trick is terminal
+        """
+        if round == True:
+            return self.cards_remaining == 0
+
+        return self.winner and round == False
 
 
 
@@ -179,16 +191,42 @@ class RolloutSimulator:
         # local mutable copy
         self.state = state
 
-    def rollout(self) -> Dict[PlayerStr, int]:
+    def rollout_round(self) -> Dict[PlayerStr, int]:
 
         state = self.state
 
         while not state.is_terminal():
             player = state.next_player()
             legal_moves = state.get_legal_moves(player)
+            if not tuple(legal_moves):
+                raise ValueError("There is a duplicate card in play, please check assigned cards")
             move = random.choice(tuple(legal_moves))
 
             state = state.apply_move(player, move)
 
         return state.round_scores
-        
+
+    def rollout_trick(self, perspective: PlayerStr, chosen_card: CardStr) -> PlayerStr:
+
+        """
+        Similar to rollout round however, it terminates after finishing a trick
+        """
+
+        state = self.state
+
+        while not state.is_terminal(round=False):
+            player = state.next_player()
+            legal_moves = state.get_legal_moves(player)
+            if not tuple(legal_moves):
+                raise ValueError("There is a duplicate card in play, please check assigned cards")
+
+            # perspective plays their own move
+
+            if player == perspective:
+                move = chosen_card
+            else:
+                move = random.choice(tuple(legal_moves))
+
+            state = state.apply_move(player, move)
+
+        return state.winner                    
