@@ -238,8 +238,8 @@ hands = (
 
 root_state = GameState(
     hands=dict(hands),                 # Convert tuple pairs to dict
-    current_trick=(),                  # No cards played yet
-    leader="A",                        # A leads
+    current_trick=(('B', 'AD'), ),       # (PlayerStr, CardStr)
+    leader="C",                        # A leads
     trump_suit="D",                    # Hearts are trump
     player_order=players,
     round_scores={p: 0 for p in players},
@@ -251,7 +251,7 @@ root_state = GameState(
 
 bidding_estimates = {}
 
-# Start Estimation
+"""# Start Estimation
 
 bidding_estimates[my_player] = estimate_optimal_bid(
    root_state, N_rollouts=100, perspective=my_player)
@@ -266,4 +266,4 @@ for i, v in bidding_estimates.items():
     print("Highest Expected Score", max(v["expected_scores"].values()), '\n')
     print("Mode", v["mode"])
     print("Mode Probability", v["mode_probability"])
-    print("\n")
+    print("\n")"""

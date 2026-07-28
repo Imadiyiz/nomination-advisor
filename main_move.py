@@ -4,7 +4,7 @@ from main_mc import estimate_optimal_move, root_state
 my_player = 'A'
 move_estimates = {}
 move_estimates[my_player] = estimate_optimal_move(
-    root_state, N_rollouts=200, perspective=my_player)
+    root_state, N_rollouts=100, perspective=my_player)
 
 print(f"Move estimation for {my_player}:")
 

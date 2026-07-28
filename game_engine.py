@@ -32,6 +32,7 @@ class GameState():
     bids: Dict[PlayerStr, int]
     cards_remaining: int
     winner: PlayerStr = ''                # Winner of the previous trick
+    inserted_trick: bool = False
 
     # Class constants
     valid_initials = Deck().generate_valid_card_initials()
@@ -60,9 +61,18 @@ class GameState():
 
         player_hand = self.hands[player]
 
+        # Check that your card hasn't already been played
+        # Useful for testing with AI players
+
+        for _play in self.current_trick:
+            if _play[0] == player:
+                self.inserted_trick = True
+                return set()
+
         if not self.current_trick:
             return set(player_hand)
-        
+
+        print(self.current_trick)
         lead_suit = self.current_trick[0][1][-1]
         
         follow_cards = {card for card in player_hand 
@@ -176,6 +186,7 @@ class GameState():
         """
         round or trick is terminal
         """
+        print(self.cards_remaining)
         if round == True:
             return self.cards_remaining == 0
 
@@ -217,8 +228,11 @@ class RolloutSimulator:
         while not state.is_terminal(round=False):
             player = state.next_player()
             legal_moves = state.get_legal_moves(player)
+
             if not tuple(legal_moves):
-                raise ValueError("There is a duplicate card in play, please check assigned cards")
+                if not state.inserted_trick:
+                    raise ValueError("There is a duplicate card in play, please check assigned cards")
+                continue
 
             # perspective plays their own move
 
@@ -229,4 +243,19 @@ class RolloutSimulator:
 
             state = state.apply_move(player, move)
 
+        # reset trick flag
+        state.inserted_trick = False
+
         return state.winner                    
+
+
+
+
+### It never reduces the cards remaining when there are already items in the trick.
+""" 
+To solve this I will need to do checks before making any evaluations.
+The check should iterate through the cards and should remove hand length from AI player, although this won't make a difference
+since everything is reset once the trick is over. The check should iterate through the cards and omit them from having a turn, but in trutth
+there shouldn't be a player after the perspective player that has ALREADY played their card.
+
+"""
