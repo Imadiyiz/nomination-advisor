@@ -1,16 +1,16 @@
-from dataclasses import dataclass
-from typing import Dict, List, Tuple, Set
-from Classes.DeckClass import Deck
-from Classes.CardClass import Card
-from belief_model import BeliefModel
 import random
+from dataclasses import dataclass
+
+from belief_model import BeliefModel
+from Classes.CardClass import Card
+from Classes.DeckClass import Deck
 
 CardStr = str
 PlayerStr = str
 TrumpStr = str
 
 @dataclass()
-class GameState():
+class GameState:
 
     """
 
@@ -23,16 +23,16 @@ class GameState():
     
     #Cards 
 
-    hands: Tuple[Tuple[PlayerStr, set[CardStr]], ...]           # player_id -> cards.initials
-    current_trick: Tuple[Tuple[PlayerStr, CardStr], ...]        # (player_id, card)
+    hands: dict[PlayerStr, set[CardStr]]           # player_id -> cards.initials
+    current_trick: tuple[tuple[PlayerStr, CardStr], ...]        # (player_id, card)
     leader: PlayerStr                     # player_id whose turn it is
     trump_suit: TrumpStr
-    player_order: Tuple[PlayerStr, ...]   # fixed seating order
-    round_scores: Dict[PlayerStr, int]
-    bids: Dict[PlayerStr, int]
+    player_order: tuple[PlayerStr, ...]   # fixed seating order
+    round_scores: dict[PlayerStr, int]
+    bids: dict[PlayerStr, int]
     cards_remaining: int
     winner: PlayerStr = ''                # Winner of the previous trick
-    inserted_trick: bool = False
+
 
     # Class constants
     valid_initials = Deck().generate_valid_card_initials()
@@ -44,7 +44,7 @@ class GameState():
         return (
         self.player_order[start_index:] +
         self.player_order[:start_index]
-    )
+        )
 
     def next_player(self) -> PlayerStr:
         order = self._get_turn_order()
@@ -53,26 +53,16 @@ class GameState():
     def get_legal_moves(self, player: PlayerStr) -> set[CardStr]:
         """
         Function for identifing legal moves given;
-        it enforces follow-suit
-        respects trump rules
+        enforces follow-suit and respects trump rules
         
         :returns set of legal moves
         """
 
         player_hand = self.hands[player]
 
-        # Check that your card hasn't already been played
-        # Useful for testing with AI players
-
-        for _play in self.current_trick:
-            if _play[0] == player:
-                self.inserted_trick = True
-                return set()
-
         if not self.current_trick:
             return set(player_hand)
 
-        print(self.current_trick)
         lead_suit = self.current_trick[0][1][-1]
         
         follow_cards = {card for card in player_hand 
@@ -124,7 +114,7 @@ class GameState():
         # if trick complete, resolve it
         if len(new_trick) == len(self.player_order):
             winner = self._resolve_trick(new_trick)
-            #print("WINNER", winner)
+            print("WINNER", winner)
             new_scores[winner] += 1
             new_trick = ()
             new_leader = winner
@@ -139,33 +129,29 @@ class GameState():
             player_order= self.player_order,
             round_scores=new_scores,
             cards_remaining=new_cards_remaining,
-            bids=dict(), 
+            bids=dict(self.bids), 
             winner = winner
         )
 
 
     def _resolve_trick(
-            self, trick: Tuple[Tuple[PlayerStr, CardStr], ...]
+            self, trick: tuple[tuple[PlayerStr, CardStr], ...]
     ) -> PlayerStr:
         
         """ Returns player who wins the trick"""
         
         lead_suit = trick[0][1][-1]
 
-        def _card_value(card_str: CardStr):
-            rank, suit = Card.from_initials(card_str) 
-            picture_to_rank = {"J": 11,
-             "Q": 12,
-             "K": 13,
-             "A": 14}
+        def _card_value(card_str: CardStr) -> int:
+            rank, _ = Card.from_initials(card_str) 
+            picture_to_rank = {"J": 11, "Q": 12, "K": 13, "A": 14}
             
             if rank.isnumeric():
-                card_value_output = int(rank)
-                return card_value_output
-            
+                return int(rank)
+                
             return picture_to_rank[rank]
         
-        # trump first
+        # trump suit evaluation
         trump_cards = [
             (player, card) for player, card in trick
             if card[-1] == self.trump_suit
@@ -174,7 +160,7 @@ class GameState():
         if trump_cards:
             return max(trump_cards, key = lambda tc: _card_value(tc[1]))[0] ### error here
         
-        # Otherwise lead suit, player card
+        # Lead suit evaluation
         lead_cards = [
             (p, c) for p, c in trick if c[-1] == lead_suit
         ]
@@ -186,11 +172,11 @@ class GameState():
         """
         round or trick is terminal
         """
-        print(self.cards_remaining)
         if round == True:
             return self.cards_remaining == 0
 
-        return self.winner and round == False
+        print("Current trick", self.current_trick)
+        return self.winner is not None and round == False
 
 
 
@@ -202,11 +188,11 @@ class RolloutSimulator:
         # local mutable copy
         self.state = state
 
-    def rollout_round(self) -> Dict[PlayerStr, int]:
-
+    def rollout_round(self) -> dict[PlayerStr, int]:
         state = self.state
 
         while not state.is_terminal():
+            
             player = state.next_player()
             legal_moves = state.get_legal_moves(player)
             if not tuple(legal_moves):
@@ -222,29 +208,28 @@ class RolloutSimulator:
         """
         Similar to rollout round however, it terminates after finishing a trick
         """
-
         state = self.state
+
+        print("state.is_terminal(round=False)", state.is_terminal(round=False))
 
         while not state.is_terminal(round=False):
             player = state.next_player()
             legal_moves = state.get_legal_moves(player)
+            print(f"Player {player} legal moves: {legal_moves}")
 
             if not tuple(legal_moves):
-                if not state.inserted_trick:
                     raise ValueError("There is a duplicate card in play, please check assigned cards")
-                continue
 
-            # perspective plays their own move
-
+            # Perspective plays chosen card, others play random legal cards
             if player == perspective:
                 move = chosen_card
+                state = state.apply_move(player, move)
+            # Determine if the player has already played a card in the current trick
+            elif any(play[0] == player for play in state.current_trick):
+                continue  # Skip this player if they have already played
             else:
                 move = random.choice(tuple(legal_moves))
-
-            state = state.apply_move(player, move)
-
-        # reset trick flag
-        state.inserted_trick = False
+                state = state.apply_move(player, move)
 
         return state.winner                    
 
@@ -256,6 +241,10 @@ class RolloutSimulator:
 To solve this I will need to do checks before making any evaluations.
 The check should iterate through the cards and should remove hand length from AI player, although this won't make a difference
 since everything is reset once the trick is over. The check should iterate through the cards and omit them from having a turn, but in trutth
-there shouldn't be a player after the perspective player that has ALREADY played their card.
+there shouldn't be a player able to play a card after the perspective player if they have ALREADY played their card.
+
+11/08/2026
+
+Currently the legal moves function is not getting called and the card manually input into the trick is still in the deck
 
 """

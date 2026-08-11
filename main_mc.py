@@ -1,12 +1,12 @@
-from game_engine import GameState, RolloutSimulator
 from belief_model import BeliefModel
-from typing import Dict, Set
+from game_engine import GameState, RolloutSimulator
+
 
 def simulate_round(root_state: GameState, N_rollouts: int, perspective: str, belief_model: BeliefModel, bid: int):
 
         """
         Simulation commences.
-        Returns simulation_results: Dict[bid_successes: value, total_nom_score: value]
+        Returns simulation_results: dict[bid_successes: value, total_nom_score: value]
         """
 
         # Initialise totals
@@ -16,7 +16,7 @@ def simulate_round(root_state: GameState, N_rollouts: int, perspective: str, bel
         for _ in range(N_rollouts):
         
                     # Sample a possible world consistent with beliefs
-                    sampled_hands: Dict[str, Set[str]] = belief_model.sample_world()
+                    sampled_hands: dict[str, set[str]] = belief_model.sample_world()
                     sampled_hands[perspective] = root_state.hands[perspective]
         
                     # Construct determinized state
@@ -73,7 +73,7 @@ def simulate_trick(root_state: GameState, N_rollouts: int,
         for _ in range(N_rollouts):
         
                     # Sample a possible world consistent with beliefs
-                    sampled_hands: Dict[str, Set[str]] = belief_model.sample_world()
+                    sampled_hands: dict[str, set[str]] = belief_model.sample_world()
                     sampled_hands[perspective] = root_state.hands[perspective]
         
                     # Construct determinized state
@@ -138,9 +138,9 @@ def estimate_optimal_move(root_state: GameState, perspective: str, N_rollouts: i
     # Generate move win percentage per card
 
     for move_index in range(current_hand_size): 
-        win_percentage = float()
+        win_percentage = 0.0
         # Sample a possible world consistent with current beliefs
-        sampled_hands: Dict[str: set[str]] = belief_model.sample_world()
+        sampled_hands: dict[str, set[str]] = belief_model.sample_world()
         sampled_hands[perspective] = root_state.hands[perspective]
         card_to_play = perspective_hand[move_index]
 
@@ -177,6 +177,7 @@ def estimate_optimal_bid(root_state: GameState, perspective: str, N_rollouts: in
     summary_context = {}
     score_per_bid = {}
     bid_accuracy_distribution = {}
+    mode = 0
     
     # Initialize belief model for perspective player
     belief_model = BeliefModel(
@@ -238,7 +239,7 @@ hands = (
 
 root_state = GameState(
     hands=dict(hands),                 # Convert tuple pairs to dict
-    current_trick=(('B', 'AD'), ),       # (PlayerStr, CardStr)
+    current_trick=( ),                 # (PlayerStr, CardStr)
     leader="C",                        # A leads
     trump_suit="D",                    # Hearts are trump
     player_order=players,
