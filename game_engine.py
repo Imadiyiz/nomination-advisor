@@ -1,7 +1,6 @@
 import random
 from dataclasses import dataclass
 
-from belief_model import BeliefModel
 from Classes.CardClass import Card
 from Classes.DeckClass import Deck
 
@@ -31,7 +30,7 @@ class GameState:
     round_scores: dict[PlayerStr, int]
     bids: dict[PlayerStr, int]
     cards_remaining: int
-    winner: PlayerStr = ''                # Winner of the previous trick
+    winner: PlayerStr = ''              # Winner of the previous trick
 
 
     # Class constants
@@ -89,6 +88,11 @@ class GameState:
         winner = ''
 
         if card not in self.get_legal_moves(player):
+            print("")
+            print(f"Illegal move attempted by {player}: {card}")
+            print(f"Player's hand: {self.hands[player]}")
+            print(f"Current trick: {self.current_trick}")
+            print(f"legal moves: {self.get_legal_moves(player)}")
             raise ValueError("Illegal move")
         
 
@@ -114,7 +118,8 @@ class GameState:
         # if trick complete, resolve it
         if len(new_trick) == len(self.player_order):
             winner = self._resolve_trick(new_trick)
-            print("WINNER", winner)
+            print("WINNER am", winner)
+            print("Final trick", new_trick)
             new_scores[winner] += 1
             new_trick = ()
             new_leader = winner
@@ -176,7 +181,7 @@ class GameState:
             return self.cards_remaining == 0
 
         print("Current trick", self.current_trick)
-        return self.winner is not None and round == False
+        return self.winner != '' and round == False
 
 
 
@@ -203,6 +208,25 @@ class RolloutSimulator:
 
         return state.round_scores
 
+    def rollout_trick_until_perspective(self, perspective: PlayerStr):
+
+        """Completes rollout until it is the perspective player's turn to play, then updates the state"""
+        state = self.state
+
+        while not state.is_terminal(round=False):
+            player = state.next_player()
+            legal_moves = state.get_legal_moves(player)
+            if not tuple(legal_moves):
+                raise ValueError("There is a duplicate card in play, please check assigned cards")
+            move = random.choice(tuple(legal_moves))
+
+            state = state.apply_move(player, move)
+
+            if player == perspective:
+                break
+
+        self.state = state
+
     def rollout_trick(self, perspective: PlayerStr, chosen_card: CardStr) -> PlayerStr:
 
         """
@@ -210,12 +234,9 @@ class RolloutSimulator:
         """
         state = self.state
 
-        print("state.is_terminal(round=False)", state.is_terminal(round=False))
-
         while not state.is_terminal(round=False):
             player = state.next_player()
             legal_moves = state.get_legal_moves(player)
-            print(f"Player {player} legal moves: {legal_moves}")
 
             if not tuple(legal_moves):
                     raise ValueError("There is a duplicate card in play, please check assigned cards")
@@ -226,6 +247,7 @@ class RolloutSimulator:
                 state = state.apply_move(player, move)
             # Determine if the player has already played a card in the current trick
             elif any(play[0] == player for play in state.current_trick):
+                print(f"Player {player} has already played a card in the current trick, skipping their turn.")
                 continue  # Skip this player if they have already played
             else:
                 move = random.choice(tuple(legal_moves))

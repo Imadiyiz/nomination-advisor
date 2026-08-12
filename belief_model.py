@@ -1,20 +1,19 @@
 # contents of belief model python file 
 
-from dataclasses import dataclass
-from typing import Dict, List, Set
 import random
+from dataclasses import dataclass
 
 
 @dataclass
-class BeliefModel():
+class BeliefModel:
     """
     Player belief model
     Represents what one player believes about the game
     """
 
-    void_suits: Dict[str, set[str]] # dict, player id, set(suit)
+    void_suits: dict[str, set[str]] # dict, player id, set(suit)
     unknown_cards: set[str]         # cards not yet assigned
-    hand_sizes: Dict[str, int]      # player -> cards remaining
+    hand_sizes: dict[str, int]      # player -> cards remaining
     perspective_player: str
 
     def observe_play(self,
@@ -37,7 +36,7 @@ class BeliefModel():
         if card_suit != lead_suit:
             self.void_suits[player].add(lead_suit)
 
-    def sample_world(self) -> Dict[str, Set[str]]:
+    def sample_world(self) -> dict[str, set[str]]:
         """
         Produce a concrete assignment of unknown cards
         which are consistent with all the constraints
