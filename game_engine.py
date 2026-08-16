@@ -37,7 +37,6 @@ class GameState:
     def _get_turn_order(self) -> tuple[PlayerStr, ...]:
         """Returns player order based on game leader's pos index """
         start_index = self.player_order.index(self.leader)
-        print("START INDEX", start_index)
 
         return (
         self.player_order[start_index:] +
@@ -46,7 +45,6 @@ class GameState:
 
     def _next_player(self) -> PlayerStr:
         order = self._get_turn_order()
-        print("order", order)
         return order[len(self.current_trick)]
 
     def get_legal_moves(self, player: PlayerStr) -> set[CardStr]:
@@ -88,7 +86,7 @@ class GameState:
             print(f"Player's hand: {self.hands[player]}")
             print(f"Current trick: {self.current_trick}")
             print(f"legal moves: {self.get_legal_moves(player)}")
-            raise ValueError("Illegal move")
+            raise ValueError("Illegal move - Check world status")
         
 
         new_hands = {
@@ -103,12 +101,9 @@ class GameState:
         new_leader = self.leader
         new_cards_remaining = self.cards_remaining
 
-
-        print(len(new_trick), len(self.player_order), "DEBUGGING LENGTHS")
         # if trick complete, resolve it
         if len(new_trick) == len(self.player_order):
             winner = self._resolve_trick(new_trick)
-            print("Final trick", new_trick, winner)
             new_scores[winner] += 1
             new_trick = ()
             new_leader = winner
@@ -199,22 +194,18 @@ class RolloutSimulator:
 
         self.state.winner = ''  # Reset winner to ensure the trick is not considered complete at the start
         while not self.state.is_terminal(round=False):
-            print(f"Current trick: {self.state.current_trick} RTUP")  # Debugging statement
             player = self.state._next_player()
-            print("Player Turn", player)
             legal_moves = self.state.get_legal_moves(player)
             if not tuple(legal_moves):
                 raise ValueError("There is a duplicate card in play, please check assigned cards RTUP")
 
             # If the current player is the perspective player, return the legal moves for that player
             if player == perspective:
-                print("returned legal moves", self.state.get_legal_moves(perspective))
                 return self.state.get_legal_moves(perspective)
                 # while the player has been skipped, the loop will keep repeating the same player as next_player() gives the same next player as it is based off of the leader
             else:
                 move = random.choice(tuple(legal_moves))
                 self.state = self.state._apply_move(player, move)
-
 
     def rollout_trick(self, perspective: PlayerStr, chosen_card: CardStr) -> PlayerStr:
 
@@ -223,10 +214,8 @@ class RolloutSimulator:
         """
 
         while not self.state.is_terminal(round=False):
-            print(f"Current trick: {self.state.current_trick} RT")  # Debugging statement
             player = self.state._next_player()
             legal_moves = self.state.get_legal_moves(player) # The real truth
-            print(f"Legal moves for {player}: {legal_moves} DEBUG RT")  # Debugging statement
 
             if not tuple(legal_moves):
                     raise ValueError("There is a duplicate card in play, please check assigned cards RT")
@@ -241,8 +230,6 @@ class RolloutSimulator:
             else:
                 move = random.choice(tuple(legal_moves))
                 self.state = self.state._apply_move(player, move)
-
-        print("Returned winner:", self.state.winner)  # Debugging statement
         return self.state.winner                    
 
 
@@ -250,13 +237,6 @@ class RolloutSimulator:
 
 ### It never reduces the cards remaining when there are already items in the trick.
 """ 
-To solve this I will need to do checks before making any evaluations.
-The check should iterate through the cards and should remove hand length from AI player, although this won't make a difference
-since everything is reset once the trick is over. The check should iterate through the cards and omit them from having a turn, but in trutth
-there shouldn't be a player able to play a card after the perspective player if they have ALREADY played their card.
-
-11/08/2026
-
-Currently the legal moves function is not getting called and the card manually input into the trick is still in the deck
+i need to incorporate bid information into gamestate so that the bots in the simulation can change their bidding strategy to match their bid
 
 """

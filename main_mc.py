@@ -3,6 +3,20 @@ import copy
 from belief_model import BeliefModel
 from game_engine import GameState, RolloutSimulator
 
+def get_leader(players: tuple, current_trick: tuple) -> str:
+    """
+    Returns a valid leader given the current restraints
+    """
+
+    if not current_trick:
+        return players[0]
+
+    leader = current_trick[0][0]
+
+    if leader not in players:
+        raise RuntimeError("The player who played the first trump card has not been registered")
+
+    return leader
 
 def get_true_legal_moves(determinised_state: GameState, perspective: str) -> set[str]:
     """
@@ -15,8 +29,6 @@ def get_true_legal_moves(determinised_state: GameState, perspective: str) -> set
 
     # Advance the game state until it is the perspective player's turn and return the legal moves for that player
     legal_moves = simulator.rollout_trick_until_perspective(perspective=perspective)
-
-    print(f"Legal cards to play for {perspective}: {legal_moves} GTLM")  # Debugging statement
 
     return legal_moves   # Still inaccurate
 
@@ -143,16 +155,10 @@ def estimate_optimal_move(root_state: GameState, perspective: str, N_rollouts: i
 
         # Calculate the amount of legal moves the player can make
         true_legal_moves = get_true_legal_moves(determinised_state, perspective) # inaccurate, truth is within the simulator instance
-        print(f"Legal cards to play for {perspective}: {true_legal_moves} TLM")  # Debugging statement
-
+        
         # Generate move win percentage per card
 
-        for card_to_play in true_legal_moves:
-            print("LOOP")
-            print("True Legal Moves", true_legal_moves)
-            print("Card to play", card_to_play)
-            print(f"Current trick: {determinised_state.current_trick}, Leader: {determinised_state.leader}, Next Player: {determinised_state._next_player()}")  # Debugging statement
-            print(f"Simulating play for {perspective} playing {card_to_play}...")  # Debugging statement     #
+        for card_to_play in true_legal_moves: 
             attempts_per_card[card_to_play] += 1  # Increment the count of attempts for the card played
             if simulate_card_play(determinised_state = determinised_state,
                                             perspective=perspective,
@@ -175,7 +181,7 @@ def estimate_optimal_move(root_state: GameState, perspective: str, N_rollouts: i
     # Determine the optimal card to play based on the highest win percentage
     for i, v in expected_win_percentage.items():
         if v == max_win_percentage:
-            optimal_card = perspective_hand.index(i)
+            optimal_card = i
             summary_context['optimal_move'] = optimal_card
             summary_context['optimal_move_probability'] = v
             summary_context['least_optimal_move'] = min(list(expected_win_percentage.keys()), key=lambda k: expected_win_percentage[k])
@@ -247,30 +253,34 @@ def estimate_optimal_bid(root_state: GameState, perspective: str, N_rollouts: in
 ########
 
 # Players
-players = ("A", "B", "C", "F")
+players = ("A", "F", "B", "C")
 my_player = "A"
 
-# Hands (sets of card initials)
+# Current trick state
+
+current_trick = tuple[tuple[str, str], ...]
+current_trick = ()
+
+# Hands (sets of card initials) These are allowed to have duplicates as these are not the sampled hands in the simulation
 hands = (
     # Very strong hand: Top-tier high cards (Ace, King, Queen, Jack, 10 of Spades + Ace of Clubs)
-    ("A", set({"AS", "KS", "QS", "JS", "10S", "AC"})),  
+    ("A", set({"AS", "KS", "QS", "JS", "10S", "AC", "2D", "5C"})),  
     
-    # Single-suit hand: A complete 6-card flush consisting entirely of Hearts
-    ("B", set({"KH", "QH", "JH", "10H", "9H", "8H"})),  
+    ("B", set({"KH", "QH", "JH", "10H", "9H", "8H", "AC", "KC"})),  
     
     # Mixed mid-strength: Mid-tier connected cards split evenly between Clubs and Diamonds
-    ("C", set({"9C", "8C", "7C", "9D", "8D", "7D"})), 
+    ("C", set({"9C", "8C", "7C", "9D", "8D", "7D", "10D", "10C"})), 
     
     # Very weak spread: Unconnected low ranks across random suits with zero synergy
-    ("F", set({ "3S", "2H", "3D", "2C", "4C"})),  
+    ("F", set({ "2S", "3S", "2H", "3D", "2C", "4C", "AD", "AH"})),  
 )
 
 
 root_state = GameState(
     hands=dict(hands),                 # Convert tuple pairs to dict
-    current_trick=(('F', '2S'),),                 # (PlayerStr, CardStr)
-    leader="F",                        # A leads (must always be the first player in the trick)
-    trump_suit="S",                    # Clubs are trump
+    current_trick=current_trick,                 # (PlayerStr, CardStr)
+    leader=get_leader(players, current_trick),                  # First in the player order or the first player to play their trump card
+    trump_suit="D",                    # Diamonds are trump
     player_order=players,
     round_scores={p: 0 for p in players},
     bids={p: 2 for p in players},      # Arbitrary example bids
@@ -280,10 +290,10 @@ root_state = GameState(
 
 bidding_estimates = {}
 
-"""# Start Estimation
+# Start Estimation
 
 bidding_estimates[my_player] = estimate_optimal_bid(
-   root_state, N_rollouts=100, perspective=my_player)
+   root_state, N_rollouts=400, perspective=my_player)
 
 
 
@@ -295,4 +305,4 @@ for i, v in bidding_estimates.items():
     print("Highest Expected Score", max(v["expected_scores"].values()), '\n')
     print("Mode", v["mode"])
     print("Mode Probability", v["mode_probability"])
-    print("\n")"""
+    print("\n")

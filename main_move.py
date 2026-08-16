@@ -1,24 +1,33 @@
-from main_mc import estimate_optimal_move, my_player, root_state
 import time
+
+from main_mc import estimate_optimal_move, my_player, root_state
 
 # Start time
 
 strt_time = time.perf_counter()
 
-move_estimates = {}
-move_estimates[my_player] = estimate_optimal_move(
-    root_state, N_rollouts=100, perspective=my_player)
+results = estimate_optimal_move(
+    root_state, N_rollouts=500, perspective=my_player)
+
+win_percentage_list = list(results["win_percentages"])
+maximum_win_card_percentage = max(
+    win_percentage_list,
+    key=lambda x:x[1]
+    )
 
 
-for i, v in move_estimates.items():  # noqa: PERF102
+sorted_win_percentage_list = sorted(win_percentage_list,
+                                    key=lambda x:x[1],
+                                    reverse=True)
 
-    print(f"{my_player}'s hand ", root_state.hands[my_player])
-    print("Win Percentage per Card", list(v["win_percentages"]))
-    print("Highest Percentage Card", max(v["win_percentages"]), '\n')
-    print("Optimal Card", v["optimal_move"])
-    print("Highest Card Probability", v["optimal_move_probability"])
-    print("Least Optimal Card", v["least_optimal_move"])
-    print("Lowest Card Probability", v["lowest_move_probability"])
+print(" ")
+print(f"{my_player}'s hand ", root_state.hands[my_player])
+print("Win Percentage per Card:\n\n", "".join(f"{r}\n " for r in sorted_win_percentage_list))
+print("Highest Percentage Card", maximum_win_card_percentage, '\n')
+print("Optimal Card", results["optimal_move"])
+print("Highest Card Probability", results["optimal_move_probability"])
+print("Least Optimal Card", results["least_optimal_move"])
+print("Lowest Card Probability", results["lowest_move_probability"])
 
 # End time
 end_time = time.perf_counter()
