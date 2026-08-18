@@ -1,13 +1,13 @@
 import time
 
-from main_mc import estimate_optimal_move, my_player, root_state
+from hand_evaluator import HandEvaluator
+from main_mc import 
 
 # Start time
 
 strt_time = time.perf_counter()
 
-results = estimate_optimal_move(
-    root_state, N_rollouts=500, perspective=my_player)
+results = HandEvaluator().estimate_optimal_move()
 
 win_percentage_list = list(results["win_percentages"])
 maximum_win_card_percentage = max(
@@ -32,12 +32,3 @@ print("Lowest Card Probability", results["lowest_move_probability"])
 # End time
 end_time = time.perf_counter()
 print(f"Execution time: {end_time - strt_time:.2f} seconds")
-
-
-# Mostly working now, just need some quality of life changes, the main bug was the logic
-# I need to estabbllish that the assigned leader is the first player to play however, this should be derived not set manuyally
-# e.g first player to play in trump tuple otherwise first player in player order
-# Furthermore the core logic was wrong as you should only be able to simulate after what you have played,
-# Not just randomly simulate what is going to happen as this is a not realistic. 
-# The core principle of the game means you have information before you play unless you are first,
-# However that already worked so I was getting stressed over fixing something that didn;t need fixing.

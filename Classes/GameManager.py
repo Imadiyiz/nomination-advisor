@@ -1,24 +1,27 @@
 # Contents of the GameManager class
 
-from .TableClass import Table
-from .DeckClass import Deck
-from .PlayerClass import Player
 import random
-from .ScoreboardClass import Scoreboard
-from .UIManager import UIManager
-from .BiddingManager import BiddingManager
-from .PlayerStateManager import PlayerStateManager
-from .TrumpManager import TrumpManager
-from Utils.tools import clear_screen
-from .StepClass import *
-from .PlayerSetupFlow import PlayerSetupFlow
-from .BiddingFlow import BiddingFlow
-from .InitialTrumpFlow import InitialTrumpFlow
-from .PlayingFlow import PlayingFlow
-from .LocalCardAssignmentFlow import LocalCardAssignmentFlow
-from .IterativeTrumpFlow import IterativeTrumpFlow
 from enum import Enum
+
+from Utils.tools import clear_screen
+
+from .BiddingFlow import BiddingFlow
+from .BiddingManager import BiddingManager
 from .CardClass import Card
+from .DeckClass import Deck
+from .InitialTrumpFlow import InitialTrumpFlow
+from .IterativeTrumpFlow import IterativeTrumpFlow
+from .LocalCardAssignmentFlow import LocalCardAssignmentFlow
+from .PlayerClass import Player
+from .PlayerSetupFlow import PlayerSetupFlow
+from .PlayerStateManager import PlayerStateManager
+from .PlayingFlow import PlayingFlow
+from .ScoreboardClass import Scoreboard
+from .StepClass import *
+from .TableClass import Table
+from .TrumpManager import TrumpManager
+from .UIManager import UIManager
+
 
 class Phase(Enum):
         PLAYER_SELECTION = "player_selection"

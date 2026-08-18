@@ -1,4 +1,3 @@
-import random
 from dataclasses import dataclass
 
 from Classes.CardClass import Card
@@ -22,17 +21,30 @@ class GameState:
     
     hands: dict[PlayerStr, set[CardStr]]           # player_id -> cards.initials
     current_trick: tuple[tuple[PlayerStr, CardStr], ...]        # (player_id, card)
-    leader: PlayerStr                     # player_id whose turn it is
     trump_suit: TrumpStr
     player_order: tuple[PlayerStr, ...]   # fixed seating order
     round_scores: dict[PlayerStr, int]
     bids: dict[PlayerStr, int]
     cards_remaining: int
     winner: PlayerStr = ''              # Winner of the previous trick
+    leader: PlayerStr = ''              
 
 
     # Class constants
     valid_initials = Deck().generate_valid_card_initials()
+
+    # must be used to avoid generating inaccurate worlds
+    def _get_leader(self, players: tuple, current_trick: tuple) -> str:
+        """
+        Returns a valid leader given the current trick restraints
+        """
+        if not current_trick:
+            return players[0]
+        leader = current_trick[0][0]
+
+        if leader not in players:
+            raise RuntimeError("The player who played the first trump card has not been registered")
+        return leader
 
     def _get_turn_order(self) -> tuple[PlayerStr, ...]:
         """Returns player order based on game leader's pos index """
@@ -160,82 +172,15 @@ class GameState:
         """
         round or trick is terminal
         """
+
+        # Terminal state if there are no cards remaining in play 
         if round == True:
             return self.cards_remaining == 0
 
-        return self.winner != '' and round == False
-    
 
-class RolloutSimulator:
+        # Terminal state if a winner has been declared
+        return self.winner != '' and round == False              
 
-    def __init__(self, state: GameState):
-        # local mutable copy
-        self.state = state
-
-    def rollout_round(self) -> dict[PlayerStr, int]:
-
-        self.state.winner = ''  # Reset winner to ensure the trick is not considered complete at the start
-        while not self.state.is_terminal():
-            
-            player = self.state._next_player()
-            legal_moves = self.state.get_legal_moves(player)
-            if not tuple(legal_moves):
-                raise ValueError("There is a duplicate card in play, please check assigned cards")
-            move = random.choice(tuple(legal_moves))
-
-            self.state = self.state._apply_move(player, move)
-
-        return self.state.round_scores
-
-    def rollout_trick_until_perspective(self, perspective: PlayerStr) -> "set[CardStr]":
-
-        """Completes rollout until it is the perspective player's turn to play, then returns the legal moves for that player. 
-        This function does not play the perspective player's move, it only advances the game state to their turn."""
-
-        self.state.winner = ''  # Reset winner to ensure the trick is not considered complete at the start
-        while not self.state.is_terminal(round=False):
-            player = self.state._next_player()
-            legal_moves = self.state.get_legal_moves(player)
-            if not tuple(legal_moves):
-                raise ValueError("There is a duplicate card in play, please check assigned cards RTUP")
-
-            # If the current player is the perspective player, return the legal moves for that player
-            if player == perspective:
-                return self.state.get_legal_moves(perspective)
-                # while the player has been skipped, the loop will keep repeating the same player as next_player() gives the same next player as it is based off of the leader
-            else:
-                move = random.choice(tuple(legal_moves))
-                self.state = self.state._apply_move(player, move)
-
-    def rollout_trick(self, perspective: PlayerStr, chosen_card: CardStr) -> PlayerStr:
-
-        """
-        Similar to rollout round however, it terminates after finishing a trick
-        """
-
-        while not self.state.is_terminal(round=False):
-            player = self.state._next_player()
-            legal_moves = self.state.get_legal_moves(player) # The real truth
-
-            if not tuple(legal_moves):
-                    raise ValueError("There is a duplicate card in play, please check assigned cards RT")
-
-            # Perspective plays chosen card, others play random legal cards
-            if player == perspective:
-                move = chosen_card
-                self.state = self.state._apply_move(player, move)
-            # Determine if the player has already played a card in the current trick
-            elif any(play[0] == player for play in self.state.current_trick):
-                continue  # Skip this player if they have already played
-            else:
-                move = random.choice(tuple(legal_moves))
-                self.state = self.state._apply_move(player, move)
-        return self.state.winner                    
-
-
-
-
-### It never reduces the cards remaining when there are already items in the trick.
 """ 
 i need to incorporate bid information into gamestate so that the bots in the simulation can change their bidding strategy to match their bid
 
