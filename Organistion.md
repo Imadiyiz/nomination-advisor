@@ -33,6 +33,10 @@ GameManager is working as a Super class as it is performing too much within itse
 
 I thought about changing the way cards are calculated. Currently they are assigned values via a map to value based on their initials, whereas they could simply be a number, which could be divided into suits depending on whether they mod to 0 via a number mapped to a suit. e.g 40 could be 10S and 44 could be JS. However, upon my research performing mod operations isn't constant time complexity therefore, I do not think it is worth the refactor. I will need to test the time taken by the code in order to determine it.
 
+Additionslly I need to spend the time creating tests for my classes as they are not robust. It would have been nice to be writing tests and program simultaneuously however, this can't always be done. One class I need to focus on the most is the gamestate class as it is the backbone of my Monte Carlo simulation.
+
+[ ] Created unit tests for GameState class
+
 ### Key points
 
 Continue to update this file to reduce mental workload - Programming is difficult with a large mental workload, more planning and forward thinking can reduce this, making the process more enjoyable.
@@ -43,3 +47,15 @@ When will you know that the evaluator actually gives you an edge and isn't just 
 
 A: I will do my own personal testing, to see if I can beat my friends over the span of maybe 10 games. Despite the small sample size I will know whether my actual decision making and the evaluator's decision making is different and whether the evaluator's option provides a winning outcome. As in I will be to get a sense of whether the evaluator's points are sane or whether they are random or follow a certain pattern. It will also be interesting to see if my friends have a different approach when playing a robot as I have previously played over 200 games with them.
 For a more mathematical approach I could perform an experiment where I perform n_rollouts for each unqiue possible hand, and determine whether there are any hidden patterns by plotting the distributions in an excel speadsheet or matplot on python.
+
+
+CHANGE THOUGHT PROCESS
+
+CARD     WIN TRICK    MAKE BID    FINAL SCORE
+──────────────────────────────────────────────
+A♠          92%          18%          4.2
+K♦          61%          54%         12.8
+7♣          23%          71%         15.4
+4♥          11%          63%         13.1
+
+This is more insightful compared to simulating to the end of the trick

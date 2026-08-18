@@ -35,6 +35,10 @@ class GameState:
     # Class constants
     valid_initials = Deck().generate_valid_card_initials()
 
+    def __post_init__(self):
+        if not self._leader:
+            self._leader = self._get_leader(self.player_order, self.current_trick)
+
     # must be used to avoid generating inaccurate worlds
     def _get_leader(self, players: tuple, current_trick: tuple) -> str:
         """
@@ -55,12 +59,6 @@ class GameState:
     def _get_turn_order(self) -> tuple[PlayerStr, ...]:
         """Returns player order based on game leader's pos index """
 
-        # Should always work as it the first use point for self._leader, therefore,
-        # The first leader should be the default leader not the winner leader
-        
-        if not self._leader:
-            self._leader = self._get_leader(self.player_order, self.current_trick)
-
         start_index = self.player_order.index(self._leader)
 
         return (
@@ -68,7 +66,7 @@ class GameState:
         self.player_order[:start_index]
         )
 
-    def _next_player(self) -> PlayerStr:
+    def next_player(self) -> PlayerStr:
         order = self._get_turn_order()
         return order[len(self.current_trick)]
 
@@ -80,7 +78,7 @@ class GameState:
         :returns set of legal moves
         """
 
-        player_hand = self.hands[player] # hands are null 
+        player_hand = self.hands[player] 
 
         if not self.current_trick:
             return set(player_hand)
@@ -97,7 +95,7 @@ class GameState:
             # if no legal moves, any card can be discarded
             return set(player_hand)
     
-    def _apply_move(self, player: PlayerStr, card: CardStr) -> "GameState":
+    def apply_move(self, player: PlayerStr, card: CardStr) -> "GameState":
         """
         Returns a NEW GameState after move
         """
@@ -193,8 +191,3 @@ class GameState:
 
         # Terminal state if a winner has been declared
         return self.winner != '' and round == False              
-
-""" 
-i need to incorporate bid information into gamestate so that the bots in the simulation can change their bidding strategy to match their bid
-
-"""

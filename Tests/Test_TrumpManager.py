@@ -15,7 +15,7 @@ def computer_player_set():
 
 @pytest.fixture
 def human_player():
-    return Player(name=f"Human", round_score=5, computer = False)
+    return Player(name="Human", round_score=5, computer = False)
 
 @pytest.fixture
 def trump_manager():

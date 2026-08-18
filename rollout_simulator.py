@@ -24,13 +24,13 @@ class RolloutSimulator:
         self.state.winner = ''  # Reset winner to ensure the trick is not considered complete at the start
         while not self.state.is_terminal():
             
-            player = self.state._next_player()
+            player = self.state.next_player()
             legal_moves = self.state.get_legal_moves(player)
             if not tuple(legal_moves):
                 raise ValueError("There is a duplicate card in play, please check assigned cards")
             move = random.choice(tuple(legal_moves))
 
-            self.state = self.state._apply_move(player, move)
+            self.state = self.state.apply_move(player, move)
 
         return self.state.round_scores
 
@@ -40,8 +40,9 @@ class RolloutSimulator:
         Similar to rollout round however, it terminates after finishing a trick
         """
 
+        self.winner = '' # reset winner before new one is assigned
         while not self.state.is_terminal(round=False):
-            player = self.state._next_player()
+            player = self.state.next_player()
             legal_moves = self.state.get_legal_moves(player) # The real truth
 
             if not tuple(legal_moves):
@@ -53,6 +54,6 @@ class RolloutSimulator:
             else:
                 move = random.choice(tuple(legal_moves))
 
-            self.state = self.state._apply_move(player, move)
+            self.state = self.state.apply_move(player, move)
 
         return self.state.winner      

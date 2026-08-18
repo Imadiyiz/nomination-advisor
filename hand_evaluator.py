@@ -74,11 +74,10 @@ class HandEvaluator:
         """ 
 
         # Initialise variables and dictionaries
-        true_legal_moves = {}
         perspective_hand = list(self.root_state.hands[self.perspective])
         
         # Want to track, per card, how many times it was eligible to be played, and how many times it won
-        tricks_won = {card: 0.0 for card in perspective_hand} 
+        tricks_won = {card: 0 for card in perspective_hand} 
         attempts_per_card = {card: 0.0 for card in perspective_hand} 
 
         for _ in range(self.N_rollouts):
