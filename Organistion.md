@@ -13,7 +13,7 @@ I want to make the trick evaluation in EOM by making the articifical players in 
 
 I want to turn the main_mc.py script into a class to follow best principles and avoid repeating the parameters. This would be called HandEvaluator which would be initialised with a root_state, perspective and belief model. 
 
-- [ ] Successfully implemented the class HandEvaluator (Do First)
+- [X] Successfully implemented the class HandEvaluator (Do First)
 
 ### Future Steps
 
