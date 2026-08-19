@@ -59,3 +59,23 @@ K♦          61%          54%         12.8
 4♥          11%          63%         13.1
 
 This is more insightful compared to simulating to the end of the trick
+
+
+# Quality of life changes to make to the Game CLI
+
+Formatting in general
+Some duplicate messages
+Make the player to play explicit
+Make it clear the cards should be redealt
+No idea what the total score is when bidding or playing the game
+Should be clear in the bidding phase
+Unplayable cards should be alerted, potentially red in color
+
+Round order is not clear as round score changes based on score not order
+A pointer icon on top of the player playing would solve this
+
+Unable to put lowercase for initial of cards in the round gameplay screen for other player
+
+Choose card should display [1] instead of [1-1] when selecting (Once len gets to 1 just show 1)
+
+Must indicate that the cards should be redealt for x amount of cards before the winner of the previous round is able to decide the new trump

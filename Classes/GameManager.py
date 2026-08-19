@@ -4,6 +4,7 @@ import random
 from enum import Enum
 
 from Utils.tools import clear_screen
+from Utils.card_tools import initials_to_id
 
 from .BiddingFlow import BiddingFlow
 from .BiddingManager import BiddingManager
@@ -22,6 +23,11 @@ from .TableClass import Table
 from .TrumpManager import TrumpManager
 from .UIManager import UIManager
 
+VALID_CARD_INITIALS = {
+    (f"{rank}{suit}")
+    for rank in (2,3,4,5,6,7,8,9,10,'J','Q','K','A')
+    for suit in "CDHS"
+    }
 
 class Phase(Enum):
         PLAYER_SELECTION = "player_selection"
@@ -74,13 +80,8 @@ class Game:
 
         self.player_queue = [] #queue for playing during rounds
 
-        #IF SHUFFLE IS NECEESARY
-        #places the shuffled players into the actual list in their new order
-        #random.shuffle(self.player_queue)
-        
-        #run gameloop after creating the game   
-
     def start(self):
+        clear_screen() 
         self.create_game()
         self.run_game_phases()
         clear_screen(2)    
@@ -103,7 +104,7 @@ class Game:
         self.biddingFlow = BiddingFlow(self.player_queue)
         self.initialTrumpFlow = InitialTrumpFlow()
         self.localCardAssignmentFlow = LocalCardAssignmentFlow(
-            self.deck.generate_valid_card_initials())
+            VALID_CARD_INITIALS)
 
     def run_game_phases(self):
         """
@@ -153,25 +154,11 @@ class Game:
         """
         
         #initialise objects and reset
-        self.deck.deck = self.deck.generate_deck()
         max_cards = self.cards_per_round[self.round-1]
         self.scoreboard = Scoreboard(self.player_queue)
         self.scoreboard.reset_round_scoreboard()
 
-
-
         for player in self.player_queue:
-
-            """
-            if player.opponent:
-                for _ in range(self.cards_per_round[self.round-1]):
-                    card = self.deck.deck.pop()
-                    player.hand.append(card)
-                    player.own_hand()
-                continue
-            """ 
-            # not required as the opponents will have unknown 
-            # irl hands. 
 
             # local players only
             if not player.opponent: 
@@ -185,13 +172,14 @@ class Game:
                     )
                     
                     # choice of initials has already been sanitised
-                    chosen_card = self.deck.draw_card_from_initials(choice_of_initials)
+                    chosen_card = self.deck.draw_specific_card(choice_of_initials)
+                    print(chosen_card, "chosen card")
                     if chosen_card:
                         player.hand.append(chosen_card)
                         player.own_hand()
                     else:
                         print(f"{choice_of_initials} is no longer in the deck")
-                        print(len(self.deck.deck))
+                        print(len(self.deck))
 
         
         if self.round == 1:
@@ -209,7 +197,7 @@ class Game:
         cards =  self.cards_per_round[self.round-1]
         print(f"ROUND {self.round} - Bidding Phase ({cards} cards per hand)\n")
 
-        context = self.initialTrumpFlow.run(self.deck.valid_card_initials)
+        context = self.initialTrumpFlow.run(VALID_CARD_INITIALS)
         manual_trump_generation = context['manual_trump_generation']
         trump_card_initials = context['trump_card_initials']
 
@@ -219,24 +207,24 @@ class Game:
 
         #   manual trump selection
         else:
-            card = self.deck.draw_card_from_initials(trump_card_initials)
+            card = self.deck.draw_specific_card(trump_card_initials)
             if not card:
                 print("Invalid card")
                 return
         
-            self.trump_suit = card.suit[0]
+            self.trump_suit = card.suit
 
         self.phase = Phase.BIDDING
     
     def select_trump_automatically(self):
 
         clear_screen()
-        trump_card = self.deck.deck[0]
+        trump_card = self.deck.draw_random()
         #determine trump
         #since deck is already shuffled, pick first card
         # choose the trump after cards have been assinged to players
         self.trump_suit = trump_card.suit[0]
-        print(f"Random trump card - {str(trump_card)}")
+        print(f"Random trump card - {trump_card}")
         print("Trump suit: ", self.trump_suit)
 
         return trump_card
@@ -322,7 +310,6 @@ class Game:
     def start_round(self):
         """
         Logic for the functionality of the playing round
-
         """
         self.table.reset()
         self.scoreboard.reorder_round_scoreboard(
@@ -331,7 +318,7 @@ class Game:
         self.playingFlow = PlayingFlow(
             self.table,
             self.scoreboard,
-            self.deck.permanent_valid_card_initials)
+            VALID_CARD_INITIALS)
         
         for player in self.temp_player_queue:
 
@@ -344,7 +331,7 @@ class Game:
                 if player.opponent:
                     selected_card = self._materialise_played_card(player, choice)
                     if not selected_card:
-                        print(f"invalid card input, card is not longer in the deck")
+                        print("invalid card input, card is not longer in the deck")
                         continue
 
                     print(f"{player} selected card", selected_card)
@@ -421,10 +408,11 @@ class Game:
         the card owner to the player
         choice is the initials for the card
         """
-        card = self.deck.draw_card_from_initials(choice)
 
-        if not card:
+        if not self.deck.contains(initials_to_id(choice)):
             return None
+        
+        card = self.deck.draw_specific_card(choice)
 
         card.owner = player
         return card

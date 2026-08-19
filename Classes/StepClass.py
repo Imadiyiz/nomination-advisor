@@ -310,7 +310,7 @@ class PlayerPlayCardStep(Step):
     """
     
     prompt_required_arguments = {"player", 
-                                   "trump_suit_symbol",
+                                   "trump_suit",
                                    "table",
                                    "scoreboard"}
     
@@ -328,10 +328,10 @@ class PlayerPlayCardStep(Step):
         
         scoreboard = args['scoreboard']
         player = args['player']
-        trump_suit_symbol = args['trump_suit_symbol']
+        trump_suit = args['trump_suit']
         table = args['table']
 
-        player_headline_string = f"▶\t {player.name} to play\t|\tTrump: {trump_suit_symbol}"
+        player_headline_string = f"▶\t {player.name} to play\t|\tTrump: {trump_suit}"
         round_scoreboard_string = f"Round score: {scoreboard.display()}"
         table_string = f"Table:\n{table.display_stack()}"
         hand_string = f"Hand:\n{format_hand(player.hand)}"
@@ -395,7 +395,7 @@ class OpponentPlayCardStep(Step):
     """
     
     prompt_required_arguments = {"opponent", 
-                                   "trump_suit_symbol",
+                                   "trump_suit",
                                    "table",
                                    "scoreboard",}
     
@@ -411,10 +411,10 @@ class OpponentPlayCardStep(Step):
         
         scoreboard = args['scoreboard']
         opponent = args['opponent']
-        trump_suit_symbol = args['trump_suit_symbol']
+        trump_suit = args['trump_suit']
         table = args['table']
         
-        player_headline_string = f"▶\t{opponent.name} to play\t|\tTrump: {trump_suit_symbol}"
+        player_headline_string = f"▶\t{opponent.name} to play\t|\tTrump: {trump_suit}"
         round_scoreboard_string = f"Round score: {scoreboard.display(round=True)}"
         table_string = f"Table:\n{table.display_stack()}"
         hand_string = f"Hand:\n{format_hand(opponent.hand)}"

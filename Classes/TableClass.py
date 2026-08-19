@@ -21,7 +21,7 @@ class Table:
             UIManager (UIManager): The UI manager instance for displaying messages
         """
 
-        self.stack = list()
+        self.stack = []
         self.UIManager = UIManager
 
     
@@ -42,13 +42,13 @@ class Table:
 
             for card in _reversed_stack:
                 if len(card.initials) >= 3:
-                     string += f"{str(card)}   ~  {card.owner}\n"
+                     string += f"{card}   ~  {card.owner}\n"
                 else:
-                     string += f" {str(card)}   ~  {card.owner}\n"
+                     string += f" {card}   ~  {card.owner}\n"
             return string
         return "(Empty)" 
 
-    def _add_to_stack(self, card: Card = None):
+    def _add_to_stack(self, card: Card):
         """
         Adds a card to the table stack
 
@@ -76,20 +76,23 @@ class Table:
 
         if self.stack: 
 
-            if card.suit[0] == trump_suit:
+            if card.suit == trump_suit:
                  return True
             
             first_card = self.stack[0] # gets the first card in stack
 
-            first_suit = first_card.suit[0].lower()
+            first_suit = first_card.suit.lower()
             
             # True if any of the cards' suits match the first card
             must_follow_suit = self._has_suit(hand=player_hand,
                                               suit=first_suit)
             #must play first card suit
             if must_follow_suit and card.suit[0].lower() != first_card.suit[0].lower():
-                print(
-                    f"Invalid card choice - Must be {first_card.suit[0]} or {trump_suit} suit")
+                if first_card.suit != trump_suit:
+                    print(
+                    f"Invalid card choice - Must be {first_card.suit} or {trump_suit} suit")
+                else:
+                    print(f"Invalid card choice - Must be {trump_suit} suit") 
                 return False
         return True
 
@@ -108,37 +111,35 @@ class Table:
         """
 
         if not self.stack:
-            return None
+            raise ValueError("No stack on the table, cannot verify winner")
         
         trump_suit = trump_suit.lower()
-        first_suit = self.stack[0].suit[0].lower()
+        first_suit = self.stack[0].suit.lower()
 
         #gets all the trump cards in the current stack
-        trump_cards = [c for c in self.stack if c.suit[0].lower() == trump_suit]
+        trump_cards = [c for c in self.stack if c.suit.lower() == trump_suit]
 
         if trump_cards:
-            return max(trump_cards, key=lambda c: c.value[1])
+            return max(trump_cards, key=lambda c: c.value)
         
         follow_suit_cards = [
-        c for c in self.stack if c.suit[0].lower() == first_suit]
+        c for c in self.stack if c.suit.lower() == first_suit]
 
-        return max(follow_suit_cards, key=lambda c: c.value[1])
+        return max(follow_suit_cards, key=lambda c: c.value)
 
     def reset(self):
         """
         Resets the table by clearing the stack
         """
-
-        self.stack = list()
+        self.stack = []
 
     def _has_suit(self, hand: list[Card], suit: str):
         """
         Returns boolean value depending on whether
         the suit is present in the hand
         """
-
         return any(
-            card.suit[0].lower() == suit for card in hand)
+            card.suit.lower() == suit for card in hand)
 
     def play_card_to_table(self, card: Card, 
                         player: Player,

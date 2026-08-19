@@ -1,7 +1,5 @@
-# Class script for the cards in the deck
+from Utils.card_tools import *
 
-# value tuple should probably just be an integer and should use encoding to decipher string value
-# e.g. 14 -> 'Ace' because it is // 10 == 1 and 7 -> '7'
 class Card:
 
     """
@@ -17,8 +15,6 @@ class Card:
         owner (Player, optional): The owner of the card.
 
     Methods:
-        generate_picture():
-            Generates and returns an ASCII representation of the card.
 
         __eq__(other):
             Checks equality between two Card objects based on suit and value.
@@ -30,20 +26,17 @@ class Card:
             Returns a hash value for the card, allowing it to be used in sets and dictionaries.
     """
 
-    def __init__(self, suit: tuple, value: tuple, owner: 'Player' = None): # Forward reference to avoid nameError
-        self.suit = suit
-        self.value = value
+    def __init__(self, owner: 'Player' = None, card_id: int = 0): # Forward reference to avoid nameError
+        self.suit = get_suit(card_id)
+        self.value = get_rank(card_id)
         self.owner = owner
-        self.initials = "".join([
-            self.value[0],
-            self.suit[0][0].upper(),
-        ])
+        self.id = card_id
+        self.initials = card_to_initials(card_id)
 
     @classmethod
     def from_initials(cls, initials: str):
         """
         Convert initials like '10H' or 'QS' into (value_str, suit_letter)
-
         e.g ("10", "H"), ("Q", "S")
         """
 
@@ -53,22 +46,17 @@ class Card:
         
         value_part = initials[:-1].upper()  # removes the end character
         suit_part = initials[-1].upper()  # suit part is the last character
-
-
         return value_part, suit_part
-    
-    
-    def to_initials(self) -> str:
-        """Returns initials form for card"""
-        return f"{self.value[0]}{self.suit[0][0]}"
-
-
 
     def __eq__(self, other):
-        return self.initials == other.initials
+        if not isinstance(other, Card):
+            return NotImplemented
+        return str(self) == str(other)
     
     def __str__(self):
-        return f"{self.value[0]} {self.suit[1]}"
+        v, _ = self.from_initials(self.initials)
+        symbol = get_suit_symbol(self.id)
+        return initials_to_prose(v, symbol)
     
     def __hash__(self):
         return hash(str(self))

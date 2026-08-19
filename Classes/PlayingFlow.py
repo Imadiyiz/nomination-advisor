@@ -90,23 +90,14 @@ class PlayingFlow:
         Returns
             int: initials of selected card
         """
-
-        suit_to_symbol = {
-            "clubs" : "♣",
-            "diamonds" : "♦",
-            "hearts" : "♥",
-            "spades" : "♠",
-        }
-
-        trump_suit_symbol = suit_to_symbol[trump_suit.lower()]
-
+        
         while True:
             
             result = self.stepManager.run_step(
                         step = OpponentPlayCardStep(),
                         prompt_args={
                             "opponent": player,
-                            "trump_suit_symbol": trump_suit_symbol,
+                            "trump_suit": trump_suit,
                             "scoreboard": self.scoreboard,
                             "table": self.table},
 

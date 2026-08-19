@@ -13,10 +13,10 @@ class IterativeTrumpFlow:
     
     def run(self, player):
 
-        suits_map = {'C': 'Clubs',
-                      'S': 'Spades',
-                        'H': 'Hearts',
-                          'D': 'Diamonds'}
+        suits_map = {'C': 'Clubs  ♣',
+                      'S': 'Spades  ♣',
+                        'H': 'Hearts  ♥',
+                          'D': 'Diamonds  ♦'}
         prompt_args = {'suits_map' : suits_map,
                        'player': player}
         validate_args = {'suits_map' : suits_map}

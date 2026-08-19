@@ -15,7 +15,7 @@ class Scoreboard:
             self.players_by_name[player.name] = player
         
         
-    def display(self, round: bool = True) -> list:
+    def display(self, round: bool = True) -> str:
         """
         Function for outputting the scores in the game
 

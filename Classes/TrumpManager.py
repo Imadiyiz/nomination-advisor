@@ -25,8 +25,8 @@ class TrumpManager:
         """
 
         #find top scorers
-        scores = dict()
-        top_players = list()
+        scores = {}
+        top_players = []
         for player in players:
             scores[player] = player.round_score
         top_score = max(scores.values())
