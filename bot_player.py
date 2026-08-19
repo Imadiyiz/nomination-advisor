@@ -1,0 +1,1 @@
+# Bot player who will make decisions during simulation
