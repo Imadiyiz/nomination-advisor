@@ -1,11 +1,8 @@
 from dataclasses import dataclass
 
-from Classes.CardClass import Card
-from Classes.DeckClass import Deck
+from Utils.card_tools import *
+from Utils.types import *
 
-CardStr = str
-PlayerStr = str
-TrumpStr = str
 
 @dataclass()
 class GameState:
@@ -19,8 +16,8 @@ class GameState:
         
     """
     
-    hands: dict[PlayerStr, set[CardStr]]           # player_id -> cards.initials
-    current_trick: tuple[tuple[PlayerStr, CardStr], ...]        # (player_id, card)
+    hands: dict[PlayerStr, set[CardInt]]           # player_id -> cards.initials
+    current_trick: tuple[tuple[PlayerStr, CardInt], ...]        # (player_id, card)
     trump_suit: TrumpStr
     player_order: tuple[PlayerStr, ...]   # fixed seating order
     round_scores: dict[PlayerStr, int]
@@ -31,16 +28,12 @@ class GameState:
     # Private attribute
     _leader: PlayerStr = ''              
 
-
-    # Class constants
-    valid_initials = Deck().generate_valid_card_initials()
-
     def __post_init__(self):
         if not self._leader:
             self._leader = self._get_leader(self.player_order, self.current_trick)
 
     # must be used to avoid generating inaccurate worlds
-    def _get_leader(self, players: tuple, current_trick: tuple) -> str:
+    def _get_leader(self, players: tuple[PlayerStr, ...], current_trick: tuple[tuple[PlayerStr, CardInt],...] ) -> str:
         """
         Returns a valid leader given the current trick restraints
         """
@@ -70,7 +63,7 @@ class GameState:
         order = self._get_turn_order()
         return order[len(self.current_trick)]
 
-    def get_legal_moves(self, player: PlayerStr) -> set[CardStr]:
+    def get_legal_moves(self, player: PlayerStr) -> set[CardInt]:
         """
         Function for identifing legal moves given;
         enforces follow-suit and respects trump rules
@@ -83,10 +76,10 @@ class GameState:
         if not self.current_trick:
             return set(player_hand)
 
-        lead_suit = self.current_trick[0][1][-1]
+        lead_suit = get_suit(self.current_trick[0][1])
         
         follow_cards = {card for card in player_hand 
-                        if card[-1] == lead_suit
+                        if get_suit(card) == lead_suit
         }
         
         if follow_cards:
@@ -95,7 +88,7 @@ class GameState:
             # if no legal moves, any card can be discarded
             return set(player_hand)
     
-    def apply_move(self, player: PlayerStr, card: CardStr) -> "GameState":
+    def apply_move(self, player: PlayerStr, card: CardInt) -> "GameState":
         """
         Returns a NEW GameState after move
         """
@@ -146,37 +139,28 @@ class GameState:
 
 
     def _resolve_trick(
-            self, trick: tuple[tuple[PlayerStr, CardStr], ...]
+            self, trick: tuple[tuple[PlayerStr, CardInt], ...]
     ) -> PlayerStr:
         
         """ Returns player who wins the trick"""
         
-        lead_suit = trick[0][1][-1]
-
-        def _card_value(card_str: CardStr) -> int:
-            rank, _ = Card.from_initials(card_str) 
-            picture_to_rank = {"J": 11, "Q": 12, "K": 13, "A": 14}
-            
-            if rank.isnumeric():
-                return int(rank)
-                
-            return picture_to_rank[rank]
+        lead_suit = get_suit(trick[0][1])
         
         # trump suit evaluation
         trump_cards = [
             (player, card) for player, card in trick
-            if card[-1] == self.trump_suit
+            if get_suit(card) == self.trump_suit
         ]
 
         if trump_cards:
-            return max(trump_cards, key = lambda tc: _card_value(tc[1]))[0]
+            return max(trump_cards, key = lambda tc: get_rank(tc[1]))[0]
         
         # Lead suit evaluation
         lead_cards = [
-            (p, c) for p, c in trick if c[-1] == lead_suit
+            (p, c) for p, c in trick if get_suit(c) == lead_suit
         ]
 
-        return max(lead_cards, key=lambda lc: _card_value(lc[1]))[0]
+        return max(lead_cards, key=lambda lc: get_rank(lc[1]))[0]
 
     
     def is_terminal(self, round = True) -> bool:

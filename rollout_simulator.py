@@ -1,10 +1,8 @@
 import random
 
 from game_engine import GameState
-
-CardStr = str
-PlayerStr = str
-TrumpStr = str
+from Utils.card_tools import *
+from Utils.types import *
 
 
 class RolloutSimulator:
@@ -34,7 +32,7 @@ class RolloutSimulator:
 
         return self.state.round_scores
 
-    def rollout_trick(self, perspective: PlayerStr, chosen_card: CardStr) -> PlayerStr:
+    def rollout_trick(self, perspective: PlayerStr, chosen_card: CardInt) -> PlayerStr:
 
         """
         Similar to rollout round however, it terminates after finishing a trick

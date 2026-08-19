@@ -31,7 +31,7 @@ class Card:
         self.value = get_rank(card_id)
         self.owner = owner
         self.id = card_id
-        self.initials = card_to_initials(card_id)
+        self.initials = id_to_initials(card_id)
 
     @classmethod
     def from_initials(cls, initials: str):
@@ -56,7 +56,7 @@ class Card:
     def __str__(self):
         v, _ = self.from_initials(self.initials)
         symbol = get_suit_symbol(self.id)
-        return initials_to_prose(v, symbol)
+        return f"{v} {symbol}"
     
     def __hash__(self):
         return hash(str(self))

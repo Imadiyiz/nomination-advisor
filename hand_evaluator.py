@@ -3,9 +3,10 @@ import copy
 from belief_model import BeliefModel
 from game_engine import GameState
 from rollout_simulator import RolloutSimulator
+from Utils.card_tools import *
+from Utils.types import *
 
-PlayerStr = str
-CardStr = str
+VALID_CARD_IDS = set(range(52))
 
 class HandEvaluator:
     def __init__(self, root_state: GameState, perspective: PlayerStr,
@@ -19,7 +20,7 @@ class HandEvaluator:
 
         return BeliefModel(
             void_suits = {p: set() for p in self.root_state.player_order},
-            unknown_cards=self.root_state.valid_initials - self.root_state.hands[self.perspective],
+            unknown_cards = VALID_CARD_IDS - self.root_state.hands[self.perspective],
             hand_sizes={p: len(self.root_state.hands[p]) for p in self.root_state.player_order},
             perspective_player=self.perspective            
         )
@@ -30,7 +31,7 @@ class HandEvaluator:
         """
 
         # Sample a possible world consistent with beliefs
-        sampled_hands: dict[PlayerStr, set[CardStr]] = self.belief_model.sample_world()
+        sampled_hands: dict[PlayerStr, set[CardInt]] = self.belief_model.sample_world()
         sampled_hands[self.perspective] = self.root_state.hands[self.perspective]
 
         # Construct determinised state
@@ -48,11 +49,17 @@ class HandEvaluator:
 
 
     def _won_simulated_card_play(self, determinised_state: GameState, 
-                                card_to_play: CardStr = '') -> int:
+                                card_to_play: CardInt) -> int:
         """
         Simulates a trick where the perspective player plays their card.
         If the perspective player wins the trick, returns 1, else returns 0.
         """
+
+        if not card_to_play:
+            raise ValueError("No card to play")
+        
+        if 0 > card_to_play or 51 < card_to_play:
+            raise ValueError("Invalid Card Chosen, must be with 0-51")
         
         # Create a deep copy of the determinised state to avoid modifying the original
         determinised_state_copy = copy.deepcopy(determinised_state)
@@ -96,7 +103,7 @@ class HandEvaluator:
     
         # Expected win percentage for the card played if the card was played at all
         move_win_distribution = {
-            card: tricks_won[card] / attempts_per_card[card] 
+            id_to_initials(card): tricks_won[card] / attempts_per_card[card] 
             for card in perspective_hand if attempts_per_card[card] > 0
             }
     

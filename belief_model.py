@@ -2,8 +2,13 @@
 
 import random
 from dataclasses import dataclass
+from Utils.card_tools import *
 
 
+from Utils.types import *
+# Purposefully decided not to add a score attribute to the belief model as I believe,
+# that the score shouldn;t be bound to the belief model class as it would need update for each
+# instance and it would become coupled with the instance even though the score does affect the belief model
 @dataclass
 class BeliefModel:
     """
@@ -12,15 +17,15 @@ class BeliefModel:
     """
 
     void_suits: dict[str, set[str]] # dict, player id, set(suit)
-    unknown_cards: set[str]         # cards not yet assigned
-    hand_sizes: dict[str, int]      # player -> cards remaining
-    perspective_player: str
+    unknown_cards: set[CardInt]         # cards not yet assigned
+    hand_sizes: dict[PlayerStr, int]      # player -> cards remaining
+    perspective_player: PlayerStr
 
     def observe_play(self,
-                         player: str,
-                         card: str,
-                         lead_suit: str, 
-                         trump_suit: str):
+                         player: PlayerStr,
+                         card: CardInt,
+                         lead_card: CardInt, 
+                         trump_suit: CardInt):
         
         """
         Updates beliefs after watching a play
@@ -30,13 +35,14 @@ class BeliefModel:
         self.unknown_cards.discard(card)
         self.hand_sizes[player] -= 1
 
-        card_suit = card[-1]
+        card_suit = get_suit(card)
+        lead_suit = get_suit(lead_card)
 
         # infer void
         if card_suit != lead_suit:
             self.void_suits[player].add(lead_suit)
 
-    def sample_world(self) -> dict[str, set[str]]:
+    def sample_world(self) -> dict[PlayerStr, set[CardInt]]:
         """
         Produce a concrete assignment of unknown cards
         which are consistent with all the constraints
@@ -54,7 +60,7 @@ class BeliefModel:
 
             possible_cards = [
                 c for c in remaining_cards
-                if c[-1] not in self.void_suits[player]
+                if get_suit(c) not in self.void_suits[player]
             ]
 
             if len(possible_cards) < size:

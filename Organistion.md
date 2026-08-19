@@ -7,13 +7,9 @@
 
 ### Next Step
 
-I want to make the trick evaluation in EOM by making the articifical players in a simulation play towards their bid. They should be aggressive when they can win tricks and passive when they want to lose tricks.
+I want to make the trick evaluation in EOM by making the articifical players in a simulation play towards their bid. They should be aggressive when they can win tricks and passive when they want to lose tricks. I have taken this a step further and tried to make the AI even smarter by having adjustable parameters. Essentially I am pivoting away from the imperfect information agent assistant and moving more towards having a strong AI that will help the player in real time.
 
-- [ ] Added Heuristics when choosing card for AI during rollout
-
-I want to turn the main_mc.py script into a class to follow best principles and avoid repeating the parameters. This would be called HandEvaluator which would be initialised with a root_state, perspective and belief model. 
-
-- [X] Successfully implemented the class HandEvaluator (Do First)
+- [ ] Added Heuristics when choosing card for AI during rollout (In progress)
 
 ### Future Steps
 
@@ -74,8 +70,29 @@ Unplayable cards should be alerted, potentially red in color
 Round order is not clear as round score changes based on score not order
 A pointer icon on top of the player playing would solve this
 
-Unable to put lowercase for initial of cards in the round gameplay screen for other player
-
-Choose card should display [1] instead of [1-1] when selecting (Once len gets to 1 just show 1)
-
 Must indicate that the cards should be redealt for x amount of cards before the winner of the previous round is able to decide the new trump
+
+
+V1 HeuristicClass
+
+parameters = {
+    "aggression": 0.45, # How often they are to bid higher than their random expected value
+    "belief_in_opponents": 0.90, # how likely they are to believe the players who
+    bid before them are successful
+    "adaptability": 0.75, # How often the parameters change based on new information,
+    "risk_tolerance": 0.1 # Decides when to make risky plays, with limited information 
+    ""
+}
+
+## latest error message
+
+Mode: 8 ~ 39.00%
+Traceback (most recent call last):
+  File "/Users/joshuaimadiyi/Michael SWE/nomination-advisor/main_mc.py", line 99, in <module>
+    
+  File "/Users/joshuaimadiyi/Michael SWE/nomination-advisor/hand_evaluator.py", line 100, in estimate_optimal_move
+    if self._won_simulated_card_play(determinised_state = determinised_state,
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/joshuaimadiyi/Michael SWE/nomination-advisor/hand_evaluator.py", line 59, in _won_simulated_card_play
+    raise ValueError("No card to play")
+ValueError: No card to play

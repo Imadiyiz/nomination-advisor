@@ -1,8 +1,5 @@
 # Contents for the Bidding Manager python file
-
 from .PlayerClass import Player
-from typing import List
-from Utils.tools import clear_screen
 
 
 class BiddingManager:
@@ -11,11 +8,11 @@ class BiddingManager:
     """
 
     def __init__(self, UIManager):
-        self.current_bids = dict()
+        self.current_bids = {}
         self.forbidden_bid = -1
         self.UIManager = UIManager
 
-    def update_current_bids(self, player_queue: List[Player]):
+    def update_current_bids(self, player_queue: list[Player]):
         """
         Function for updating the current bids dictionary based on the turn order
         Ideally meant to be used once before the round commenences
@@ -49,7 +46,7 @@ class BiddingManager:
         
         return False
 
-    def reset_bids(self, player_queue: List[Player]):
+    def reset_bids(self, player_queue: list[Player]):
         for player in player_queue:
             player.reset_bid()
             self.current_bids[player.name] = 'X'
@@ -61,7 +58,7 @@ class BiddingManager:
 
         total_bids = sum(int(bid) for bid in self.current_bids.values() if bid != 'X')
         banned_number = max_cards - total_bids 
-        return banned_number if banned_number > -1 else -1
+        return max(-1, banned_number)
 
 
     def get_round_difference(self, max_cards: int) -> int:
