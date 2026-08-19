@@ -27,7 +27,7 @@ class InitialTrumpFlow:
                 self.context['manual_trump_generation'] = False
                 return self.context  # can return here to avoid rest of script
 
-            clear_screen(1)
+            clear_screen() #1
 
         #step 2: Handle initial manual trump card selection
             trump_card_initials = self.stepManager.run_step(step = ManualTrumpStep(),

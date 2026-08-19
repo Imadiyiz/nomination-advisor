@@ -16,7 +16,7 @@ class Deck:
         return self.cards.pop()
 
     def draw_specific_card(self, specific_card: str) -> Card:
-        """Receives initials and returns associated card object"""
+        """Receives initials, removes the card from the deck and returns associated card object"""
         _id = initials_to_id(specific_card)
         for card in self.cards:
             if _id == card.id:
@@ -25,7 +25,7 @@ class Deck:
         raise ValueError(f"{specific_card} card does not exist within this deck")
 
     def contains(self, card: int):
-        return card in self.cards
+        return Card(card_id = card) in self.cards
 
     def __len__(self):
         return len(self.cards)

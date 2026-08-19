@@ -54,7 +54,7 @@ def initials_to_prose(value: str, suit: str) -> str:
     for item in SUITS:
          if item[0] == suit:
               suit = item
-    return f"{value} of {suit}"
+    return f"{value} {suit}"
 
 def initials_to_id(initials: str) -> int:
 

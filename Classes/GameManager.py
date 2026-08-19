@@ -84,7 +84,7 @@ class Game:
         clear_screen() 
         self.create_game()
         self.run_game_phases()
-        clear_screen(2)    
+        clear_screen() #2   
 
     def create_game(self):
         """
@@ -171,7 +171,11 @@ class Game:
                         player, max_cards
                     )
                     
-                    # choice of initials has already been sanitised
+                    # choice of initials has not been sanitised ANYMORE
+                    if not self.deck.contains(initials_to_id(choice_of_initials)):
+                        print(f"{Card(initials_to_id(choice_of_initials))} has already been used and is no longer in the deck")
+                        continue # loops until there is a valid card
+
                     chosen_card = self.deck.draw_specific_card(choice_of_initials)
                     print(chosen_card, "chosen card")
                     if chosen_card:
@@ -193,7 +197,7 @@ class Game:
         
         """
 
-        clear_screen(2)
+        clear_screen() #2
         cards =  self.cards_per_round[self.round-1]
         print(f"ROUND {self.round} - Bidding Phase ({cards} cards per hand)\n")
 
@@ -287,6 +291,9 @@ class Game:
         for player in self.player_queue:
                 player.reset() 
 
+        # part of the rest is getting a new deck
+        self.deck = Deck()
+    
         self.phase = Phase.HAND_ASSIGNMENT
 
     def handle_scoring_phase(self):
@@ -329,9 +336,10 @@ class Game:
                     trump_suit=self.trump_suit)
                 
                 if player.opponent:
+                    print("choice", choice)
                     selected_card = self._materialise_played_card(player, choice)
                     if not selected_card:
-                        print("invalid card input, card is not longer in the deck")
+                        print(f"invalid card input, {selected_card} is not longer in the deck")
                         continue
 
                     print(f"{player} selected card", selected_card)

@@ -51,22 +51,13 @@ class PlayingFlow:
         Returns
             int: index of legal card played in hand
         """
-
-        suit_to_symbol = {
-            "clubs" : "♣",
-            "diamonds" : "♦",
-            "hearts" : "♥",
-            "spades" : "♠",
-        }
-
-        trump_suit_symbol = suit_to_symbol[trump_suit.lower()]
-        
+    
 
         result = self.stepManager.run_step(
                     step = PlayerPlayCardStep(),
                     prompt_args={
                         "player": player,
-                        "trump_suit_symbol": trump_suit_symbol,
+                        "trump_suit": trump_suit,
                         "scoreboard": self.scoreboard,
                         "table": self.table},
                     validate_args={"player": player}
@@ -90,7 +81,7 @@ class PlayingFlow:
         Returns
             int: initials of selected card
         """
-        
+
         while True:
             
             result = self.stepManager.run_step(
