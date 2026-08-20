@@ -2,10 +2,11 @@
 
 import random
 from dataclasses import dataclass
+
 from Utils.card_tools import *
-
-
 from Utils.types import *
+
+
 # Purposefully decided not to add a score attribute to the belief model as I believe,
 # that the score shouldn;t be bound to the belief model class as it would need update for each
 # instance and it would become coupled with the instance even though the score does affect the belief model
@@ -16,16 +17,16 @@ class BeliefModel:
     Represents what one player believes about the game
     """
 
-    void_suits: dict[str, set[str]] # dict, player id, set(suit)
-    unknown_cards: set[CardInt]         # cards not yet assigned
-    hand_sizes: dict[PlayerStr, int]      # player -> cards remaining
+    void_suits: dict[str, set[str]]  # dict, player id, set(suit)
+    unknown_cards: set[CardInt]      # cards not yet assigned
+    hand_sizes: dict[PlayerStr, int]  # player -> cards remaining
     perspective_player: PlayerStr
 
     def observe_play(self,
                          player: PlayerStr,
                          card: CardInt,
                          lead_card: CardInt, 
-                         trump_suit: CardInt):
+                         trump_suit: TrumpStr):
         
         """
         Updates beliefs after watching a play

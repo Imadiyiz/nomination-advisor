@@ -56,7 +56,11 @@ K♦          61%          54%         12.8
 
 This is more insightful compared to simulating to the end of the trick
 
+A good developer knows how to stay in scope. I keep changing every 2-3 hours. At this project was a local multiplayer CLI Game, then it turned into an online multiplayer GUI game, then it turned back to a single-player IRL CLI game , then it became ta single-player IRL CLI game with extra information given to perspective using a Monte-Carlo Simulation for predicting bids and winning tricks, now it has turned to a similar game with a heuristic bots instead of playing random moves within the MC rollot. All these changes have been made over the course of 12 months and have all been justified, at least at the time of the decision, but now I want to make a conscious effort to stop changing things. I will finish the basic heuristic bot, and then branch the project into two.
 
+First there will be the original CLI game with boosted information.
+
+Then I will make a second version where a single player can play against a variety of computer bots.
 # Quality of life changes to make to the Game CLI
 
 Formatting in general
@@ -73,13 +77,11 @@ A pointer icon on top of the player playing would solve this
 Must indicate that the cards should be redealt for x amount of cards before the winner of the previous round is able to decide the new trump
 
 Need to clear screen before playing the game
-on playing screeen Trump should be explicit not 'D'
 
 Make it clear who determines Trump for next round when there is a draw, should be ranndom. Could simulate automatically on the computer, as a card does not have to be drawn.
 
 Need to clarify with Jay about the rule of cutting trump, is it possible to deal that card for the subsequent round or do we omit it. Irl I believe we redeal it but in the game I assumed you removed it from the deck.
 
-Total score:  mike3 13 | mike 4 | mike2 0
 
 
 V1 HeuristicClass

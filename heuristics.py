@@ -1,10 +1,10 @@
 class Heuristics:
 
     def __init__(self, 
-                 aggression: float = 0.0,
-                 belief_in_open_info: float = 0.0,
-                 risk_tolerance: float = 0.0,
-                 adaptability: float = 0.0):
+                 aggression: float = 0.5,
+                 belief_in_open_info: float = 0.5,
+                 risk_tolerance: float = 0.5,
+                 adaptability: float = 0.5):
 
         """Contains the attributes which alter the player's move evaluation"""
 

@@ -2,7 +2,7 @@
 
 from enum import Enum
 
-from Utils.card_tools import initials_to_id, SUITS_TO_SYMBOL
+from Utils.card_tools import SUITS_TO_SYMBOL, initials_to_id
 from Utils.tools import clear_screen
 
 from .BiddingFlow import BiddingFlow

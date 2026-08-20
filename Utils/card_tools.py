@@ -1,5 +1,3 @@
-import random
-
 from Utils.types import CardInt, TrumpStr
 
 # format for standard english
@@ -27,8 +25,6 @@ SUITS = (
     "Hearts",
     "Spades"
 )
-
-DECK = list(range(52))
 
 VALUE_PROSE = ('Jack', 'Queen', 'King', 'Ace')
 
@@ -80,47 +76,3 @@ def initials_to_id(initials: str) -> CardInt:
 
     return suit * 13 + rank
 
-########
-
-def weak_hand(size=8) -> set[CardInt]:
-    weak_cards = [num for num in DECK if num % 13 < 6]
-    return set(random.sample(weak_cards, size))
-
-def strong_hand(size=8) -> set[CardInt]:
-    strong_cards = [num for num in DECK if num % 13 > 9]
-    return set(random.sample(strong_cards, size))
-
-def random_hand(size=8) -> set[CardInt]:
-    return set(random.sample(DECK, size))
-
-def suited_hand(size=8) -> set[CardInt]:
-    random_suit = random.choice(range(3))
-    suited_cards = [num for num in DECK 
-                    if num // 13 == random_suit]
-    return set(random.sample(suited_cards, size))
-
-def dynamic_hand(trump_suit: TrumpStr, size:int=8, strength: float = 0.0) -> set[CardInt]:
-    """Takes the trump_suit, size of the hand and the strength of the dynamic hand (0-1), and returns
-    the new hand"""
-
-    if not 0.0 < strength < 1.0:
-        raise ValueError(f"Strength value must be within 0-1, {strength} is beyond this scope")
-
-    SUIT_FROM_INITIAL()
-
-def generate_hand(hand_type: str, size: int = 8):
-    """Generates hand based the parameters. Options are
-    'strong', 'weak', 'suited', 'random' """
-    if hand_type == "strong":
-        return strong_hand(size)
-
-    if hand_type == "weak":
-        return weak_hand(size)
-
-    if hand_type == "suited":
-        return suited_hand(size)
-
-    if hand_type == "random":
-        return random_hand(size)
-
-    raise ValueError(f"Unknown hand type: {hand_type}")

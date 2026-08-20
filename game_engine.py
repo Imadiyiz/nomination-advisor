@@ -1,7 +1,9 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from Utils.card_tools import *
 from Utils.types import *
+
+# This GameState class is for showing me at any time what is happening, not for dictiating plays 
 
 
 @dataclass()
@@ -21,10 +23,11 @@ class GameState:
     trump_suit: TrumpStr
     player_order: tuple[PlayerStr, ...]   # fixed seating order
     round_scores: dict[PlayerStr, int]
-    bids: dict[PlayerStr, int]
     cards_remaining: int
     winner: PlayerStr = ''              # Winner of the previous trick
 
+    # Must use default_factory for when declaring mutable types
+    bids: dict[PlayerStr, int]  = field(default_factory=dict)      # Don't always have bids assigned and 
     # Private attribute
     _leader: PlayerStr = ''              
 
