@@ -9,19 +9,21 @@ from Utils.hand_generators import *
 
 # Test Parameters
 #players_tuple = ("strong", "weak", "suited", "random")
-players_tuple = ("random1","random2","random3","random4")
+players_tuple = ("random1","random2",
+                 "random3","random4",)
+
 players = list(players_tuple)
 my_player = "random"
-hand_size = 8
 current_trick = ()
 bot_players = [BotPlayer(name = name) for name in players_tuple]
-N_rollouts = 1000000
+N_rollouts = 10000
 
 # Constants
 PRINT_BID_EVAL = False
 PRINT_MOVE_EVAL = False
 PRINT_NAIVE_BIDS = False
 PRINT_NAIVE_BIDS_DISTRIBUTION = True
+HAND_SIZE = 6
 
 
 def convert_into_percentage(decimal: float) -> str:
@@ -46,6 +48,8 @@ hand_generators = (
     random_hand,
     random_hand,
     random_hand,
+    random_hand,
+    random_hand,
     random_hand
 )
 if PRINT_NAIVE_BIDS_DISTRIBUTION:
@@ -63,7 +67,6 @@ if PRINT_NAIVE_BIDS_DISTRIBUTION:
                 )
         ]
         hands = dict(hands)
-        hand_size = len(hands["random1"])
 
         banned = -1
         bid_total = 0
@@ -71,7 +74,7 @@ if PRINT_NAIVE_BIDS_DISTRIBUTION:
         # Must check that all the bids do not add up to banned
         for i, bot in enumerate(bot_players):
             if i == len(bot_players) - 1:   
-                banned = hand_size - bid_total
+                banned = HAND_SIZE - bid_total
 
             bid = bot.determine_baseline_bid(
                 hand=hands[bot.name],
@@ -83,7 +86,7 @@ if PRINT_NAIVE_BIDS_DISTRIBUTION:
             bid_total += bid
 
         # Distribution forming
-        bid_diff = sum(naive_bids.values()) - hand_size
+        bid_diff = sum(naive_bids.values()) - HAND_SIZE 
         if bid_diff not in round_difference_distribution:
             round_difference_distribution[bid_diff] = 1
         else:

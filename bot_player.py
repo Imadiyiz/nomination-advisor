@@ -25,6 +25,24 @@ class BotPlayer:
         self.name = name
         self.belief_model = belief_model
 
+    def determine_bid(self, distribution: dict,
+                      table_position: int,
+                      table_size: int,
+                      point_margin: int) -> int:
+        """Determines a bid based on the distribution of their ETW 
+        (Expected Tricks Won).Also accounts for their position at the
+        table, the table size and the points margin from the leader
+        whiile making use of heuristics.
+        Returns: bid"""
+
+        return
+        # Distribution should not have restricted bid within it
+
+
+
+
+
+
     def determine_baseline_bid(self, hand: set[CardInt], 
                                trump_suit: TrumpStr,
                                restriction: int = -1) -> int:
@@ -32,7 +50,7 @@ class BotPlayer:
            Accepts a hand parameter instead of using actual hand as.
            If the bot has a restriction on bid, they must alter their bid towards the average"""
 
-        LOW_HAND_BID_WEIGHTS = (4,3,2)
+        
         player_amount = 4 # default player_amount in case its not set in belief_model
 
         if self.belief_model is not None:  # Ensure belief model exists before attempting to calculate hand sizes
@@ -47,22 +65,17 @@ class BotPlayer:
                                                 trump_id, 
                                                 player_amount)]
 
-        # Plays negatively if bot has less than 3 strong cards
-        bid_to_confirm = (
-            len(strong_cards) 
-            if len(strong_cards) > 2 
-            else random.choices(
-                (0,1,2),
-                weights=LOW_HAND_BID_WEIGHTS,
-                k=1)
-            [0]
-         ) # more biased towards 0
+        # Plays postively if bot has less than 3 strong cards
+        bid_to_confirm = len(strong_cards) - max(0, (player_amount - 5) )
 
         if bid_to_confirm == restriction:
             if bid_to_confirm == 0:  # Can only play 1 as -1 is not allowed
                 return 1
             else:
-                return random.choice((bid_to_confirm+1, bid_to_confirm-1))
+                return random.choices(
+                    (restriction + 1, restriction - 1),
+                    weights=(1, 1), # has a dramatic effect on the distribution
+                    k = 1)[0]
 
         else:
             return bid_to_confirm
@@ -74,11 +87,9 @@ class BotPlayer:
         Returns: True if strong"""
 
         strong = (card // 13 == trump_id 
-                 and card % 13 > (1 + player_amount)
-                 or card % 13 > (5 + player_amount))
+                 and card % 13 > (5 + player_amount)
+                 or card % 13 > (6 + player_amount))
         return strong
-
-
 
 
     def determine_move(self, possible_moves: set[CardInt], calculation_limit = 10) -> CardInt:
