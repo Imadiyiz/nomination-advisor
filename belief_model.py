@@ -35,8 +35,8 @@ class BeliefModel:
         self.unknown_cards.discard(card)
         self.hand_sizes[player] -= 1
 
-        card_suit = get_suit(card)
-        lead_suit = get_suit(lead_card)
+        card_suit = get_suit_str(card)
+        lead_suit = get_suit_str(lead_card)
 
         # infer void
         if card_suit != lead_suit:
@@ -60,7 +60,7 @@ class BeliefModel:
 
             possible_cards = [
                 c for c in remaining_cards
-                if get_suit(c) not in self.void_suits[player]
+                if get_suit_str(c) not in self.void_suits[player]
             ]
 
             if len(possible_cards) < size:

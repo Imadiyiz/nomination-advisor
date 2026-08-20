@@ -1,10 +1,9 @@
 # Contents of the GameManager class
 
-import random
 from enum import Enum
 
+from Utils.card_tools import initials_to_id, SUITS_TO_SYMBOL
 from Utils.tools import clear_screen
-from Utils.card_tools import initials_to_id
 
 from .BiddingFlow import BiddingFlow
 from .BiddingManager import BiddingManager
@@ -63,7 +62,7 @@ class Game:
         }
 
         self.round = 1
-        self.cards_per_round = [8,7,6,6,7,8] 
+        self.cards_per_round = [2,3,6,6,7,8] #change to 8
         self.phases = {
             Phase.PLAYER_SELECTION: self.handle_player_selection,
             Phase.HAND_ASSIGNMENT: self.handle_hand_assignment,
@@ -120,7 +119,7 @@ class Game:
         
     def handle_player_selection(self):
         """
-        Player selection logic
+        Player selection logic and initialises the scoreboards as they rely on player selection
 
         """
         context = self.playerSetupFlow.run()
@@ -143,6 +142,9 @@ class Game:
         # round player_queue
         self.temp_player_queue = self.player_queue
 
+        # Can initialise scoreboard now
+        self.scoreboard = Scoreboard(self.player_queue)
+
         self.phase = Phase.HAND_ASSIGNMENT
 
     def handle_hand_assignment(self):
@@ -155,7 +157,6 @@ class Game:
         
         #initialise objects and reset
         max_cards = self.cards_per_round[self.round-1]
-        self.scoreboard = Scoreboard(self.player_queue)
         self.scoreboard.reset_round_scoreboard()
 
         for player in self.player_queue:
@@ -173,7 +174,7 @@ class Game:
                     
                     # choice of initials has not been sanitised ANYMORE
                     if not self.deck.contains(initials_to_id(choice_of_initials)):
-                        print(f"{Card(initials_to_id(choice_of_initials))} has already been used and is no longer in the deck")
+                        print(f"{choice_of_initials} has already been used and is no longer in the deck")
                         continue # loops until there is a valid card
 
                     chosen_card = self.deck.draw_specific_card(choice_of_initials)
@@ -211,7 +212,11 @@ class Game:
 
         #   manual trump selection
         else:
-            card = self.deck.draw_specific_card(trump_card_initials)
+            if self.deck.contains(
+                card=initials_to_id(trump_card_initials)):
+                card = self.deck.draw_specific_card(trump_card_initials)
+            else:
+                return
             if not card:
                 print("Invalid card")
                 return
@@ -227,7 +232,7 @@ class Game:
         #determine trump
         #since deck is already shuffled, pick first card
         # choose the trump after cards have been assinged to players
-        self.trump_suit = trump_card.suit[0]
+        self.trump_suit = trump_card.suit
         print(f"Random trump card - {trump_card}")
         print("Trump suit: ", self.trump_suit)
 
@@ -303,6 +308,7 @@ class Game:
         if self.round < 6:
             self.round += 1
             #display total scoreboard
+            print("Scoreboard before ts", self.scoreboard.total_scoreboard)
             self.scoreboard.update_total_scoreboard(
                 player_list=self.player_queue,
                 max_cards=self.max_cards
@@ -331,13 +337,14 @@ class Game:
 
             while True:
 
+                # Will alter trump suit to include the symbol as well
                 choice = self.playingFlow.play_turn(
                     player=player,
-                    trump_suit=self.trump_suit)
+                    trump_suit=f"{self.trump_suit} {SUITS_TO_SYMBOL[self.trump_suit]}")
                 
                 if player.opponent:
                     print("choice", choice)
-                    selected_card = self._materialise_played_card(player, choice)
+                    selected_card = self._materialise_played_card(player, str(choice))
                     if not selected_card:
                         print(f"invalid card input, {selected_card} is not longer in the deck")
                         continue
@@ -350,7 +357,7 @@ class Game:
                     # local player
 
                     try: 
-                        selected_card = player.hand[choice-1]
+                        selected_card = player.hand[int(choice)-1]
                         print(f"{player} selected card", selected_card)
                     except:
                         print("Invalid Card Index")

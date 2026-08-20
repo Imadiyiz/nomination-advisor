@@ -72,6 +72,15 @@ A pointer icon on top of the player playing would solve this
 
 Must indicate that the cards should be redealt for x amount of cards before the winner of the previous round is able to decide the new trump
 
+Need to clear screen before playing the game
+on playing screeen Trump should be explicit not 'D'
+
+Make it clear who determines Trump for next round when there is a draw, should be ranndom. Could simulate automatically on the computer, as a card does not have to be drawn.
+
+Need to clarify with Jay about the rule of cutting trump, is it possible to deal that card for the subsequent round or do we omit it. Irl I believe we redeal it but in the game I assumed you removed it from the deck.
+
+Total score:  mike3 13 | mike 4 | mike2 0
+
 
 V1 HeuristicClass
 
@@ -85,14 +94,3 @@ parameters = {
 }
 
 ## latest error message
-
-Mode: 8 ~ 39.00%
-Traceback (most recent call last):
-  File "/Users/joshuaimadiyi/Michael SWE/nomination-advisor/main_mc.py", line 99, in <module>
-    
-  File "/Users/joshuaimadiyi/Michael SWE/nomination-advisor/hand_evaluator.py", line 100, in estimate_optimal_move
-    if self._won_simulated_card_play(determinised_state = determinised_state,
-       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/joshuaimadiyi/Michael SWE/nomination-advisor/hand_evaluator.py", line 59, in _won_simulated_card_play
-    raise ValueError("No card to play")
-ValueError: No card to play

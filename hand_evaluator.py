@@ -55,7 +55,7 @@ class HandEvaluator:
         If the perspective player wins the trick, returns 1, else returns 0.
         """
 
-        if not card_to_play:
+        if card_to_play is None:  # 0 is a valid card_to_play
             raise ValueError("No card to play")
         
         if 0 > card_to_play or 51 < card_to_play:

@@ -1,6 +1,12 @@
 import random
 
-from Utils.types import CardInt
+from Utils.types import CardInt, TrumpStr
+
+# format for standard english
+
+def format_string(s: str) -> str:
+    """Formats irregular string into a lowercase string with uppercase starting character"""
+    return s[0].upper() + s[1:].lower()
 
 # 0-based indexing used to generate rank
 RANKS = (
@@ -38,18 +44,23 @@ SUIT_FROM_INITIAL = {
     "S": 3,
 }
 
+def get_suit_from_initial(initial:str) -> int:
+    if initial[0].upper() not in SUIT_FROM_INITIAL:
+        raise ValueError(f"{initial[0]} is not a valid initial")
+
+    return SUIT_FROM_INITIAL[initial[0].upper()]
 
 def get_rank(card: CardInt) -> str:
         return RANKS[card % 13]
     
-def get_suit(card: CardInt) -> str:
+def get_suit_str(card: CardInt) -> TrumpStr:
     return SUITS[card // 13]
 
 def get_suit_symbol(card:CardInt) -> str:
-    return SUITS_TO_SYMBOL[get_suit(card)]
+    return SUITS_TO_SYMBOL[get_suit_str(card)]
 
 def id_to_initials(card: CardInt) -> str:
-    return f"{get_rank(card)}{get_suit(card)[0].upper()}"
+    return f"{get_rank(card)}{get_suit_str(card)[0].upper()}"
 
 def initials_to_prose(value: str, suit: str) -> str:
     """ Returns prose from receiving the value and suit part of the initials"""
@@ -87,6 +98,15 @@ def suited_hand(size=8) -> set[CardInt]:
     suited_cards = [num for num in DECK 
                     if num // 13 == random_suit]
     return set(random.sample(suited_cards, size))
+
+def dynamic_hand(trump_suit: TrumpStr, size:int=8, strength: float = 0.0) -> set[CardInt]:
+    """Takes the trump_suit, size of the hand and the strength of the dynamic hand (0-1), and returns
+    the new hand"""
+
+    if not 0.0 < strength < 1.0:
+        raise ValueError(f"Strength value must be within 0-1, {strength} is beyond this scope")
+
+    SUIT_FROM_INITIAL()
 
 def generate_hand(hand_type: str, size: int = 8):
     """Generates hand based the parameters. Options are

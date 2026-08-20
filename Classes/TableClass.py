@@ -1,7 +1,10 @@
 # Contents for the table class in the Nomination game
 
+from Utils.types import TrumpStr
+
 from .CardClass import Card
 from .PlayerClass import Player
+
 
 class Table:
     """
@@ -13,7 +16,7 @@ class Table:
     - Resetting the table between rounds
     """
 
-    def __init__(self, UIManager):
+    def __init__(self, UIManager, stack: list[Card] = []):
         """
         Initialises the Table object
 
@@ -21,7 +24,7 @@ class Table:
             UIManager (UIManager): The UI manager instance for displaying messages
         """
 
-        self.stack = []
+        self.stack = stack
         self.UIManager = UIManager
 
     
@@ -60,14 +63,14 @@ class Table:
         self.stack.append(card)
 
     
-    def _valid_add_to_stack(self, card: Card, player_hand: list[Card], trump_suit: str) -> bool:
+    def _valid_add_to_stack(self, card: Card, player_hand: list[Card], trump_suit: TrumpStr) -> bool:
         """
         Validates whether a card can be played based on suit-following rules.
         
         Args:
             card (Card): The card the player wants to play
             player_hand (list[Card]): The player's current hand.
-            trump_suit(str): Ensures that the player is able to override common rules if trumped
+            trump_suit(int): Ensures that the player is able to override common rules if trumped
 
         Returns:
             bool: True if the play is valid, False otherwise.
@@ -81,7 +84,7 @@ class Table:
             
             first_card = self.stack[0] # gets the first card in stack
 
-            first_suit = first_card.suit.lower()
+            first_suit = first_card.suit
             
             # True if any of the cards' suits match the first card
             must_follow_suit = self._has_suit(hand=player_hand,
@@ -97,14 +100,14 @@ class Table:
         return True
 
 
-    def verify_winner(self, trump_suit: str) -> Card:
+    def verify_winner(self, trump_suit: TrumpStr) -> Card:
         """
         Rules:
         1. Trump suit beats all other suits
         2. If no trump is played, highest card of the leading suit wins
 
         Args:
-            trump_suit (str): The trump suit used to prioritise winning cards
+            trump_suit (TrumpStr): The trump suit used to prioritise winning cards
 
         Returns: 
             Card: The winning card based on the rules. Returns None if stack is empty

@@ -68,7 +68,7 @@ class PlayingFlow:
 
     def _prompt_for_opponent_play_card(self,
                                        player:Player,
-                                       trump_suit: str):
+                                       trump_suit: str) -> str:
         
         """
         Private method which runs the prompt for opponent play card 
@@ -79,7 +79,7 @@ class PlayingFlow:
         
 
         Returns
-            int: initials of selected card
+            str: initials of selected card
         """
 
         while True:

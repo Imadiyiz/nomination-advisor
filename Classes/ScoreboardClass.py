@@ -1,18 +1,20 @@
 # Contents of the Scoreboard class which keeps track of the scores in the game
-from Classes.PlayerClass import Player
 from Classes.CardClass import Card
+from Classes.PlayerClass import Player
+
 
 class Scoreboard:
     """
     Scoreboard class used to monitor and update the scores of multiple players.
+    Note: Why is it necessary to keep passing the player list to the scoreboard if this never changes
     """
 
-    def __init__(self, players):
-        self.round_scoreboard = {}
-        self.total_scoreboard = {}
-        self.players_by_name = {}
-        for player in players:
-            self.players_by_name[player.name] = player
+    def __init__(self, players: list[Player]):
+        self.round_scoreboard = {p.name: 0 for p in players}
+        self.total_scoreboard = {p.name: 0 for p in players}
+        self.name_to_player = {}
+        for player in players:  # In case the score needs to access the player instance's bid
+            self.name_to_player[player.name] = player
         
         
     def display(self, round: bool = True) -> str:
@@ -28,6 +30,7 @@ class Scoreboard:
         """
 
         scoreboard = self.round_scoreboard if round else self.total_scoreboard 
+
         formatted_scoreboard = sorted(
             scoreboard.items(), 
             key= lambda x:x[1], #sort by the second element of each function
@@ -35,7 +38,7 @@ class Scoreboard:
         )
 
         return " | ".join([
-            f"{name} {score} ({self.players_by_name[name].bid})" 
+            f"{name} {score} ({self.name_to_player[name].bid})" 
             for name, score in formatted_scoreboard
         ]
 
@@ -71,6 +74,7 @@ class Scoreboard:
 
         # initialise total_scoreboard if it does not exist
         if not self.total_scoreboard:
+            print("No total scoreboard", self.total_scoreboard)
             for _player in player_list:
                 self.total_scoreboard[_player.name] = 0
 

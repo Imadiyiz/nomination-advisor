@@ -10,8 +10,8 @@ class Card:
     the card generates an ASCII representation of itself.
 
     Attributes:
-        suit (tuple): The suit of the card, e.g., ("Hearts", "♥").
-        value (tuple): The value of the card, e.g., ("10", 10) or ("Ace", 14). 
+        suit (int): The suit of the card, (0-3).
+        value (str): "Jack"  
         owner (Player, optional): The owner of the card.
 
     Methods:
@@ -20,14 +20,14 @@ class Card:
             Checks equality between two Card objects based on suit and value.
 
         __str__():
-            Returns a string representation of the card (e.g., "10 Hearts").
+            Returns a string representation of the card (e.g., "10 ♥").
 
         __hash__():
             Returns a hash value for the card, allowing it to be used in sets and dictionaries.
     """
 
     def __init__(self, owner: 'Player' = None, card_id: int = 0): # Forward reference to avoid nameError
-        self.suit = get_suit(card_id)
+        self.suit = get_suit_str(card_id)
         self.value = get_rank(card_id)
         self.owner = owner
         self.id = card_id

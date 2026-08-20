@@ -73,13 +73,16 @@ class GameState:
 
         player_hand = self.hands[player] 
 
+        if not player_hand:
+            raise ValueError(f"No Cards in {player}'s hand at all")
+
         if not self.current_trick:
             return set(player_hand)
 
-        lead_suit = get_suit(self.current_trick[0][1])
+        lead_suit = get_suit_str(self.current_trick[0][1])
         
         follow_cards = {card for card in player_hand 
-                        if get_suit(card) == lead_suit
+                        if get_suit_str(card) == lead_suit
         }
         
         if follow_cards:
@@ -144,12 +147,12 @@ class GameState:
         
         """ Returns player who wins the trick"""
         
-        lead_suit = get_suit(trick[0][1])
+        lead_suit = get_suit_str(trick[0][1])
         
         # trump suit evaluation
         trump_cards = [
             (player, card) for player, card in trick
-            if get_suit(card) == self.trump_suit
+            if get_suit_str(card) == self.trump_suit
         ]
 
         if trump_cards:
@@ -157,7 +160,7 @@ class GameState:
         
         # Lead suit evaluation
         lead_cards = [
-            (p, c) for p, c in trick if get_suit(c) == lead_suit
+            (p, c) for p, c in trick if get_suit_str(c) == lead_suit
         ]
 
         return max(lead_cards, key=lambda lc: get_rank(lc[1]))[0]

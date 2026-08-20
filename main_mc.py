@@ -31,12 +31,13 @@ hands = (
     ("single_suit", suited_hand()),
     ("random", random_hand()) 
 )
- 
+
+print(format_string("lol"))
 # Generate root state
 root_state = GameState(
     hands=dict(hands),                 # Convert tuple pairs to dict
     current_trick=current_trick,                 # (PlayerStr, CardStr)
-    trump_suit="D",
+    trump_suit=format_string("Diamonds"),             # Must be the prose
     player_order=tuple(players),
     round_scores={p: 0 for p in players},
     bids={p: 2 for p in players},      # Arbitrary example bids
@@ -93,7 +94,7 @@ for p in players:
     move_estimates[p] = HandEvaluator(
         root_state=root_state,
         perspective=p,
-        N_rollouts=5000
+        N_rollouts=500
     ).estimate_optimal_move()
 
 

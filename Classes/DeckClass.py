@@ -25,6 +25,7 @@ class Deck:
         raise ValueError(f"{specific_card} card does not exist within this deck")
 
     def contains(self, card: int):
+        """Only requires card id"""
         return Card(card_id = card) in self.cards
 
     def __len__(self):
