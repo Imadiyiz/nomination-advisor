@@ -9,9 +9,9 @@ from Utils.types import *
 VALID_CARD_IDS = set(range(52))
 
 class HandEvaluator:
-    def __init__(self, root_state: GameState, perspective: PlayerStr,
+    def __init__(self, state: GameState, perspective: PlayerStr,
                  N_rollouts: int = 100):
-        self.root_state = root_state
+        self.state = state
         self.perspective = perspective
         self.N_rollouts = N_rollouts
         self.belief_model = self._get_belief_model()
@@ -19,9 +19,9 @@ class HandEvaluator:
     def _get_belief_model(self):
 
         return BeliefModel(
-            void_suits = {p: set() for p in self.root_state.player_order},
-            unknown_cards = VALID_CARD_IDS - self.root_state.hands[self.perspective],
-            hand_sizes={p: len(self.root_state.hands[p]) for p in self.root_state.player_order},
+            void_suits = {p: set() for p in self.state.player_order},
+            unknown_cards = VALID_CARD_IDS - self.state.hands[self.perspective],
+            hand_sizes={p: len(self.state.hands[p]) for p in self.state.player_order},
             perspective_player=self.perspective            
         )
 
@@ -32,17 +32,17 @@ class HandEvaluator:
 
         # Sample a possible world consistent with beliefs
         sampled_hands: dict[PlayerStr, set[CardInt]] = self.belief_model.sample_world()
-        sampled_hands[self.perspective] = self.root_state.hands[self.perspective]
+        sampled_hands[self.perspective] = self.state.hands[self.perspective]
 
         # Construct determinised state
         determinised_state = GameState(
             hands=sampled_hands,
-            current_trick=self.root_state.current_trick,
-            trump_suit=self.root_state.trump_suit,
-            player_order=self.root_state.player_order,
-            round_scores=dict(self.root_state.round_scores),
-            bids=dict(self.root_state.bids),
-            cards_remaining=self.root_state.cards_remaining
+            current_trick=self.state.current_trick,
+            trump_suit=self.state.trump_suit,
+            player_order=self.state.player_order,
+            round_scores=dict(self.state.round_scores),
+            bids=dict(self.state.bids),
+            cards_remaining=self.state.cards_remaining
         )
 
         return determinised_state
@@ -81,7 +81,7 @@ class HandEvaluator:
         """ 
 
         # Initialise variables and dictionaries
-        perspective_hand = list(self.root_state.hands[self.perspective])
+        perspective_hand = list(self.state.hands[self.perspective])
         
         # Want to track, per card, how many times it was eligible to be played, and how many times it won
         tricks_won = {card: 0 for card in perspective_hand} 
@@ -121,42 +121,32 @@ class HandEvaluator:
             'move_win_distribution': move_win_distribution
         }
 
-    def estimate_optimal_bid(self) -> dict:
+    def generate_bid_probabilities(self) -> dict:
         """
         Runs Monte Carlo evaluation for current hand and determines most optimal bid based on hand.
         Only uses card initials (strings). Returns summary of context in dictionary form.
+
+        Returns:
+            "mode": int, 
+            "expected_scores": dict[int, float],
+            "bid_accuracy_distribution": dict[int, float],
+            "mode_probability": float
         """
-        # Genrerate score output for each bid amoun
+        # Genrerate score output for each bid amount
         distribution = self._simulate_round()
         
         scores_per_bid = self._calculate_scores_per_bid(distribution)
 
         mode = max(distribution.keys(), key=lambda key: distribution[key])
 
+        # expected_scores doesn't quite make sense at the moment since it does not factor
+        # round score or total score
         return {
             "mode": mode,
-            "expected_scores": scores_per_bid,
+            "expected_scores": scores_per_bid, 
             "bid_accuracy_distribution": distribution,
             "mode_probability": distribution[mode],
         }
-    
-    def estimate_optimal_bid_baseline(self):
-        """
-        Runs Monte Carlo simulation for current hand and determines most optimal bid based on the hand playing random moves.
-        Only uses card initials (strings). Returns summary of context in dictionary form.
-        """
-
-        distribution = self._simulate_round()
-        scores_per_bid = self._calculate_scores_per_bid(distribution=distribution)
-
-        mode = max(distribution.keys(), key=lambda key: distribution[key])
-
-        return {
-            "mode": mode,
-            "expected_scores": scores_per_bid,
-            "bid_accuracy_distribution": distribution,
-            "mode_probability": distribution[mode],
-    }
 
     def _simulate_round(self, bid: int = 9) -> dict[int, float]:
 

@@ -8,12 +8,20 @@ class Heuristics:
 
         """Contains the attributes which alter the player's move evaluation"""
 
+        # Move parameter
         self.aggression = aggression                         # 0 = Passive, 1 = Attacking
-        self.belief_in_open_information = belief_in_open_info # 0 = Paranoid, 1 = Trusting
+      
         
-        # The 3 new parameters
+        # Bidding parameters
         self.risk_tolerance = risk_tolerance                 # 0 = Safe, 1 = Gambler
-        self.adaptability = adaptability                     # 0 = Rigid, 1 = Quick to adjust
+        # Decide whether to believe that others will secure their bids
+        self.belief_in_open_information = belief_in_open_info # 0 = Paranoid, 1 = Trusting 
 
+        # Rewards multiplier
+        self.adaptability = adaptability                     # 0 = Rigid, 1 = Quick to adjust (Reward)
+
+        # Rewards
+        self.bid_reward = 0.0         # reward between -1.0 and 1.0
+        self.move_reward = 0.0         # reward between -1.0 and 1.0
 
     

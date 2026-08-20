@@ -11,6 +11,10 @@ I want to make the trick evaluation in EOM by making the articifical players in 
 
 - [ ] Added Heuristics when choosing card for AI during rollout (In progress)
 
+I need to simulate the rest of the round/game after selecting a move to observe whether it is the best move for the situation, playing a card that makes you win another trick after achieving your bid is not ideal.
+
+- [ ] Extended the simulation of the estimate_optimal_move to include the following tricks/rounds
+
 ### Future Steps
 
 I would like to implement the move evaluation and bidding evaluation into the CLI game. This will hopefully give the perspective player an edge during the game. 
@@ -32,6 +36,9 @@ I thought about changing the way cards are calculated. Currently they are assign
 Additionslly I need to spend the time creating tests for my classes as they are not robust. It would have been nice to be writing tests and program simultaneuously however, this can't always be done. One class I need to focus on the most is the gamestate class as it is the backbone of my Monte Carlo simulation.
 
 [ ] Created unit tests for GameState class
+
+move = random.choice(tuple(legal_moves)) # change this 
+LN 29 in Rollout simulator - Could potentially make it smarter using desired_move() function to use gamestate to work out whether its in the best interest to the player to win the hand
 
 ### Key points
 

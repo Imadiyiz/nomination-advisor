@@ -21,22 +21,91 @@ class BotPlayer:
         
         """Originally only has a name, personality and optionally a brain.
         Pass in 'belief_model': BeliefModel(), to incorporate a simulation brain for the bot"""
-        self.heuristics = heuristics if heuristics else Heuristics()  # default Heuristic instance with all 0.5 attributes
+        self.heuristics = heuristics if heuristics is not None else Heuristics()  # default Heuristic instance with all 0.5 attributes
         self.name = name
         self.belief_model = belief_model
 
-    def determine_bid(self, distribution: dict,
-                      table_position: int,
+    def determine_bid(self, expected_scores: dict[int, float],
+                      position: int,
                       table_size: int,
-                      point_margin: int) -> int:
+                      points_margin: int,
+                      current_bids: list[int],
+                      hand_size: int,
+                      restriction:int = -1) -> int:
         """Determines a bid based on the distribution of their ETW 
-        (Expected Tricks Won).Also accounts for their position at the
+        (Expected Tricks Won). Also accounts for their position at the
         table, the table size and the points margin from the leader
-        whiile making use of heuristics.
+        whiile making use of heuristics. Caller of the function must impose the restriction
+        of bid amount if necessary.
         Returns: bid"""
 
-        return
+        curr_bid_sum = sum(current_bids)
+        core_avg_bid = (
+            table_size / hand_size
+        )
+
+        # Determine whether the previous players are overbidding or underbidding
+        CURRENT_BID_MARGIN = curr_bid_sum - (core_avg_bid) * len(current_bids)  
+        
+        decision_risk = self.heuristics.risk_tolerance
+        print("Original decision_risk", decision_risk)
+        BIOI = self.heuristics.belief_in_open_information
+
+        # idk if this the correct way to do things
+        # alter heuristics based on the information at hand
+        if CURRENT_BID_MARGIN > 1 or CURRENT_BID_MARGIN < -1:  # Reduce decision_risk if the margin swings
+            decision_risk = min(1, decision_risk * BIOI)  # Reduces less if belief is high
+
+        print("B Margin decision_risk", decision_risk)
+        # Decides whether the bot will ignore points margin
+        if points_margin < -(15 * decision_risk):  # Reduce decision_risk if the margin swings
+            decision_risk = min(1, decision_risk * BIOI * 1.2) 
+        elif points_margin > (15 * decision_risk):
+            decision_risk = min(1, decision_risk * BIOI * 0.8) 
+
+        print("P Margin decision_risk", decision_risk)
+        # Decides whether the bot will ignore the position at table
+        if position == 0:
+            decision_risk = min(1, decision_risk * BIOI * 1.5) # Take more risk knowing bot dictates play
+        elif position == table_size - 1:
+            decision_risk = min(1, decision_risk * BIOI * 0.5) # Take less risk knowing bot can't dictate play
+
+        print("Pos Margin decision_risk", decision_risk)
+        # Clean distribution dict from null values
+        expected_scores_list = [(i, dist) for i, dist in expected_scores.items() if dist > 0.0]
+        print(expected_scores_list)
+
+
+        # if restriction then cleanse and normalise distribution
+        if -1 < restriction < 9:
+            expected_scores_list = [s for s in expected_scores_list if s[0] != restriction]
+
+
+        # how to normalise new distribuitons
+
+        # Generate top moves to choose from
+        top_moves = sorted(expected_scores_list,
+                           key = lambda es: es[1],
+                           reverse=True)[:3]  # List of the top 3 probable moves, sodecision_risked by points gained
+
+        top_moves_in_order = sorted(
+            top_moves,
+            key=lambda tm: tm[0],
+            reverse=True
+        )  # Sort again to allow risky moves to be made to maximise score
+
+        if decision_risk > 0.7:  # Favour the greater returns
+            bid, _ = random.choices(top_moves_in_order,
+                       weights=[exp[1] for exp in top_moves_in_order],
+                       k=1)[0]
+        else:
+            bid, _ = top_moves[0] # Move with the highest ES
+
+        return bid
+    
         # Distribution should not have restricted bid within it
+
+
 
 
 
