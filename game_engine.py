@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 
 from Utils.card_tools import *
-from Utils.types import *
 from Utils.nom_rule_tools import calculate_correct_bid_score
+from Utils.types import *
 
 # This GameState class is for showing what the gamestate is after actions occur
 
@@ -149,8 +149,7 @@ class GameState:
         """Should be called after a round concludes to ensure that the total score is updated to current gamestate.
         Receives the latest round_score and returns new total_score dictionary"""
         _total_scores = dict(self.total_scores)
-        print(round_scores.items())
-        for player, score in round_scores:
+        for player, score in round_scores.items():
             if score == self.bids[player]:
                 _total_scores[player] += calculate_correct_bid_score(score)
             else:

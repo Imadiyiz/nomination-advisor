@@ -20,6 +20,12 @@ my_player = players_tuple[0]
 HAND_SIZE = 8
 N_ROLLOUTS = 100
 
+
+# PRINT FLAGS
+
+PRINT_EXPECTED_BID = False
+PRINT_HANDS = True
+
 hand_generators = (
     random_hand,
     random_hand,
@@ -38,17 +44,15 @@ hands = (
 hands = dict(hands)
 deck = Deck() # Reset deck
 hand_lists = [card[1] for card in hands.items()]
-for lst in hand_lists:
-    print(id_to_initial_list(list(lst)))
+
+
+
 
 def generate_educated_bids(hands: dict[PlayerStr, set[CardInt]]) -> dict:
 
     educated_bids = {}
     banned = -1
     bid_total = 0
-
-
-
 
     # Must check that all the bids do not add up to banned
     for i, bot in enumerate(bot_players):
@@ -92,15 +96,23 @@ hand_evaluator = HandEvaluator(
     N_rollouts=N_ROLLOUTS
 )
 
-bid_probs = hand_evaluator.generate_bid_probabilities()
-ES_per_bid = bid_probs['expected_scores']
-predicted_bid = bot_players[0].determine_bid(
-    expected_scores=ES_per_bid,
-    position=0,
-    table_size=len(hands),
-    hand_size=HAND_SIZE,
-    points_margin=0,
-    current_bids=[] # Naive to use a list as you won't know if the leader is before you
 
-)
-print(f"Predicted bid: {predicted_bid}, Mode: {bid_probs['mode']}")
+####
+
+if PRINT_HANDS:
+    for lst in hand_lists:
+        print(id_to_initial_list(list(lst)))
+
+if PRINT_EXPECTED_BID:
+    bid_probs = hand_evaluator.generate_bid_probabilities()
+    ES_per_bid = bid_probs['expected_scores']
+    predicted_bid = bot_players[0].determine_bid(
+        expected_scores=ES_per_bid,
+        position=0,
+        table_size=len(hands),
+        hand_size=HAND_SIZE,
+        points_margin=0,
+        current_bids=[] # Naive to use a list as you won't know if the total score leader is before you
+
+    )
+    print(f"Predicted bid: {predicted_bid}, Mode: {bid_probs['mode']}")
