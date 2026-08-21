@@ -2,8 +2,8 @@
 
 from Utils.types import TrumpStr
 
-from .CardClass import Card
-from .PlayerClass import Player
+from .card import Card
+from .player import Player
 
 
 class Table:

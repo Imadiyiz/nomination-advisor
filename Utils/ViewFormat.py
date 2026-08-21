@@ -1,5 +1,5 @@
 # functions for the ViewFormat Class
-from Classes.CardClass import Card
+from Classes.card import Card
 
 def format_hand(hand: list[Card], cols=4):
         """

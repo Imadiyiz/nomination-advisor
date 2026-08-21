@@ -1,7 +1,7 @@
-from Classes.CardClass import Card
-from Classes.PlayerClass import Player
-from Classes.ScoreboardClass import Scoreboard
-from Classes.DeckClass import Deck
+from Classes.card import Card
+from Classes.player import Player
+from Classes.scoreboard import Scoreboard
+from Classes.deck import Deck
 import pytest
 
 

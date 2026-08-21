@@ -1,7 +1,7 @@
-from Classes.CardClass import Card
-from Classes.TableClass import Table
+from Classes.card import Card
+from Classes.table import Table
 import pytest
-from Classes.UIManager import UIManager
+from Classes.ui_manager import UIManager
 
 @pytest.fixture
 def ui():

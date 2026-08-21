@@ -1,8 +1,8 @@
-from .StepManager import *
-from Classes.BiddingManager import BiddingManager
-from Classes.TableClass import Table
-from Classes.ScoreboardClass import Scoreboard
-from Classes.CardClass import Card
+from .step_manager import *
+from Classes.bidding_manager import BiddingManager
+from Classes.table import Table
+from Classes.scoreboard import Scoreboard
+from Classes.card import Card
 
 class PlayingFlow:
     """

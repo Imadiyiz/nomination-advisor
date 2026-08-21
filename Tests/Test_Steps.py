@@ -1,10 +1,10 @@
 import pytest
-from Classes.StepClass import *
-from Classes.PlayerClass import Player
+from Classes.step import *
+from Classes.player import Player
 from unittest.mock import MagicMock
-from Classes.GameManager import *
-from Classes.CardClass import Card
-from Classes.DeckClass import Deck
+from Classes.game_manager import *
+from Classes.card import Card
+from Classes.deck import Deck
 
 @pytest.fixture
 def player():

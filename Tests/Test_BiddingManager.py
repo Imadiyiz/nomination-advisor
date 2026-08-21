@@ -1,8 +1,8 @@
 
-from Classes.PlayerClass import Player
+from Classes.player import Player
 import pytest
-from Classes.UIManager import UIManager
-from Classes.BiddingManager import BiddingManager
+from Classes.ui_manager import UIManager
+from Classes.bidding_manager import BiddingManager
 import random
 
 @pytest.fixture

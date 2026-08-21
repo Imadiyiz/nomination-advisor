@@ -1,7 +1,7 @@
 # contents of the game loop
 
-from Classes.GameManager import Game
-from Classes.PlayerClass import Player
+from Classes.game_manager import Game
+from Classes.player import Player
 
                  
 game = Game()

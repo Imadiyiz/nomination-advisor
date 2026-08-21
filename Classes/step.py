@@ -1,7 +1,7 @@
 # contains variations of the Step class
 
 from Utils.cli_tools import *
-from .PlayerClass import Player
+from .player import Player
 from Utils.ViewFormat import *
 
 

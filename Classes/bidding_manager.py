@@ -1,5 +1,5 @@
 # Contents for the Bidding Manager python file
-from .PlayerClass import Player
+from .player import Player
 
 
 class BiddingManager:

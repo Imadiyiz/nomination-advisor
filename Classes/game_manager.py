@@ -5,22 +5,22 @@ from enum import Enum
 from Utils.card_tools import SUITS_TO_SYMBOL, initials_to_id
 from Utils.cli_tools import clear_screen
 
-from .BiddingFlow import BiddingFlow
-from .BiddingManager import BiddingManager
-from .CardClass import Card
-from .DeckClass import Deck
+from .bidding_flow import BiddingFlow
+from .bidding_manager import BiddingManager
+from .card import Card
+from .deck import Deck
 from .InitialTrumpFlow import InitialTrumpFlow
-from .IterativeTrumpFlow import IterativeTrumpFlow
-from .LocalCardAssignmentFlow import LocalCardAssignmentFlow
-from .PlayerClass import Player
-from .PlayerSetupFlow import PlayerSetupFlow
-from .PlayerStateManager import PlayerStateManager
-from .PlayingFlow import PlayingFlow
-from .ScoreboardClass import Scoreboard
-from .StepClass import *
-from .TableClass import Table
-from .TrumpManager import TrumpManager
-from .UIManager import UIManager
+from .iterative_trump_flow import IterativeTrumpFlow
+from .local_card_assignment import LocalCardAssignmentFlow
+from .player import Player
+from .player_setup_flow import PlayerSetupFlow
+from .player_state_manager import PlayerStateManager
+from .playing_flow import PlayingFlow
+from .scoreboard import Scoreboard
+from .step import *
+from .table import Table
+from .trump_manager import TrumpManager
+from .ui_manager import UIManager
 
 VALID_CARD_INITIALS = {
     (f"{rank}{suit}")

@@ -1,5 +1,5 @@
-from bot_player import BotPlayer
-from Classes.DeckClass import Deck
+from bot import BotPlayer
+from Classes.deck import Deck
 from game_engine import GameState
 from hand_evaluator import HandEvaluator
 from Utils.card_tools import *

@@ -1,6 +1,6 @@
 # Contents of the Player class python file
 
-from .CardClass import Card
+from .card import Card
 from dataclasses import dataclass, field
 from typing import List, Optional
 

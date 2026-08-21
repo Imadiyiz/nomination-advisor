@@ -1,9 +1,9 @@
 # Contents of the Test_TrumpManager.py file
 
-from Classes.TrumpManager import TrumpManager
-from Classes.UIManager import UIManager
+from Classes.trump_manager import TrumpManager
+from Classes.ui_manager import UIManager
 import pytest
-from Classes.PlayerClass import Player
+from Classes.player import Player
 import random
 
 @pytest.fixture

@@ -1,5 +1,5 @@
 # contents of the StepManager.py file
-from .StepClass import *
+from .step import *
 
 class StepManager:
     """

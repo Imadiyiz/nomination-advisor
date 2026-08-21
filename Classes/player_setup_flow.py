@@ -1,4 +1,4 @@
-from .StepManager import *
+from .step_manager import *
 
 
 class PlayerSetupFlow:

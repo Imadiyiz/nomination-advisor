@@ -1,7 +1,7 @@
 # Contents for the PlayerStateManager python file
 
-from .PlayerClass import Player
-from .CardClass import Card
+from .player import Player
+from .card import Card
 
 class PlayerStateManager:
     """

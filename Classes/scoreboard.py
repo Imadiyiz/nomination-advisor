@@ -1,6 +1,6 @@
 # Contents of the Scoreboard class which keeps track of the scores in the game
-from Classes.CardClass import Card
-from Classes.PlayerClass import Player
+from Classes.card import Card
+from Classes.player import Player
 
 
 class Scoreboard:

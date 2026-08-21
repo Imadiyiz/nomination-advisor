@@ -1,6 +1,6 @@
 import random
 
-from Classes.DeckClass import Deck
+from Classes.deck import Deck
 from Utils.types import CardInt, TrumpStr
 
 

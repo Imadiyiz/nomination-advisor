@@ -1,6 +1,6 @@
 # Contents of the Trump Manager Class
 import random
-from .PlayerClass import Player
+from .player import Player
 
 class TrumpManager:
     """

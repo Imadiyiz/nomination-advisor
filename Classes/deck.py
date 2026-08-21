@@ -1,6 +1,6 @@
 import random
 
-from Classes.CardClass import Card
+from Classes.card import Card
 from Utils.card_tools import initials_to_id
 
 
