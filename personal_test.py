@@ -58,13 +58,14 @@ def generate_educated_bids(hands: dict[PlayerStr, set[CardInt]]) -> dict:
         bid = bot.determine_baseline_bid(
             hand=hands[bot.name],
             trump_suit=format_string("Diamonds"),
+            player_amount=len(hands),
             restriction=banned
         )
 
-        naive_bids[bot.name] = bid
+        educated_bids[bot.name] = bid
         bid_total += bid
 
-    return naive_bids
+    return educated_bids
 
 hands = [
     (bot_player, generator(deck))
@@ -81,6 +82,7 @@ root_state = GameState(
     trump_suit=format_string("Diamonds"),             # Must be the prose
     player_order=tuple(players),
     round_scores={p: 0 for p in players},
+    total_scores={p: 0 for p in players},
     cards_remaining=8                  # 8 cards each
 )
 

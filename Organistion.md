@@ -103,3 +103,7 @@ parameters = {
 }
 
 ## latest error message
+
+After this bug fix of the illegal bid, I will create unit tests for the framework and a clear roadmap to progress because I have spent 1 hour debugging something as trivial as two players having the same name in my test, something which is impossible in an actual game.
+
+Fixed said bug, happy to unit test my components now

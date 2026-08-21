@@ -10,20 +10,20 @@ from Utils.hand_generators import *
 # Test Parameters
 #players_tuple = ("strong", "weak", "suited", "random")
 players_tuple = ("random1","random2",
-                 "random3","random4",)
+                 "random3", "random4")
 
 players = list(players_tuple)
 my_player = "random"
 current_trick = ()
 bot_players = [BotPlayer(name = name) for name in players_tuple]
-N_rollouts = 10000
+N_rollouts = 500
 
 # Constants
 PRINT_BID_EVAL = False
 PRINT_MOVE_EVAL = False
 PRINT_NAIVE_BIDS = False
-PRINT_NAIVE_BIDS_DISTRIBUTION = True
-HAND_SIZE = 6
+PRINT_NAIVE_BIDS_DIFFERENCE_DISTRIBUTION = True
+HAND_SIZE = 8
 
 
 def convert_into_percentage(decimal: float) -> str:
@@ -52,15 +52,19 @@ hand_generators = (
     random_hand,
     random_hand
 )
-if PRINT_NAIVE_BIDS_DISTRIBUTION:
+if PRINT_NAIVE_BIDS_DIFFERENCE_DISTRIBUTION:
+    print("PRINT_NAIVE_BIDS_DIFFERENCE_DISTRIBUTION")
     round_difference_distribution = {}
-
     for _ in range(N_rollouts):
+
         naive_bids = {}
+        banned = -1
+        bid_total = 0
+
         #reset deck
         deck = Deck()
         hands = [
-            (bot_player, generator(deck))
+            (bot_player, generator(deck, HAND_SIZE))
             for bot_player, generator in zip(
                 players, 
                 [gen for gen in hand_generators]
@@ -68,31 +72,27 @@ if PRINT_NAIVE_BIDS_DISTRIBUTION:
         ]
         hands = dict(hands)
 
-        banned = -1
-        bid_total = 0
-
         # Must check that all the bids do not add up to banned
         for i, bot in enumerate(bot_players):
-            if i == len(bot_players) - 1:   
+            if (i == len(bot_players) - 1): 
                 banned = HAND_SIZE - bid_total
 
             bid = bot.determine_baseline_bid(
                 hand=hands[bot.name],
+                player_amount=len(players),
                 trump_suit=format_string("Diamonds"),
                 restriction=banned
             )
-
             naive_bids[bot.name] = bid
             bid_total += bid
 
-        # Distribution forming
-        bid_diff = sum(naive_bids.values()) - HAND_SIZE 
+        # Distribution forming 
+        bid_diff = sum(naive_bids.values()) - HAND_SIZE   
         if bid_diff not in round_difference_distribution:
             round_difference_distribution[bid_diff] = 1
         else:
             round_difference_distribution[bid_diff] += 1
 
-    # Turn freq into distrbution
     for i, v in round_difference_distribution.items():
         round_difference_distribution[i] = round(v / N_rollouts, 2)
 
@@ -117,8 +117,9 @@ root_state = GameState(
     trump_suit=format_string("Diamonds"),             # Must be the prose
     player_order=tuple(players),
     round_scores={p: 0 for p in players},
+    total_scores={p: 0 for p in players},
     bids=naive_bids,      # Arbitrary example bids
-    cards_remaining=8                  # 8 cards each
+    cards_remaining=HAND_SIZE                  # 8 cards each
 )
 
 bidding_estimates = {}
@@ -138,7 +139,7 @@ if PRINT_BID_EVAL:
         root_state.player_order = tuple(players)
 
         bidding_estimates[p] = HandEvaluator(
-            root_state=root_state,
+            state=root_state,
             perspective=p,
             N_rollouts=500
         ).estimate_optimal_bid()
@@ -174,7 +175,7 @@ if PRINT_MOVE_EVAL:
 
         
         move_estimates[p] = HandEvaluator(
-            root_state=root_state,
+            state=root_state,
             perspective=p,
             N_rollouts=500
         ).estimate_optimal_move()

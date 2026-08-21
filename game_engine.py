@@ -2,17 +2,15 @@ from dataclasses import dataclass, field
 
 from Utils.card_tools import *
 from Utils.types import *
+from Utils.nom_rule_tools import calculate_correct_bid_score
 
-# This GameState class is for showing me at any time what is happening, not for dictiating plays 
-
+# This GameState class is for showing what the gamestate is after actions occur
 
 @dataclass()
 class GameState:
 
     """
 
-    Cards stored as ("10D", "3H")
-    Suits are stored a 'D', 'S'
     Only the Truth, fully concrete
     Attributes:
         
@@ -23,8 +21,9 @@ class GameState:
     trump_suit: TrumpStr
     player_order: tuple[PlayerStr, ...]   # fixed seating order
     round_scores: dict[PlayerStr, int]
+    total_scores: dict[PlayerStr, int]
     cards_remaining: int
-    winner: PlayerStr = ''              # Winner of the previous trick
+    winner: PlayerStr | None = None            # Winner of the previous trick
 
     # Must use default_factory for when declaring mutable types
     bids: dict[PlayerStr, int]  = field(default_factory=dict)      # Don't always have bids assigned and 
@@ -35,7 +34,7 @@ class GameState:
         if not self._leader:
             self._leader = self._get_leader(self.player_order, self.current_trick)
 
-    # must be used to avoid generating inaccurate worlds
+    # must be used to avoid generating inaccurate worlds due to inaccurate ordering
     def _get_leader(self, players: tuple[PlayerStr, ...], current_trick: tuple[tuple[PlayerStr, CardInt],...] ) -> str:
         """
         Returns a valid leader given the current trick restraints
@@ -100,7 +99,7 @@ class GameState:
         """
 
         # Initially there isn't a winner
-        winner = ''
+        winner = None
 
         if card not in self.get_legal_moves(player):
             print("")
@@ -116,7 +115,8 @@ class GameState:
             for p, cards in self.hands.items()
         }
 
-        new_scores = dict(self.round_scores)
+        new_round_scores = dict(self.round_scores)
+        new_total_scores = dict(self.total_scores)
 
         new_trick = self.current_trick + ((player, card),)
 
@@ -126,10 +126,11 @@ class GameState:
         # if trick complete, resolve it
         if len(new_trick) == len(self.player_order):
             winner = self._resolve_trick(new_trick)
-            new_scores[winner] += 1
+            new_round_scores[winner] += 1
             new_trick = ()
             new_leader = winner
             new_cards_remaining -= 1
+            new_total_scores = self._update_total_score(new_round_scores)
 
         return GameState(
             hands=new_hands,
@@ -137,11 +138,25 @@ class GameState:
             _leader=new_leader,
             trump_suit=self.trump_suit,
             player_order= self.player_order,
-            round_scores=new_scores,
+            round_scores=new_round_scores,
+            total_scores=new_total_scores,
             cards_remaining=new_cards_remaining,
             bids=dict(self.bids), 
             winner = winner
         )
+
+    def _update_total_score(self, round_scores: dict[PlayerStr, int]) -> dict[PlayerStr, int]:
+        """Should be called after a round concludes to ensure that the total score is updated to current gamestate.
+        Receives the latest round_score and returns new total_score dictionary"""
+        _total_scores = dict(self.total_scores)
+        print(round_scores.items())
+        for player, score in round_scores:
+            if score == self.bids[player]:
+                _total_scores[player] += calculate_correct_bid_score(score)
+            else:
+                _total_scores[player] += score  # Fix later need to update total score, score should be an int tho
+
+        return _total_scores
 
 
     def _resolve_trick(
@@ -169,15 +184,17 @@ class GameState:
         return max(lead_cards, key=lambda lc: get_rank(lc[1]))[0]
 
     
-    def is_terminal(self, round = True) -> bool:
+    def is_round_terminal(self) -> bool:
         """
-        round or trick is terminal
+        Decides whether the current round has ended
         """
-
-        # Terminal state if there are no cards remaining in play 
-        if round == True:
-            return self.cards_remaining == 0
-
-
+        # Terminal state if there are no cards remaining in play
+        return self.cards_remaining == 0
+      
+    
+    def is_trick_terminal(self) -> bool:
+        """
+        Decides whether the current trick has ended
+        """
         # Terminal state if a winner has been declared
-        return self.winner != '' and round == False              
+        return self.winner != None   

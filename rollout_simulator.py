@@ -13,14 +13,33 @@ class RolloutSimulator:
         # local mutable copy
         self.state = state
 
-    def rollout_round(self) -> dict[PlayerStr, int]:
+    def random_rollout_round(self) -> dict[PlayerStr, int]:
         """
         Players play random moves until they run out of moves and the round terminates.
         Returns the scores from the round
         
         """
-        self.state.winner = ''  # Reset winner to ensure the trick is not considered complete at the start
-        while not self.state.is_terminal():
+        self.state.winner = None  # Reset winner to ensure the trick is not considered complete at the start
+        while not self.state.is_round_terminal():
+            
+            player = self.state.next_player()
+            legal_moves = self.state.get_legal_moves(player)
+            if not tuple(legal_moves):
+                raise ValueError("There is a duplicate card in play, please check assigned cards")
+            move = random.choice(tuple(legal_moves))  # Intentionally random
+
+            self.state = self.state.apply_move(player, move)
+
+        return self.state.round_scores
+
+    def baseline_rollout_round(self) -> dict[PlayerStr, int]:
+        """
+        Players play moves to win or lose the trick based on bid until they run out of moves and the round terminates.
+        Returns the scores from the round
+        
+        """
+        self.state.winner = None  # Reset winner to ensure the trick is not considered complete at the start
+        while not self.state.is_round_terminal():
             
             player = self.state.next_player()
             legal_moves = self.state.get_legal_moves(player)
@@ -32,14 +51,14 @@ class RolloutSimulator:
 
         return self.state.round_scores
 
-    def rollout_trick(self, perspective: PlayerStr, chosen_card: CardInt) -> PlayerStr:
+    def rollout_trick(self, perspective: PlayerStr, chosen_card: CardInt) -> PlayerStr | None:
 
         """
         Similar to rollout round however, it terminates after finishing a trick
         """
 
-        self.winner = '' # reset winner before new one is assigned
-        while not self.state.is_terminal(round=False):
+        self.winner = None # reset winner before new one is assigned
+        while not self.state.is_trick_terminal():
             player = self.state.next_player()
             legal_moves = self.state.get_legal_moves(player) # The real truth
 

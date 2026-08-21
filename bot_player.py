@@ -1,4 +1,5 @@
 # Bot player who will make decisions during simulation
+import math
 import random
 
 from belief_model import BeliefModel
@@ -32,8 +33,8 @@ class BotPlayer:
                       current_bids: list[int],
                       hand_size: int,
                       restriction:int = -1) -> int:
-        """Determines a bid based on the distribution of their ETW 
-        (Expected Tricks Won). Also accounts for their position at the
+        """Determines a bid based on the distribution of their ES 
+        (Expected Score). Also accounts for their position at the
         table, the table size and the points margin from the leader
         whiile making use of heuristics. Caller of the function must impose the restriction
         of bid amount if necessary.
@@ -114,13 +115,14 @@ class BotPlayer:
 
     def determine_baseline_bid(self, hand: set[CardInt], 
                                trump_suit: TrumpStr,
+                               player_amount: int,
                                restriction: int = -1) -> int:
         """Naively determines bid solely based on hand strength
            Accepts a hand parameter instead of using actual hand as.
            If the bot has a restriction on bid, they must alter their bid towards the average"""
 
         
-        player_amount = 4 # default player_amount in case its not set in belief_model
+        hand_size = len(hand)
 
         if self.belief_model is not None:  # Ensure belief model exists before attempting to calculate hand sizes
             player_amount = len(self.belief_model.hand_sizes)
@@ -132,33 +134,68 @@ class BotPlayer:
         strong_cards = [card for card in hand 
                         if self._is_strong_card(card,
                                                 trump_id, 
-                                                player_amount)]
+                                                player_amount,
+                                                hand_size)]
 
-        # Plays postively if bot has less than 3 strong cards
-        bid_to_confirm = len(strong_cards) - max(0, (player_amount - 5) )
+        # Expects to win with each strong card
+        bid_to_confirm = len(strong_cards) 
 
         if bid_to_confirm == restriction:
-            if bid_to_confirm == 0:  # Can only play 1 as -1 is not allowed
+            if restriction == 0:  # Can only play 1 as -1 is not allowed
                 return 1
             else:
-                return random.choices(
-                    (restriction + 1, restriction - 1),
-                    weights=(1, 1), # has a dramatic effect on the distribution
-                    k = 1)[0]
-
+                return random.choice(
+                    (restriction + 1, restriction - 1))  # has a dramatic effect on the distribution
         else:
             return bid_to_confirm
 
 
-    def _is_strong_card(self, card: CardInt, trump_id: int, player_amount: int = 4) -> bool:
+    def _is_strong_card(self, card: CardInt,
+                        trump_id: int,
+                        player_amount: int,
+                        hand_size: int) -> bool:
 
         """Trump cards over X amount and high cards over Y amount are strong (assumes 4 players). 
+        Threshold aims for expected strong cards in play to be the number of cards per hand.
         Returns: True if strong"""
 
-        strong = (card // 13 == trump_id 
-                 and card % 13 > (5 + player_amount)
-                 or card % 13 > (6 + player_amount))
-        return strong
+        if card is None:
+            return False
+
+        # Ensures that the strong card pool is at least the minimum required
+        # to make the expected strong cards in play the number of cards per hand.
+        strong_cards_target = self._generate_strong_card_target(
+            hand_size, player_amount)  
+
+        strong_cards = []
+        trump_threshold = 12
+        high_threshold = 12
+
+        while len(strong_cards) < strong_cards_target:
+        
+            strong_cards = [card for card in range(52) if (
+                    (card // 13 == trump_id and card % 13 > (trump_threshold))
+                    or card % 13 > (high_threshold))
+            ]
+            margin = strong_cards_target - len(strong_cards)
+
+            if margin > 3:
+                high_threshold -=1
+            elif margin > 0:
+                trump_threshold -=1
+
+        return card in strong_cards
+
+    def _generate_strong_card_target(self, 
+                                     hand_size:int,
+                                     player_amount: int):
+        """Based off hand_size and player_amount generates smallest strong card pool target which makes the
+        expected strong cards within play greater than hand size."""
+
+        PC = hand_size * player_amount
+        TC = 52
+        HS = hand_size
+        return int(round((TC*HS) / PC, 0))
 
 
     def determine_move(self, possible_moves: set[CardInt], calculation_limit = 10) -> CardInt:

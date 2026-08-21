@@ -6,7 +6,8 @@ from Utils.types import CardInt, TrumpStr
 
 def weak_hand(deck: Deck, size=8) -> set[CardInt]:
     """Generates a weak hand as well as modifying the deck instance passed so that the 
-    cards are removed from the deck"""
+    cards are removed from the deck
+    """
 
     weak_cards = [card.id for card in deck.cards if card.id % 13 < 6]
     sample = set(random.sample(weak_cards, size))

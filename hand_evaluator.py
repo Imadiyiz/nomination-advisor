@@ -5,6 +5,7 @@ from game_engine import GameState
 from rollout_simulator import RolloutSimulator
 from Utils.card_tools import *
 from Utils.types import *
+from Utils.nom_rule_tools import calculate_correct_bid_score
 
 VALID_CARD_IDS = set(range(52))
 
@@ -36,14 +37,15 @@ class HandEvaluator:
 
         # Construct determinised state
         determinised_state = GameState(
-            hands=sampled_hands,
-            current_trick=self.state.current_trick,
-            trump_suit=self.state.trump_suit,
-            player_order=self.state.player_order,
+            hands=dict(sampled_hands),
+            current_trick=tuple(self.state.current_trick),
+            trump_suit=str(self.state.trump_suit),
+            player_order=tuple(self.state.player_order),
             round_scores=dict(self.state.round_scores),
+            total_scores=dict(self.state.total_scores),
             bids=dict(self.state.bids),
-            cards_remaining=self.state.cards_remaining
-        )
+            cards_remaining=int(self.state.cards_remaining)
+        ) # Adjusted this so that it is not possible to change gamestate for HE instance
 
         return determinised_state
 
@@ -148,22 +150,36 @@ class HandEvaluator:
             "mode_probability": distribution[mode],
         }
 
-    def _simulate_round(self, bid: int = 9) -> dict[int, float]:
+    def _simulate_round(self, bid: int = 9, rollout_type: str = 'RANDOM') -> dict[int, float]:
 
         """
         Simulation commences.
+
+        Args:
+            simulation_type: (str)
+            RANDOM, BASELINE
         Returns distribution of tricks won per bid:
         """
+
+        # Sanitise rollout type
+        rollout_type = rollout_type.upper()
+
         bid_success_freq = {b: 0 for b in range(9)}
         bid_success_distribution = {b: 0.0 for b in range(9)}
         tricks_won = 0
 
         for _ in range(self.N_rollouts):
     
-            # Sample a possible world consistent with beliefs
-            # Run rollout until perspective is reached
+            # simulator instance created with a sampled possible world consistent with perspective beliefs
             simulator = RolloutSimulator(self._get_determinised_state())
-            final_scores = simulator.rollout_round()
+
+            # Determine type of rollout
+            rollout_map = {
+                'RANDOM' : simulator.random_rollout_round
+            }
+
+            # Run rollout until perspective is reached
+            final_scores = rollout_map[rollout_type]()
             tricks_won = final_scores[self.perspective]
             bid_success_freq[tricks_won] += 1
 
@@ -174,20 +190,11 @@ class HandEvaluator:
      
         return bid_success_distribution
 
-    def _calculate_score(self, tricks_won: int) -> int:
-        """Based on nomination rules returns score"""
-
-        if tricks_won > 8:
-            return tricks_won
-        if tricks_won == 8:
-            return 36
-        return tricks_won + 10
-
     def _calculate_scores_per_bid(self, distribution: dict[int, float]) -> dict[int, float]:
 
         scores_per_bid = {}
         for bid in range(9):
-            premium = self._calculate_score(bid)
+            premium = calculate_correct_bid_score(bid)
             # expected score = P(hit) * premium + sum over misses of P(miss_tricks) * miss_tricks
             expected = distribution[bid] * premium + sum(
                 p * tricks for tricks, p in distribution.items() if tricks != bid
