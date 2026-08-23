@@ -53,3 +53,15 @@ increase SC by 1 by decreasing threshold for trump cards
 increase SC by 3 by decreasing threshold for high cards (be careful that high card threshold is never below trump)
 
 Default is 18 strong cards as this is the lowest int value that is that satisfies the formula
+
+# heuristics class
+V1 HeuristicClass
+
+parameters = {
+    "aggression": 0.45, # How often they are to bid higher than their random expected value
+    "belief_in_opponents": 0.90, # how likely they are to believe the players who
+    bid before them are successful
+    "adaptability": 0.75, # How often the parameters change based on new information,
+    "risk_tolerance": 0.1 # Decides when to make risky plays, with limited information 
+    ""
+}

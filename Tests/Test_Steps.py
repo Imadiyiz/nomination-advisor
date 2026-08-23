@@ -1,15 +1,15 @@
 import pytest
-from Classes.step import *
-from Classes.player import Player
-from unittest.mock import MagicMock
-from Classes.game_manager import *
-from Classes.card import Card
+
 from Classes.deck import Deck
+from Classes.game_manager import *
+from Classes.player import Player
+from Classes.step import *
+
 
 @pytest.fixture
 def player():
     p = Player(name="Alice")
-    p.hand = ["2C", "4C", "AC"]  # minimal stub
+    p.hand = [4, 44, 10]  # minimal stub
     p.opponent = False
     return p
 
@@ -30,9 +30,6 @@ def tb(ui):
 def sb(player_queue):
     return Scoreboard(players=player_queue)
 
-@pytest.fixture()
-def vci():
-    return Deck().generate_valid_card_initials()
 
 class Test_NumPlayerStep():
 
@@ -142,22 +139,3 @@ class Test_PlayerPlayCardStep():
             step.validate("5", args)
 
 
-class TestOpponentPlaysCard():
-    def test_opponent_plays_card(self, tb, sb, vci):
-        
-        opponent = Player(name="CPU", opponent=True)
-
-        playing_flow = PlayingFlow(
-            table=tb,
-            scoreboard=sb,
-            valid_card_initials=vci
-        )
-
-        # mock input loop if needed
-        result = playing_flow._prompt_for_opponent_play_card(
-            player=opponent,
-            trump_suit="Spades"
-        )
-
-        assert isinstance(result, str)
-        assert result in vci or (result == 'BACK')

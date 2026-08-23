@@ -9,7 +9,7 @@ from .bidding_flow import BiddingFlow
 from .bidding_manager import BiddingManager
 from .card import Card
 from .deck import Deck
-from .InitialTrumpFlow import InitialTrumpFlow
+from .initial_trump_flow import InitialTrumpFlow
 from .iterative_trump_flow import IterativeTrumpFlow
 from .local_card_assignment import LocalCardAssignmentFlow
 from .player import Player

@@ -1,5 +1,7 @@
+from Classes.bidding_manager import BiddingManager
+
 from .step_manager import *
-from Classes.BiddingManager import BiddingManager
+
 
 class BiddingFlow:
     """

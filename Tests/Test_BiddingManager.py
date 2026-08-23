@@ -1,9 +1,12 @@
 
-from Classes.player import Player
-import pytest
-from Classes.ui_manager import UIManager
-from Classes.bidding_manager import BiddingManager
 import random
+
+import pytest
+
+from Classes.bidding_manager import BiddingManager
+from Classes.player import Player
+from Classes.ui_manager import UIManager
+
 
 @pytest.fixture
 def computer_players():
@@ -20,7 +23,7 @@ def bm():
 def human_player():
     return Player(name="Human") 
     
-class TestBiddingManager():
+class TestBiddingManager:
     
     """
     def test_successful_computer_bid(self, bm, computer_players):

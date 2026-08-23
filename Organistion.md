@@ -9,6 +9,8 @@
 
 I want to make the trick evaluation in EOM by making the articifical players in a simulation play towards their bid. They should be aggressive when they can win tricks and passive when they want to lose tricks. I have taken this a step further and tried to make the AI even smarter by having adjustable parameters. Essentially I am pivoting away from the imperfect information agent assistant and moving more towards having a strong AI that will help the player in real time.
 
+Progress update: I can use the determine baseline bid using strong cards estimation, to generate bids to play towards in the calculated simulator rollout
+
 - [ ] Added Heuristics when choosing card for AI during rollout (In progress)
 
 I need to simulate the rest of the round/game after selecting a move to observe whether it is the best move for the situation, playing a card that makes you win another trick after achieving your bid is not ideal.
@@ -25,7 +27,6 @@ I would like to implement the move evaluation and bidding evaluation into the CL
 I want the bid evaluator to be aware of the global score in order to cut a deficit between perspective and the points leader in order to minimise the deficit or maxmimise the lead. Must also remember that bid evaulator must omit the banned bid.
 
 - [ ] Inegrated global score awareness within the the bid evaluator
-
 
 GameManager is working as a Super class as it is performing too much within itself. It has so much responsibility that I haven;t refactored as the code works. Unfortunately, making changes are quite expensive timewise and mentally.
 
@@ -66,9 +67,9 @@ This is more insightful compared to simulating to the end of the trick
 A good developer knows how to stay in scope. I keep changing every 2-3 hours. At this project was a local multiplayer CLI Game, then it turned into an online multiplayer GUI game, then it turned back to a single-player IRL CLI game , then it became ta single-player IRL CLI game with extra information given to perspective using a Monte-Carlo Simulation for predicting bids and winning tricks, now it has turned to a similar game with a heuristic bots instead of playing random moves within the MC rollot. All these changes have been made over the course of 12 months and have all been justified, at least at the time of the decision, but now I want to make a conscious effort to stop changing things. I will finish the basic heuristic bot, and then branch the project into two.
 
 First there will be the original CLI game with boosted information.
-
 Then I will make a second version where a single player can play against a variety of computer bots.
-# Quality of life changes to make to the Game CLI
+
+### Quality of life changes to make to the Game CLI
 
 Formatting in general
 Some duplicate messages
@@ -89,21 +90,11 @@ Make it clear who determines Trump for next round when there is a draw, should b
 
 Need to clarify with Jay about the rule of cutting trump, is it possible to deal that card for the subsequent round or do we omit it. Irl I believe we redeal it but in the game I assumed you removed it from the deck.
 
+Could make the back system work by each move being added to the stack and then when that sequence has finshed just reset the stack. After each step in the step the previous step can be saved within the stack, therefore if the user goes back then the most recent action can be removed from the stack and the gamestate that was previously on the stack will be used.
 
+### Known issues
 
-V1 HeuristicClass
+The sampling in belief model is not fairly distributed as first players to sample have a larger pool of cards to sample from, across multiple rollouts this makes the last player to sample from the deck of cards less liikely to obtain certain cards that the previous players are forced to take
 
-parameters = {
-    "aggression": 0.45, # How often they are to bid higher than their random expected value
-    "belief_in_opponents": 0.90, # how likely they are to believe the players who
-    bid before them are successful
-    "adaptability": 0.75, # How often the parameters change based on new information,
-    "risk_tolerance": 0.1 # Decides when to make risky plays, with limited information 
-    ""
-}
-
-## latest error message
-
-After this bug fix of the illegal bid, I will create unit tests for the framework and a clear roadmap to progress because I have spent 1 hour debugging something as trivial as two players having the same name in my test, something which is impossible in an actual game.
-
-Fixed said bug, happy to unit test my components now
+Formatting this needs work choose cards [1-1]
+Rule for following suits needs to be adhered

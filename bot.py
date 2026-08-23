@@ -12,7 +12,8 @@ class BotPlayer:
 
     """
     Bot player within the Monte Carlo Simulation. Able to reason during the sim in order
-    tp make the simuation more realistic
+    tp make the simuation more realistic. Fed the truth via Gamestate, and makes decision based on personality and
+    belief_model (brain)
     """
 
     def __init__(self,
@@ -105,12 +106,6 @@ class BotPlayer:
         return bid
     
         # Distribution should not have restricted bid within it
-
-
-
-
-
-
 
 
     def determine_baseline_bid(self, hand: set[CardInt], 
