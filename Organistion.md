@@ -41,6 +41,8 @@ Additionslly I need to spend the time creating tests for my classes as they are 
 move = random.choice(tuple(legal_moves)) # change this 
 LN 29 in Rollout simulator - Could potentially make it smarter using desired_move() function to use gamestate to work out whether its in the best interest to the player to win the hand
 
+I have done some research on Game Theory and have come across terms such as Nash Equillibrium (No regrettable moves), backwards induction (deducing the optimal move by backtracking from the outcome) and subgame perfection in imperfect information games. Currently I am running a PIMC (Perfect Information Monte Carlo) simulation. The issues with this strategy is that it is non-local, therefore it does not account for the fact that opponents choicces are also information and may forecast what they are due to play in the future. Additionally Strategy fusion is an issue, as PIMC assumes that in each sampled world you'll see the outcome before needing to act again but this is not the case, as the information will not be present in a real game until the cards are played. Overreates plays which only work when you 'peek'.
+
 ### Key points
 
 Continue to update this file to reduce mental workload - Programming is difficult with a large mental workload, more planning and forward thinking can reduce this, making the process more enjoyable.

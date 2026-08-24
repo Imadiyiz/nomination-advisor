@@ -17,7 +17,7 @@ class BeliefModel:
     Represents what one player believes about the game
     """
 
-    void_suits: dict[str, set[str]]  # dict, player id, set(suit)
+    void_suits: dict[PlayerStr, set[str]]  # dict, player id, set(suit)
     unknown_cards: set[CardInt]      # cards not yet assigned
     hand_sizes: dict[PlayerStr, int]  # player -> cards remaining
     perspective_player: PlayerStr
@@ -25,8 +25,7 @@ class BeliefModel:
     def observe_play(self,
                          player: PlayerStr,
                          card: CardInt,
-                         lead_card: CardInt, 
-                         trump_suit: TrumpStr):
+                         lead_card: CardInt):
         
         """
         Updates beliefs after watching a play
@@ -45,7 +44,7 @@ class BeliefModel:
 
     def sample_world(self) -> dict[PlayerStr, set[CardInt]]:
         """
-        Produce a concrete assignment of unknown cards
+        Produce a hypothetical assignment of unknown cards
         which are consistent with all the constraints
         
         """
@@ -55,6 +54,7 @@ class BeliefModel:
         remaining_cards = list(self.unknown_cards)
         random.shuffle(remaining_cards)
 
+        # Could reorder to make most resttricted player sample first
         for player, size in self.hand_sizes.items():
             if player == self.perspective_player:
                 continue  # already known

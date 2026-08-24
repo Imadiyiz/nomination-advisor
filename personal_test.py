@@ -112,7 +112,7 @@ if PRINT_EXPECTED_BID:
         table_size=len(hands),
         hand_size=HAND_SIZE,
         points_margin=0,
-        current_bids=[] # Naive to use a list as you won't know if the total score leader is before you
+        current_bids={} # Naive to use a list as you won't know if the total score leader is before you
 
     )
     print(f"Predicted bid: {predicted_bid}, Mode: {bid_probs['mode']}")

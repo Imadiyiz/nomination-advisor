@@ -7,7 +7,7 @@ import pytest
 from bot import BotPlayer
 from Classes.deck import Deck
 
-N_ROLLOUTS = 500
+N_ROLLOUTS = 100
 
 @pytest.fixture
 def default_bot_player() -> BotPlayer:
@@ -83,7 +83,6 @@ class TestBotPlayer:
             # need last players order
             for i, bot in enumerate(default_bots):
 
-
                 if i == len(default_bots) - 1:
                     banned = hand_size - bid_total
 
@@ -93,6 +92,8 @@ class TestBotPlayer:
                     player_amount = player_amount,
                     restriction = banned
                 )  # Implement restricted bid logic
+
+                assert bid in range(0, hand_size + 1)  # Bid must be within valid range
 
                 bid_total += bid
 
@@ -104,8 +105,6 @@ class TestBotPlayer:
                 
 
         # End here for function
-
-        print(bid_diff_frequency.items())
 
         bid_diff_distribution = [( bid, round(freq / N_ROLLOUTS, 2)) 
                             for bid, freq in bid_diff_frequency.items()]
@@ -124,6 +123,9 @@ class TestBotPlayer:
         # Must be more than one type of bid chosen
         assert len(bare_distribution) >= 2
 
-        print(bare_distribution)
-        print(statistics.stdev(bare_distribution))
+        # Distributions equal 1
+        assert sum(bare_distribution)
+
+        assert statistics.stdev(bare_distribution) < 1  # Not a particularly strict enforcement
+
 

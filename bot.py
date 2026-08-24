@@ -5,7 +5,7 @@ import random
 from belief_model import BeliefModel
 from heuristics import Heuristics
 from Utils.card_tools import SUIT_FROM_INITIAL
-from Utils.types import CardInt, TrumpStr
+from Utils.types import CardInt, PlayerStr, TrumpStr
 
 
 class BotPlayer:
@@ -31,9 +31,9 @@ class BotPlayer:
                       position: int,
                       table_size: int,
                       points_margin: int,
-                      current_bids: list[int],
+                      current_bids: dict[PlayerStr, int],
                       hand_size: int,
-                      restriction:int = -1) -> int:
+                      restriction:int = -1) -> int: # Don't like current_bids being a list, should be dict with player names
         """Determines a bid based on the distribution of their ES 
         (Expected Score). Also accounts for their position at the
         table, the table size and the points margin from the leader
@@ -41,7 +41,7 @@ class BotPlayer:
         of bid amount if necessary.
         Returns: bid"""
 
-        curr_bid_sum = sum(current_bids)
+        curr_bid_sum = sum(current_bids.values())
         core_avg_bid = (
             table_size / hand_size
         )
@@ -116,7 +116,6 @@ class BotPlayer:
            Accepts a hand parameter instead of using actual hand as.
            If the bot has a restriction on bid, they must alter their bid towards the average"""
 
-        
         hand_size = len(hand)
 
         if self.belief_model is not None:  # Ensure belief model exists before attempting to calculate hand sizes
@@ -139,8 +138,8 @@ class BotPlayer:
             if restriction == 0:  # Can only play 1 as -1 is not allowed
                 return 1
             else:
-                return random.choice(
-                    (restriction + 1, restriction - 1))  # has a dramatic effect on the distribution
+                return min(hand_size, random.choice(
+                     (restriction + 1, restriction - 1)))  # Can not bid more than hand size
         else:
             return bid_to_confirm
 
