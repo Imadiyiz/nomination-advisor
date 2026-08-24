@@ -12,6 +12,8 @@ VALID_CARD_IDS = set(range(52))
 class HandEvaluator:
     def __init__(self, state: GameState, perspective: PlayerStr,
                  N_rollouts: int = 100):
+
+        """Monte Carlo hand evaluator class"""
         self.state = state
         self.perspective = perspective
         self.N_rollouts = N_rollouts
@@ -76,7 +78,7 @@ class HandEvaluator:
         )
         return 1 if winner == self.perspective else 0
 
-    def estimate_optimal_move(self) -> dict:
+    def estimate_optimal_move(self, rollout_type:str = 'RANDOM') -> dict:
         """
         Runs a Monte Carlo simulation to evaluate which card the player should play.
         Can only estimate legal moves based on the current hand. Returns summary of context in dictionary form.
@@ -150,7 +152,7 @@ class HandEvaluator:
             "mode_probability": distribution[mode],
         }
 
-    def _simulate_round(self, bid: int = 9, rollout_type: str = 'RANDOM') -> dict[int, float]:
+    def _simulate_round(self, rollout_type: str = 'RANDOM') -> dict[int, float]:
 
         """
         Simulation commences.
@@ -175,7 +177,8 @@ class HandEvaluator:
 
             # Determine type of rollout
             rollout_map = {
-                'RANDOM' : simulator.random_rollout_round
+                'RANDOM' : simulator.random_rollout_round,
+                'NAIVE' : simulator.naive_rollout_round,
             }
 
             # Run rollout until perspective is reached

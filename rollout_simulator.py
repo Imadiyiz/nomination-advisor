@@ -34,10 +34,10 @@ class RolloutSimulator:
 
         return self.state.round_scores
 
-    def baseline_rollout_round(self, player_map: dict[PlayerStr, BotPlayer]) -> dict[PlayerStr, int]:  # Can't be real player as this is a rollout simulator
+    def naive_rollout_round(self, player_map: dict[PlayerStr, BotPlayer]) -> dict[PlayerStr, int]:  # Can't be real player as this is a rollout simulator
         """
         Players play moves to win or lose the trick based on bid until they run out of moves and the round terminates.
-        Returns the scores from the round
+        Returns the scores from the round. Basic heurisic and acts as the baseline
         
         """
         self.state.winner = None  # Reset winner to ensure the trick is not considered complete at the start
@@ -53,11 +53,13 @@ class RolloutSimulator:
             move = player.determine_naive_move(
                 current_trick=self.state.current_trick,
                 trump_suit=self.state.trump_suit,
-                player_amount=len(self.state.player_order),
                 legal_moves=legal_moves,
                 round_score=self.state.round_scores,
                 bids=self.state.bids,
                 )
+
+            if not move:
+                raise ValueError(f"Invalid move selected by {player}, try again")
 
             self.state = self.state.apply_move(player.name, move)
 

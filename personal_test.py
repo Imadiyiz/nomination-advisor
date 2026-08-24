@@ -25,6 +25,7 @@ N_ROLLOUTS = 100
 
 PRINT_EXPECTED_BID = False
 PRINT_HANDS = True
+PRINT_MONTE_CARLO_SIM = False
 
 hand_generators = (
     random_hand,

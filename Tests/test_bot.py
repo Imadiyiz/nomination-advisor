@@ -129,3 +129,98 @@ class TestBotPlayer:
         assert statistics.stdev(bare_distribution) < 1  # Not a particularly strict enforcement
 
 
+    @pytest.mark.parametrize('hand_size', range(6, 9), indirect=True)
+    @pytest.mark.parametrize('player_amount', range(3, 7), indirect=True)
+    def test_determine_bid_returns_valid_bid(self,
+        default_bot_player: BotPlayer,
+        hand_size: int,
+        player_amount: int
+    ):
+        """Bid must always be a valid bid and must respect the restriction."""
+
+        bot = default_bot_player
+
+        expected_scores = {
+            0: 0.10,
+            1: 0.25,
+            2: 0.40,
+            3: 0.20,
+            4: 0.05,
+        }
+
+        for _ in range(N_ROLLOUTS):
+
+            restriction = random.choice(range(-1, hand_size + 1))
+
+            bid = bot.determine_bid(
+                expected_scores=expected_scores,
+                position=random.randrange(player_amount),
+                table_size=player_amount,
+                points_margin=random.randint(-30, 30),
+                current_bids={f"Bot {i}": random.randint(0, hand_size) for i in range(
+                    random.randint(0, player_amount - 1)
+                )},
+                hand_size=hand_size,
+                restriction=restriction
+            )
+
+            assert 0 <= bid <= hand_size
+            assert bid != restriction
+
+    def test_determine_bid_prefers_best_expected_score(self,
+    default_bot_player: BotPlayer):
+        """Deterministic test where the bot should bid the bid with the greatest expected score"""
+
+        for _ in range(N_ROLLOUTS):
+            bot = default_bot_player
+
+            expected_scores = {
+                0: 0.10,
+                1: 0.20,
+                2: 0.70,
+                3: 0.15,
+                4: 0.05,
+            }
+
+            bid = bot.determine_bid(
+                expected_scores=expected_scores,
+                position=1,
+                table_size=4,
+                points_margin=0,
+                current_bids={'Player 1':1,},
+                hand_size=8,
+                restriction=-1
+            )
+
+            assert bid == 2
+
+
+    def test_determine_bid_high_risk_allows_variation(
+    self, default_bot_player: BotPlayer):
+        bot = default_bot_player
+        bot.heuristics.risk_tolerance = 1.0
+
+        expected_scores = {
+            1: 0.30,
+            2: 0.40,
+            3: 0.30,
+        }
+
+        bids = []
+
+        for _ in range(N_ROLLOUTS):
+            bid = bot.determine_bid(
+                expected_scores=expected_scores,
+                position=1,
+                table_size=4,
+                points_margin=0,
+                current_bids={},
+                hand_size=8,
+                restriction=-1
+            )
+
+            bids.append(bid)
+
+        assert 1 in bids
+        assert 2 in bids
+        assert 3 in bids

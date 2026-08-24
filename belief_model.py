@@ -51,7 +51,8 @@ class BeliefModel:
         
         """
         attempts = 0
-        MAX_ATTEMPTS = 10000
+        MAX_ATTEMPTS = 25000  # Not happy, but in 6 players it struggles with the sampling. Normally
+        # the upper limit is not reached thankfully
         valid = True
 
         # Attempt sampling until valid world assignments are formed
