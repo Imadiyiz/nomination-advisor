@@ -1,12 +1,12 @@
 
 import random
-import statistics
 from collections import defaultdict
+
 import pytest
 
 from belief_model import BeliefModel
-from Classes.deck import Deck
 from bot import BotPlayer
+from Classes.deck import Deck
 from Utils.types import TrumpStr
 
 N_ROLLOUTS = 1000

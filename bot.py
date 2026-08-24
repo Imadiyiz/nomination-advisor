@@ -4,7 +4,8 @@ import random
 
 from belief_model import BeliefModel
 from heuristics import Heuristics
-from Utils.card_tools import SUIT_FROM_INITIAL
+from Utils.card_tools import SUIT_FROM_INITIAL, get_suit_str
+from Utils.nom_rule_tools import calculate_winning_card
 from Utils.types import CardInt, PlayerStr, TrumpStr
 
 
@@ -192,16 +193,108 @@ class BotPlayer:
         return int(round((TC*HS) / PC, 0))
 
 
-    def determine_move(self, possible_moves: set[CardInt], calculation_limit = 10) -> CardInt:
-        """ Evaluates possible moves based on heuristics and belief model. Outputs
+    def determine_naive_move(self,
+                       current_trick: tuple[tuple[PlayerStr, CardInt], ...],
+                       trump_suit: TrumpStr,
+                       legal_moves: set[CardInt],
+                       bids: dict[PlayerStr, int],
+                       round_score: dict[PlayerStr, int]) -> CardInt:
+        """ Evaluates possible moves based on heuristics, belief model and current gamestate. Outputs
         chosen move"""
 
-        chosen_move = None  
-        attempts = 0
 
-        while attempts < calculation_limit:
+        # scenario 1: Want to win but someone else has trumped, must trump higher
+        # scenario 2: Want to to win, no one else has trumped
+        # scenario 3: Wanr to lose, play highest value non-winning card
+        # scenario 4: Going firsr, if you want to win play highest card else play lowest card (non trump) 
 
-            attempts += 1
-            move = random.choice
+        trump_suit_id = SUIT_FROM_INITIAL[trump_suit[0].upper()]
+        current_trick_list = [trick[1] for trick in current_trick]
+        winning_trump_cards = []
+        winning_suit_cards = []
 
-        return int()
+        # Making the lead suit logic explicit 
+        lead_suit = (
+            get_suit_str(current_trick_list[0])
+            if current_trick_list
+            else None
+            )
+       
+        # Trump cards sorted lowest to highest in value
+        trump_cards_in_possesion = sorted(
+            [c for c in legal_moves if c // 13 == trump_suit_id],
+            key= lambda c: c % 13)
+
+        # Non trump cards sorted lowest to highest in value
+        normal_cards_in_possesion = sorted(
+            [c for c in legal_moves if c // 13 != trump_suit_id],
+            key=lambda c: c % 13
+        )
+
+        if not normal_cards_in_possesion:
+            lowest_legal_move = min(legal_moves, key=lambda c: c % 13)
+            highest_legal_move = max(legal_moves, key=lambda c: c % 13)
+
+        # Only check if trump has been played because legal moves covers first suit compliance
+        winning_card = calculate_winning_card(current_trick_list, trump_suit)
+        winning_card_is_trump = winning_card is not None and (
+                get_suit_str(winning_card) == trump_suit) 
+
+        if winning_card:
+            winning_suit_cards = [c for c in normal_cards_in_possesion if (
+            lead_suit is not None
+            and get_suit_str(c) == lead_suit
+            and c % 13 > winning_card % 13
+            )]  # Already sorted
+            
+        if winning_card and winning_card_is_trump:
+            winning_trump_cards = [c for c in trump_cards_in_possesion if (
+            c % 13 > winning_card % 13)]  # Already sorted
+
+        bid_margin = bids[self.name] - round_score[self.name]
+
+        # Decides whether to win bid, opts to win bid even after over scoring bid as there is a slight incentive
+        try_win = bid_margin != 0
+
+        # Scenario 4 where player is first to play, purposely overplays in order to take advantage of playing first
+        if not winning_card and try_win:
+            if trump_cards_in_possesion:
+                return trump_cards_in_possesion[-1]
+            else:
+                return normal_cards_in_possesion[-1] if normal_cards_in_possesion else highest_legal_move
+        elif not winning_card and not try_win:
+            return normal_cards_in_possesion[0] if normal_cards_in_possesion else lowest_legal_move
+
+        # Scenario 3 trying to lose, must discard most valuable non-winning card (trumps are more valuable than high cards)
+        if not try_win and winning_card_is_trump:
+            if trump_cards_in_possesion:
+                non_winning_trump_cards = [c for c in trump_cards_in_possesion if (
+                    c not in winning_trump_cards)]
+                return non_winning_trump_cards[0] if (
+                    non_winning_trump_cards
+                    ) else normal_cards_in_possesion[-1] if normal_cards_in_possesion else greatest_legal_move
+            else:
+                return normal_cards_in_possesion[-1] if normal_cards_in_possesion else highest_legal_move
+
+        # Scenario 1 trying win but winning card is trump, must play higher trump or concede and play lowest legal move
+        elif try_win and winning_card_is_trump:
+
+            if winning_trump_cards:
+                return winning_trump_cards[0]
+            else:
+                return normal_cards_in_possesion[0] if normal_cards_in_possesion else lowest_legal_move
+
+        # Scenario 2 Trying to win and winning card is not trump
+        elif try_win and not winning_card_is_trump:
+            # First try to win using the suit that is currently winning.
+            if winning_suit_cards:
+                return winning_suit_cards[0]
+
+            # If we cannot win by following suit, use the cheapest trump.
+            if trump_cards_in_possesion:
+                return trump_cards_in_possesion[0]
+
+            # We cannot win the trick.
+            return normal_cards_in_possesion[0] if normal_cards_in_possesion else lowest_legal_move
+
+        raise ValueError("Move has not been made, corrupted state")
