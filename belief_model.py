@@ -45,33 +45,67 @@ class BeliefModel:
     def sample_world(self) -> dict[PlayerStr, set[CardInt]]:
         """
         Produce a hypothetical assignment of unknown cards
-        which are consistent with all the constraints
+        which are consistent with all the constraints. This is a greedy sampling 
+        technique which is adequate for this implementation but does not guarantee that
+        there isn't a valid world which would satisfy the constraints.
         
         """
+        attempts = 0
+        MAX_ATTEMPTS = 10000
+        valid = True
 
-        assignments = {p: set() for p in self.hand_sizes}
+        # Attempt sampling until valid world assignments are formed
+        while attempts < MAX_ATTEMPTS:
 
-        remaining_cards = list(self.unknown_cards)
-        random.shuffle(remaining_cards)
+            # Fresh try
+            assignments = {p: set() for p in self.hand_sizes}
+            hands = dict(self.hand_sizes)  # local copy for altering
+            remaining_cards = list(self.unknown_cards)
+            random.shuffle(remaining_cards)
 
-        # Could reorder to make most resttricted player sample first
-        for player, size in self.hand_sizes.items():
-            if player == self.perspective_player:
-                continue  # already known
+            for i in range(len(self.hand_sizes)):
+                attempts += 1
+                valid = True
+                constraints = {}
 
-            possible_cards = [
-                c for c in remaining_cards
-                if get_suit_str(c) not in self.void_suits[player]
-            ]
+                # Calculate possible card pool size per player
+                for player, size in hands.items():
 
-            if len(possible_cards) < size:
-                raise ValueError('No valid world exists')
+                    if player == self.perspective_player:
+                        continue  # already known
+                    
+                    possible_cards = [
+                        c for c in remaining_cards
+                        if get_suit_str(c) not in self.void_suits[player]
+                        ]
 
-            # assigns cards to player consistent with world constraints
-            chosen_cards = random.sample(possible_cards, size)
-            assignments[player].update(chosen_cards)
+                    constraints[player] = len(possible_cards)
+                    
+                player_to_sample = min(sorted(constraints, key=constraints.get))  # type: ignore
 
-            for card in chosen_cards:
-                remaining_cards.remove(card)
+                possible_cards = [
+                            c for c in remaining_cards
+                            if get_suit_str(c) 
+                            not in self.void_suits[player_to_sample]
+                    ]
+                
+                size = hands[player_to_sample]  # Size of the hand to be played
+                if len(possible_cards) < size:
+                    valid = False  
+                    break
 
-        return assignments
+                # assigns cards to player consistent with world constraints
+                chosen_cards = random.sample(possible_cards, size)
+                assignments[player_to_sample].update(chosen_cards)
+
+                for card in chosen_cards:
+                    remaining_cards.remove(card)
+
+                # Remove sampled player from hand dict
+                hands.pop(player_to_sample)
+
+            if valid:
+                return assignments
+
+
+        raise ValueError(f'No valid world exists, tried {attempts} times') 
