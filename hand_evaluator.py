@@ -33,7 +33,7 @@ class HandEvaluator:
 
         # Sample a possible world consistent with beliefs
         sampled_hands: dict[PlayerStr, set[CardInt]] = self.belief_model.sample_world()
-        sampled_hands[self.perspective] = self.state.hands[self.perspective]
+        sampled_hands[self.perspective] = set(self.state.hands[self.perspective])
 
         # Construct determinised state
         determinised_state = GameState(
@@ -58,23 +58,19 @@ class HandEvaluator:
         # Initialise variables and dictionaries
         perspective_bid = self.state.bids[self.perspective]
         expected_scores = {}
-        
 
-        # Simulates a round where the perspective has played their move
-        for _ in range(self.N_rollouts):
-            # This is to ensure that the belief model is updated with the current trick and the void suits are updated accordingly.
-            determinised_state = self._get_determinised_state() 
-    
-            # Calculate the amount of legal moves the player can make
-            true_legal_moves = determinised_state.get_legal_moves(self.perspective)
-            
-            # Generate move win percentage per card
-            for card_to_play in true_legal_moves: 
-                expected_score = self._simulate_round_for_expected_move(player=self.perspective,
+        # Calculate the amount of legal moves the player can make
+        true_legal_moves = self.state.get_legal_moves(self.perspective)
+
+
+        # Generate move win percentage per card
+        for card_to_play in true_legal_moves: 
+            # Simulates a round where the perspective has played their move
+            expected_score = self._simulate_round_for_expected_move(player=self.perspective,
                                                                              move=card_to_play,
                                                                              bid=perspective_bid,
                                                                              rollout_type=rollout_type)
-                expected_scores[card_to_play] = expected_score
+            expected_scores[card_to_play] = expected_score
     
         # Expected score for the card played if the card was played at all
 
@@ -100,7 +96,7 @@ class HandEvaluator:
         Returns:
             "mode": int, 
             "expected_scores": dict[int, float],
-            "bid_accuracy_distribution": dict[int, float],
+            "tricks_won_distribution": dict[int, float],
             "mode_probability": float
         """
         # Genrerate score output for each bid amount
@@ -116,7 +112,7 @@ class HandEvaluator:
         return {
             "mode": mode,
             "raw_expected_scores": scores_per_bid, 
-            "bid_accuracy_distribution": tricks_won_distribution,
+            "tricks_won_distribution": tricks_won_distribution,
             "mode_probability": tricks_won_distribution[mode],
         }
 
@@ -144,16 +140,16 @@ class HandEvaluator:
         sim = RolloutSimulator(self._get_determinised_state())
 
         # Determine initial/placeholder bid
-        if rollout_type == 'RANDOM' and not sim.state.bids:
+        if not sim.state.bids:
             initial_bids = self._strong_card_bid_initialiser(simulator=sim)
-        elif rollout_type == 'NAIVE' and not sim.state.bids:
-            initial_bids = self._expected_score_bid_initialiser(simulator=sim)
+
 
         for _ in range(self.N_rollouts):
 
             # Determinised state used for simulation needs updated initial bids
             d_state = self._get_determinised_state()
-            d_state.bids = initial_bids
+            if initial_bids:
+                d_state.bids = initial_bids
 
             simulator = RolloutSimulator(d_state)
             # Determine type of rollout
@@ -191,13 +187,12 @@ class HandEvaluator:
         # Sanitise rollout type
         rollout_type = rollout_type.upper()
 
-        total_move_score = 0  #Error Circular dependency again below
+        total_move_score = 0 
+        # determinised state which is derived from root state but can be altered to perform MC
+        d_state = self._get_determinised_state().apply_move(
+                player=player, card=move) # Applies the intended move to the state before evaluating the remaining moves
 
         for _ in range(self.N_rollouts):
-
-            # determinised state which is derived from root state but can be altered to perform MC
-            d_state = self._get_determinised_state().apply_move(
-                player=player, card=move) # Applies the intended move to the state before evaluating the remaining moves
     
             # simulator instance created with a sampled possible world consistent with perspective beliefs
             simulator = RolloutSimulator(d_state)  
@@ -240,10 +235,12 @@ class HandEvaluator:
         initial_bids = {}
         bid_total = 0
         banned_bid = -1
+        hand_size = len(simulator.state.hands[self.perspective])
         player_amount = len(simulator.bot_players_map.values())
+
         for i, bot in enumerate(simulator.bot_players_map.values()):
             if i == player_amount - 1:
-                banned_bid = len(simulator.state.hands[bot.name])  # All must be the same
+                banned_bid = hand_size - bid_total
             bid = bot.determine_SC_bid(
                 hand=simulator.state.hands[bot.name],
                 trump_suit=simulator.state.trump_suit,
@@ -253,36 +250,4 @@ class HandEvaluator:
             initial_bids[bot.name] = bid
             bid_total += bid
 
-        return initial_bids
-    
-    def _expected_score_bid_initialiser(self, simulator: RolloutSimulator,) -> dict[PlayerStr, int]:
-        """Initialises bids based on expected scores derived from playing randomly,
-        while respecting restriction and passes them back as a dict"""
-
-        initial_bids = {}
-        bid_total = 0
-        banned_bid = -1
-        player_amount = len(simulator.bot_players_map.values())
-
-        distributions = self._calculate_tricks_won_probabilities(
-            rollout_type='RANDOM')
-
-        raw_expected_scores = distributions['raw_expected_scores']
-
-
-        for i, bot in enumerate(simulator.bot_players_map.values()):
-            if i == player_amount - 1:
-                banned_bid = len(simulator.state.hands[bot.name])  # All must be the same
-            bid = bot.determine_ES_bid(
-                expected_scores=raw_expected_scores,
-                hand=simulator.state.hands[bot.name],
-                table_size=len(simulator.state.hands),
-                current_bids={},
-                restriction=banned_bid
-            )  # fix bids
-
-            initial_bids[bot.name] = bid  # bids are always the same which is not good
-            bid_total += bid
-
-        print(initial_bids)
         return initial_bids

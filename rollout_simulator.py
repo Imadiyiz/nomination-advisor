@@ -1,10 +1,10 @@
+import copy
 import random
 
+from bot import BotPlayer
 from game_engine import GameState
 from Utils.card_tools import *
 from Utils.types import *
-from bot import BotPlayer
-import copy
 
 
 class RolloutSimulator:
@@ -13,7 +13,7 @@ class RolloutSimulator:
     """
     def __init__(self, state: GameState):
         # local mutable copy
-        self.state = copy.copy(state)
+        self.state = copy.deepcopy(state)
 
         # Every player including perspective will be an MC bot during sim
         self.bot_players_map = {p: BotPlayer(name=p) for p in state.player_order}  
@@ -41,7 +41,7 @@ class RolloutSimulator:
         """
         Players play moves to win or lose the trick based on bid until they run out of moves and the round terminates.
         Returns the scores from the round. Basic heurisic and acts as the baseline. Uses bot players created to imitate real players
-        during the rollout, including perspective. NEEDS UPDATED THEORETICAL BIDS
+        during the rollout, including perspective.
         
         """
         self.state.winner = None  # Reset winner to ensure the trick is not considered complete at the start

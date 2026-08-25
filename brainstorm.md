@@ -75,17 +75,17 @@ ES = Expected Score
 
 RANDOM MC ROADMAP
 
-1. Bid trick total according to strong hands
-2. Perform MC using each legal move in hand where opponents play random legal moves
-3. The MC should let bots play random legal moves
-5. Once MC is performed the move with the greatest naive ES should be chosen 
+1. Bots bid based on strong cards in hand
+2. Perform MC using each legal move in hand 
+3. The simulator should let bots play random legal moves
+5. Once MC is performed the move with the greatest ES should be chosen 
 
 NAIVE MC ROADMAP
-1. Generate ES for hand using random legal moves
-2. Bid trick amount with greatest ES
+
+2. Bots bid based on strong cards in hand
 3. Perform MC using each legal move in hand
-4. The simulator should let bots play towards their bid which they chose with ES knowledge
-5. Once MC is performed the move with the greatest naive ES should be chosen 
+4. The simulator should let bots play towards their bid
+5. Once MC is performed the move with the greatest ES should be chosen 
 
 CURRENT THOUGHTS;
 

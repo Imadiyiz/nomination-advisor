@@ -21,14 +21,16 @@ my_player = players_tuple[0]
 # Constants
 HAND_SIZE = 8
 N_ROLLOUTS = 100
-ROLLOUT_TYPE = 'NAIVE'
+ROLLOUT_TYPE = 'RANDOM'
 
 
 # PRINT FLAGS
 
 PRINT_EXPECTED_BID = False
 PRINT_HANDS = True
-PRINT_NAIVE_MONTE_CARLO_ESTIMATE_MOVE = True and ROLLOUT_TYPE == 'NAIVE'
+PRINT_MONTE_CARLO_ESTIMATE_MOVE = True
+PRINT_BOT_ESTIMATE_MOVE = False
+PRINT_GAME_SIMULATION = True
 
 
 hand_generators = (
@@ -49,35 +51,6 @@ hands = (
 hands = dict(hands)
 deck = Deck() # Reset deck
 hand_lists = [card[1] for card in hands.items()]
-
-
-
-
-def generate_educated_bids(hands: dict[PlayerStr, set[CardInt]]) -> dict:
-
-    educated_bids = {}
-    banned = -1
-    bid_total = 0
-
-    # Must check that all the bids do not add up to banned
-    for i, bot in enumerate(bot_players):
-        if i == len(bot_players) - 1:   
-            banned = HAND_SIZE - bid_total
-
-        hand_evaluator
-
-        bid = bot.determine_ES_bid(
-            hand_size=len(hands),
-            table_size=len(hands[bot.name]),
-            expected_scores=dict(),
-            current_bids={},
-            restriction=banned
-        )
-
-        educated_bids[bot.name] = bid
-        bid_total += bid
-
-    return educated_bids
 
 # Generate root state
 root_state = GameState(
@@ -106,24 +79,76 @@ if PRINT_HANDS:
 
 if PRINT_EXPECTED_BID:
     print("PRINT_EXPECTED+BID")
-    bid_probs = hand_evaluator.generate_tricks_won_probabilities()
+    local_state = copy.deepcopy(root_state)
+    bid_probs = hand_evaluator._calculate_tricks_won_probabilities()
     ES_per_bid = bid_probs['raw_expected_scores']
     predicted_bid = bot_players[0].determine_ES_bid(
+        hand=local_state.hands[bot_players[0].name],
         expected_scores=ES_per_bid,
         table_size=len(hands),
-        hand_size=HAND_SIZE,
         current_bids={}
 
     )
     print(f"Predicted bid: {predicted_bid}, Mode: {bid_probs['mode']}")
 
 
-if PRINT_NAIVE_MONTE_CARLO_ESTIMATE_MOVE:
+if PRINT_BOT_ESTIMATE_MOVE:
     print("PRINT_MONTE_CARLO_ESTIMATE_MOVE")
     # Generate heuristic bid
-    local_state = copy.copy(root_state)
+    local_state = copy.deepcopy(root_state)
+    print(local_state)
+    print(local_state.bids)
+    print(local_state.player_order)
+
     local_state.bids = {}
     for i, player in enumerate(bot_players):
+        # Changes evaluator based on player
+        he = HandEvaluator(
+            state=local_state,
+            perspective=player.name,
+            N_rollouts=N_ROLLOUTS
+        )
+
+        bid_probs = he._calculate_tricks_won_probabilities(
+            rollout_type=ROLLOUT_TYPE)
+        ES_per_bid = bid_probs['raw_expected_scores']
+
+        sim = RolloutSimulator(root_state)
+        initial_bids = he._strong_card_bid_initialiser(simulator=sim)
+
+        # bids can not equal total tricks
+        assert sum(initial_bids.values()) != HAND_SIZE  # Need to put this in a test
+
+        # Update local state
+        local_state.bids = initial_bids
+
+        # Predict move now
+        optimal_move = player.determine_naive_move(
+            current_trick=local_state.current_trick,
+            trump_suit='Diamonds',
+            legal_moves=local_state.get_legal_moves(player.name),
+            bids = local_state.bids,
+            round_score={p.name: 0 for p in bot_players}
+        )
+
+        print(id_to_initials(optimal_move)) # Works perfectly with RANDOM
+        print("Bid:", local_state.bids[player.name])
+
+
+if PRINT_MONTE_CARLO_ESTIMATE_MOVE:
+    print("PRINT_MONTE_CARLO_ESTIMATE_MOVE")
+    # Generate heuristic bid
+    local_state = copy.deepcopy(root_state)
+    local_state.bids = {}
+
+    for i, player in enumerate(bot_players):
+
+
+        # Have to iterate order to simulate a round and ensure players comply with restraints
+        # e.g a player in second position should not be able to play first
+        local_state.player_order = tuple(
+        root_state.player_order[i:] + 
+                 root_state.player_order[:i])
 
         # Changes evaluator based on player
         he = HandEvaluator(
@@ -139,16 +164,17 @@ if PRINT_NAIVE_MONTE_CARLO_ESTIMATE_MOVE:
         sim = RolloutSimulator(root_state)
         initial_bids = he._strong_card_bid_initialiser(simulator=sim)
 
+        # bids can not equal total tricks
+        assert sum(initial_bids.values()) != HAND_SIZE  # Need to put this in a test
+
         # Update local state
         local_state.bids = initial_bids
+        print("Initial Bid", initial_bids)
+        he.state = local_state  # Update state
+        optimal_move = he.estimate_optimal_move()['optimal_move']
 
-        # Predict move now
-        optimal_move = player.determine_naive_move(
-            current_trick=local_state.current_trick,
-            trump_suit='Diamonds',
-            legal_moves=local_state.get_legal_moves(player.name),
-            bids = local_state.bids,
-            round_score={p.name: 0 for p in bot_players}
-        )
-
-        print(id_to_initials(optimal_move)) # Works perfectly with RANDOM
+        print(id_to_initials(optimal_move))  # It works, its just corrupted because it expects the order of the tuple to be correct
+        # It isn't going to work as the second player in the iteration uses a root state where they shouldn't be going first
+        # I could edit the tuple to prove im right
+        # I was right
+    

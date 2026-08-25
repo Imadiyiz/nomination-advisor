@@ -73,10 +73,10 @@ class GameState:
         :returns set of legal moves
         """
 
-        player_hand = self.hands[player] 
+        player_hand = self.hands[player]
 
         if not player_hand:
-            raise ValueError(f"No Cards in {player}'s hand at all")
+            raise ValueError(f"No Cards in {player}'s hand at all, likely that it is not truly {player}'s turn")
 
         if not self.current_trick:
             return set(player_hand)
@@ -118,7 +118,7 @@ class GameState:
         new_round_scores = dict(self.round_scores)
         new_total_scores = dict(self.total_scores)
 
-        new_trick = self.current_trick + ((player, card),)
+        new_trick = tuple(self.current_trick + ((player, card),))
 
         new_leader = self._leader
         new_cards_remaining = self.cards_remaining
