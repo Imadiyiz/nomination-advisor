@@ -89,3 +89,6 @@ NAIVE MC ROADMAP
 
 CURRENT THOUGHTS;
 
+Hand evaluator is just not fitting in with the current artchitecture, it just feels awkward all the time. I do not want bot to be tightly coupled with HandEvaluator. I wanted to calculate what every MC bot player should bid however, they will all need their own individual HE instance
+
+I dont know how the calculate expected score truly works with math given to me by AI

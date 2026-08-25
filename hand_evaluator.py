@@ -92,7 +92,7 @@ class HandEvaluator:
             'move_expected_scores': expected_scores.items()
         }
 
-    def generate_tricks_won_probabilities(self, rollout_type: str = 'RANDOM') -> dict:
+    def _calculate_tricks_won_probabilities(self, rollout_type: str = 'RANDOM') -> dict:
         """
         Runs Monte Carlo evaluation for current hand and determines most optimal bid based on hand.
         Only uses card initials (strings). Returns summary of context in dictionary form.
@@ -115,7 +115,7 @@ class HandEvaluator:
         # round score or total score
         return {
             "mode": mode,
-            "expected_scores": scores_per_bid, 
+            "raw_expected_scores": scores_per_bid, 
             "bid_accuracy_distribution": tricks_won_distribution,
             "mode_probability": tricks_won_distribution[mode],
         }
@@ -145,7 +145,9 @@ class HandEvaluator:
 
         # Determine initial/placeholder bid
         if rollout_type == 'RANDOM' and not sim.state.bids:
-            initial_bids = self._bid_initialiser(simulator=sim)
+            initial_bids = self._strong_card_bid_initialiser(simulator=sim)
+        elif rollout_type == 'NAIVE' and not sim.state.bids:
+            initial_bids = self._expected_score_bid_initialiser(simulator=sim)
 
         for _ in range(self.N_rollouts):
 
@@ -232,7 +234,7 @@ class HandEvaluator:
 
         return scores_per_bid
 
-    def _bid_initialiser(self, simulator: RolloutSimulator,) -> dict[PlayerStr, int]:
+    def _strong_card_bid_initialiser(self, simulator: RolloutSimulator,) -> dict[PlayerStr, int]:
         """Initialises bids based on Strong Cards, while respecting restriction and passes them back as a dict"""
 
         initial_bids = {}
@@ -251,4 +253,36 @@ class HandEvaluator:
             initial_bids[bot.name] = bid
             bid_total += bid
 
+        return initial_bids
+    
+    def _expected_score_bid_initialiser(self, simulator: RolloutSimulator,) -> dict[PlayerStr, int]:
+        """Initialises bids based on expected scores derived from playing randomly,
+        while respecting restriction and passes them back as a dict"""
+
+        initial_bids = {}
+        bid_total = 0
+        banned_bid = -1
+        player_amount = len(simulator.bot_players_map.values())
+
+        distributions = self._calculate_tricks_won_probabilities(
+            rollout_type='RANDOM')
+
+        raw_expected_scores = distributions['raw_expected_scores']
+
+
+        for i, bot in enumerate(simulator.bot_players_map.values()):
+            if i == player_amount - 1:
+                banned_bid = len(simulator.state.hands[bot.name])  # All must be the same
+            bid = bot.determine_ES_bid(
+                expected_scores=raw_expected_scores,
+                hand=simulator.state.hands[bot.name],
+                table_size=len(simulator.state.hands),
+                current_bids={},
+                restriction=banned_bid
+            )  # fix bids
+
+            initial_bids[bot.name] = bid  # bids are always the same which is not good
+            bid_total += bid
+
+        print(initial_bids)
         return initial_bids

@@ -27,10 +27,11 @@ class BotPlayer:
         self.name = name
         self.belief_model = belief_model
 
-    def determine_ES_bid(self, expected_scores: dict[int, float],
+    def determine_ES_bid(self, 
+                      expected_scores: dict[int, float],
                       table_size: int,
                       current_bids: dict[PlayerStr, int],
-                      hand_size: int,
+                      hand: set[CardInt],
                       restriction:int = -1) -> int:
         """Determines a bid based on the distribution of their ES 
         (Expected Score). Also accounts for their position at the
@@ -39,6 +40,7 @@ class BotPlayer:
         of bid amount if necessary.
         Returns: bid"""
 
+        hand_size = len(hand)
         curr_bid_sum = sum(current_bids.values())
         core_avg_bid = (
             table_size / hand_size
@@ -75,7 +77,7 @@ class BotPlayer:
 
         # Clean distribution dict from null values
         expected_scores_list = [(i, dist) for i, dist in expected_scores.items() if dist > 0.0]
-        print(expected_scores_list)
+        # print(expected_scores_list)
 
 
         # if restriction then cleanse and normalise distribution
@@ -205,6 +207,10 @@ class BotPlayer:
         # scenario 4: Going firsr, if you want to win play highest card else play lowest card (non trump) 
 
 
+        # Only one option
+        if len(legal_moves) == 1:
+            return next(iter(legal_moves))
+
         # Can not make a naive move without knowing bid
         if not bids or self.name not in bids:
             raise ValueError(f"{self.name} is not found in bids list. Can not predict move without valid bid") 
@@ -266,13 +272,13 @@ class BotPlayer:
             return normal_cards_in_possesion[0] if normal_cards_in_possesion else lowest_legal_move
 
         # Scenario 3 trying to lose, must discard most valuable non-winning card (trumps are more valuable than high cards)
-        if not try_win and winning_card_is_trump:
-            if trump_cards_in_possesion:
+        if not try_win and winning_card:
+            if trump_cards_in_possesion and winning_card_is_trump:
                 non_winning_trump_cards = [c for c in trump_cards_in_possesion if (
                     c not in winning_trump_cards)]
                 return non_winning_trump_cards[0] if (
                     non_winning_trump_cards
-                    ) else normal_cards_in_possesion[-1] if normal_cards_in_possesion else greatest_legal_move
+                    ) else normal_cards_in_possesion[-1] if normal_cards_in_possesion else highest_legal_move
             else:
                 return normal_cards_in_possesion[-1] if normal_cards_in_possesion else highest_legal_move
 
@@ -297,4 +303,14 @@ class BotPlayer:
             # We cannot win the trick.
             return normal_cards_in_possesion[0] if normal_cards_in_possesion else lowest_legal_move
 
-        raise ValueError("Move has not been made, corrupted state")
+        raise ValueError(f"""
+        Move has not been made, corrupted state
+        Try Win: {try_win},
+        Legal_moves: {legal_moves},
+        Winning_suit_cards: {winning_suit_cards},
+        Normal card in possession: {normal_cards_in_possesion},
+        Trump Card in Possession: {trump_cards_in_possesion},
+        Winning card: {winning_card},
+        Winning Card suit: {winning_card // 13 if winning_card else None}
+        Trump suit: {trump_suit_id}
+        """)

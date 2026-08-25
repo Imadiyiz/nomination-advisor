@@ -21,14 +21,15 @@ my_player = players_tuple[0]
 # Constants
 HAND_SIZE = 8
 N_ROLLOUTS = 100
+ROLLOUT_TYPE = 'NAIVE'
 
 
 # PRINT FLAGS
 
 PRINT_EXPECTED_BID = False
 PRINT_HANDS = True
-PRINT_NAIVE_MONTE_CARLO_ESTIMATE_MOVE = True
-ROLLOUT_TYPE = 'RANDOM'
+PRINT_NAIVE_MONTE_CARLO_ESTIMATE_MOVE = True and ROLLOUT_TYPE == 'NAIVE'
+
 
 hand_generators = (
     random_hand,
@@ -106,7 +107,7 @@ if PRINT_HANDS:
 if PRINT_EXPECTED_BID:
     print("PRINT_EXPECTED+BID")
     bid_probs = hand_evaluator.generate_tricks_won_probabilities()
-    ES_per_bid = bid_probs['expected_scores']
+    ES_per_bid = bid_probs['raw_expected_scores']
     predicted_bid = bot_players[0].determine_ES_bid(
         expected_scores=ES_per_bid,
         table_size=len(hands),
@@ -123,18 +124,20 @@ if PRINT_NAIVE_MONTE_CARLO_ESTIMATE_MOVE:
     local_state = copy.copy(root_state)
     local_state.bids = {}
     for i, player in enumerate(bot_players):
+
+        # Changes evaluator based on player
         he = HandEvaluator(
             state=root_state,
             perspective=player.name,
             N_rollouts=N_ROLLOUTS
         )
 
-        bid_probs = he.generate_tricks_won_probabilities(
+        bid_probs = he._calculate_tricks_won_probabilities(
             rollout_type=ROLLOUT_TYPE)
-        ES_per_bid = bid_probs['expected_scores']
+        ES_per_bid = bid_probs['raw_expected_scores']
 
         sim = RolloutSimulator(root_state)
-        initial_bids = he._bid_initialiser(simulator=sim)
+        initial_bids = he._strong_card_bid_initialiser(simulator=sim)
 
         # Update local state
         local_state.bids = initial_bids
@@ -148,5 +151,4 @@ if PRINT_NAIVE_MONTE_CARLO_ESTIMATE_MOVE:
             round_score={p.name: 0 for p in bot_players}
         )
 
-
-        print(id_to_initials(optimal_move)) # Works perfectly
+        print(id_to_initials(optimal_move)) # Works perfectly with RANDOM
