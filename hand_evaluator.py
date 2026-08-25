@@ -1,11 +1,9 @@
-import copy
-
 from belief_model import BeliefModel
 from game_engine import GameState
 from rollout_simulator import RolloutSimulator
 from Utils.card_tools import *
-from Utils.types import *
 from Utils.nom_rule_tools import calculate_correct_bid_score
+from Utils.types import *
 
 VALID_CARD_IDS = set(range(52))
 
@@ -51,33 +49,6 @@ class HandEvaluator:
 
         return determinised_state
 
-
-    def _won_simulated_card_play(self, determinised_state: GameState, 
-                                card_to_play: CardInt) -> int:
-        """
-        Simulates a trick where the perspective player plays their card.
-        If the perspective player wins the trick, returns 1, else returns 0.
-        """
-
-        if card_to_play is None:  # 0 is a valid card_to_play
-            raise ValueError("No card to play")
-        
-        if 0 > card_to_play or 51 < card_to_play:
-            raise ValueError("Invalid Card Chosen, must be with 0-51")
-        
-        # Create a deep copy of the determinised state to avoid modifying the original
-        determinised_state_copy = copy.deepcopy(determinised_state)
-
-        # Run rollout until perspective is reached
-        simulator = RolloutSimulator(determinised_state_copy)
-
-        # Play the specified card and evaluate the winner of the trick
-        winner = simulator.rollout_trick(
-                perspective=self.perspective,
-                chosen_card=card_to_play
-        )
-        return 1 if winner == self.perspective else 0
-
     def estimate_optimal_move(self, rollout_type:str = 'RANDOM') -> dict:
         """
         Runs a Monte Carlo simulation to evaluate which card the player should play.
@@ -85,12 +56,11 @@ class HandEvaluator:
         """ 
 
         # Initialise variables and dictionaries
-        perspective_hand = list(self.state.hands[self.perspective])
+        perspective_bid = self.state.bids[self.perspective]
+        expected_scores = {}
         
-        # Want to track, per card, how many times it was eligible to be played, and how many times it won
-        tricks_won = {card: 0 for card in perspective_hand} 
-        attempts_per_card = {card: 0.0 for card in perspective_hand} 
 
+        # Simulates a round where the perspective has played their move
         for _ in range(self.N_rollouts):
             # This is to ensure that the belief model is updated with the current trick and the void suits are updated accordingly.
             determinised_state = self._get_determinised_state() 
@@ -100,32 +70,29 @@ class HandEvaluator:
             
             # Generate move win percentage per card
             for card_to_play in true_legal_moves: 
-                attempts_per_card[card_to_play] += 1 
-                if self._won_simulated_card_play(determinised_state = determinised_state,
-                                                card_to_play=card_to_play):
-                    tricks_won[card_to_play] += 1  # Increment the count of tricks won for the card played
+                expected_score = self._simulate_round_for_expected_move(player=self.perspective,
+                                                                             move=card_to_play,
+                                                                             bid=perspective_bid,
+                                                                             rollout_type=rollout_type)
+                expected_scores[card_to_play] = expected_score
     
-        # Expected win percentage for the card played if the card was played at all
-        move_win_distribution = {
-            id_to_initials(card): tricks_won[card] / attempts_per_card[card] 
-            for card in perspective_hand if attempts_per_card[card] > 0
-            }
-    
-        if not move_win_distribution:
+        # Expected score for the card played if the card was played at all
+
+        if not expected_scores:
             return {}
 
-        mode = max(move_win_distribution.keys(), key=lambda key: move_win_distribution[key])
-        minimum = min(move_win_distribution.keys(), key=lambda key: move_win_distribution[key])
+        mode = max(expected_scores.keys(), key=lambda key: expected_scores[key])
+        minimum = min(expected_scores.keys(), key=lambda key: expected_scores[key])
         
         return {
             'optimal_move': mode,
-            'optimal_move_probability': move_win_distribution[mode],
+            'optimal_move_probability': expected_scores[mode],
             'least_optimal_move': minimum,
-            'lowest_move_probability': move_win_distribution[minimum], 
-            'move_win_distribution': move_win_distribution
+            'lowest_move_probability': expected_scores[minimum], 
+            'move_expected_scores': expected_scores.items()
         }
 
-    def generate_bid_probabilities(self) -> dict:
+    def generate_tricks_won_probabilities(self, rollout_type: str = 'RANDOM') -> dict:
         """
         Runs Monte Carlo evaluation for current hand and determines most optimal bid based on hand.
         Only uses card initials (strings). Returns summary of context in dictionary form.
@@ -137,44 +104,56 @@ class HandEvaluator:
             "mode_probability": float
         """
         # Genrerate score output for each bid amount
-        distribution = self._simulate_round()
+        tricks_won_distribution = self._simulate_round_for_expected_bid(rollout_type=rollout_type)
         
-        scores_per_bid = self._calculate_scores_per_bid(distribution)
+        scores_per_bid = self._calculate_scores_per_bid(tricks_won_distribution)
 
-        mode = max(distribution.keys(), key=lambda key: distribution[key])
+        mode = max(tricks_won_distribution.keys(),
+                   key=lambda key: tricks_won_distribution[key])
 
         # expected_scores doesn't quite make sense at the moment since it does not factor
         # round score or total score
         return {
             "mode": mode,
             "expected_scores": scores_per_bid, 
-            "bid_accuracy_distribution": distribution,
-            "mode_probability": distribution[mode],
+            "bid_accuracy_distribution": tricks_won_distribution,
+            "mode_probability": tricks_won_distribution[mode],
         }
 
-    def _simulate_round(self, rollout_type: str = 'RANDOM') -> dict[int, float]:
+    def _simulate_round_for_expected_bid(self, rollout_type: str = 'RANDOM') -> dict[int, float]:
 
         """
         Simulation commences.
 
         Args:
             simulation_type: (str)
-            RANDOM, BASELINE
+            RANDOM ~ Players make random moves, 
+            NAIVE ~ Players make naive moves based on expected outcomes
         Returns distribution of tricks won per bid:
         """
 
         # Sanitise rollout type
         rollout_type = rollout_type.upper()
 
-        bid_success_freq = {b: 0 for b in range(9)}
-        bid_success_distribution = {b: 0.0 for b in range(9)}
+        tricks_won_freq = {b: 0 for b in range(9)}
+        tricks_won_distribution = {b: 0.0 for b in range(9)}
         tricks_won = 0
+        initial_bids = {}
+
+        # simulator instance created with a sampled possible world consistent with perspective beliefs
+        sim = RolloutSimulator(self._get_determinised_state())
+
+        # Determine initial/placeholder bid
+        if rollout_type == 'RANDOM' and not sim.state.bids:
+            initial_bids = self._bid_initialiser(simulator=sim)
 
         for _ in range(self.N_rollouts):
-    
-            # simulator instance created with a sampled possible world consistent with perspective beliefs
-            simulator = RolloutSimulator(self._get_determinised_state())
 
+            # Determinised state used for simulation needs updated initial bids
+            d_state = self._get_determinised_state()
+            d_state.bids = initial_bids
+
+            simulator = RolloutSimulator(d_state)
             # Determine type of rollout
             rollout_map = {
                 'RANDOM' : simulator.random_rollout_round,
@@ -184,14 +163,61 @@ class HandEvaluator:
             # Run rollout until perspective is reached
             final_scores = rollout_map[rollout_type]()
             tricks_won = final_scores[self.perspective]
-            bid_success_freq[tricks_won] += 1
+            tricks_won_freq[tricks_won] += 1
 
-        # Expected Score
         # Calculate distribution
         for b in range(9):
-            bid_success_distribution[b] = round(bid_success_freq[b] / self.N_rollouts, 2)
+            tricks_won_distribution[b] = round(tricks_won_freq[b] / self.N_rollouts, 2)
      
-        return bid_success_distribution
+        return tricks_won_distribution
+    
+    def _simulate_round_for_expected_move(self,
+                                          move: CardInt,
+                                          player: PlayerStr,
+                                          bid: int,
+                                          rollout_type: str = 'RANDOM') -> float:
+
+        """
+        Simulation commences.
+
+        Args:
+            simulation_type: (str)
+            RANDOM, BASELINE
+        Returns expected score achieved when playing a move:
+        """
+
+        # Sanitise rollout type
+        rollout_type = rollout_type.upper()
+
+        total_move_score = 0  #Error Circular dependency again below
+
+        for _ in range(self.N_rollouts):
+
+            # determinised state which is derived from root state but can be altered to perform MC
+            d_state = self._get_determinised_state().apply_move(
+                player=player, card=move) # Applies the intended move to the state before evaluating the remaining moves
+    
+            # simulator instance created with a sampled possible world consistent with perspective beliefs
+            simulator = RolloutSimulator(d_state)  
+
+            # Determine type of rollout
+            rollout_map = {
+                'RANDOM' : simulator.random_rollout_round,
+                'NAIVE' : simulator.naive_rollout_round,
+            }
+
+            final_scores = rollout_map[rollout_type]()
+            tricks_won = final_scores[self.perspective]
+
+            if tricks_won == bid:
+                total_move_score += calculate_correct_bid_score(tricks_won)
+            else:
+                total_move_score += tricks_won
+
+        # Calculate Expected Score
+
+     
+        return round(total_move_score / self.N_rollouts, 1)
 
     def _calculate_scores_per_bid(self, distribution: dict[int, float]) -> dict[int, float]:
 
@@ -205,3 +231,24 @@ class HandEvaluator:
             scores_per_bid[bid] = round(expected, 1)
 
         return scores_per_bid
+
+    def _bid_initialiser(self, simulator: RolloutSimulator,) -> dict[PlayerStr, int]:
+        """Initialises bids based on Strong Cards, while respecting restriction and passes them back as a dict"""
+
+        initial_bids = {}
+        bid_total = 0
+        banned_bid = -1
+        player_amount = len(simulator.bot_players_map.values())
+        for i, bot in enumerate(simulator.bot_players_map.values()):
+            if i == player_amount - 1:
+                banned_bid = len(simulator.state.hands[bot.name])  # All must be the same
+            bid = bot.determine_SC_bid(
+                hand=simulator.state.hands[bot.name],
+                trump_suit=simulator.state.trump_suit,
+                table_size=len(simulator.state.hands),
+                restriction=banned_bid
+            )
+            initial_bids[bot.name] = bid
+            bid_total += bid
+
+        return initial_bids

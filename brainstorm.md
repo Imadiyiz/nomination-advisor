@@ -65,3 +65,27 @@ parameters = {
     "risk_tolerance": 0.1 # Decides when to make risky plays, with limited information 
     ""
 }
+
+### Architecture thoughts
+
+I currently have a circular dependency within my architecture, in order to estimate a move, there must be initial bids to play for, however depending on how accurate I want these bids to be I will need to simulate games randomly to assess what the bot should expect to play given their hand strength.
+
+TO ESTIMATE NAIVE MOVE
+ES = Expected Score
+
+RANDOM MC ROADMAP
+
+1. Bid trick total according to strong hands
+2. Perform MC using each legal move in hand where opponents play random legal moves
+3. The MC should let bots play random legal moves
+5. Once MC is performed the move with the greatest naive ES should be chosen 
+
+NAIVE MC ROADMAP
+1. Generate ES for hand using random legal moves
+2. Bid trick amount with greatest ES
+3. Perform MC using each legal move in hand
+4. The simulator should let bots play towards their bid which they chose with ES knowledge
+5. Once MC is performed the move with the greatest naive ES should be chosen 
+
+CURRENT THOUGHTS;
+

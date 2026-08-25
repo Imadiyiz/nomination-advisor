@@ -5,6 +5,8 @@ from hand_evaluator import HandEvaluator
 from Utils.card_tools import *
 from Utils.hand_generators import *
 from Utils.types import *
+from rollout_simulator import RolloutSimulator
+import copy
 
 # Test Parameters
 #players_tuple = ("strong", "weak", "suited", "random")
@@ -25,7 +27,8 @@ N_ROLLOUTS = 100
 
 PRINT_EXPECTED_BID = False
 PRINT_HANDS = True
-PRINT_MONTE_CARLO_SIM = False
+PRINT_NAIVE_MONTE_CARLO_ESTIMATE_MOVE = True
+ROLLOUT_TYPE = 'RANDOM'
 
 hand_generators = (
     random_hand,
@@ -60,10 +63,13 @@ def generate_educated_bids(hands: dict[PlayerStr, set[CardInt]]) -> dict:
         if i == len(bot_players) - 1:   
             banned = HAND_SIZE - bid_total
 
-        bid = bot.determine_baseline_bid(
-            hand=hands[bot.name],
-            trump_suit=format_string("Diamonds"),
-            player_amount=len(hands),
+        hand_evaluator
+
+        bid = bot.determine_ES_bid(
+            hand_size=len(hands),
+            table_size=len(hands[bot.name]),
+            expected_scores=dict(),
+            current_bids={},
             restriction=banned
         )
 
@@ -71,14 +77,6 @@ def generate_educated_bids(hands: dict[PlayerStr, set[CardInt]]) -> dict:
         bid_total += bid
 
     return educated_bids
-
-hands = [
-    (bot_player, generator(deck))
-    for bot_player, generator in zip(
-        players, 
-        [gen for gen in hand_generators]
-        )
-]
 
 # Generate root state
 root_state = GameState(
@@ -101,19 +99,54 @@ hand_evaluator = HandEvaluator(
 ####
 
 if PRINT_HANDS:
+    print("PRINT HANDS")
     for lst in hand_lists:
         print(id_to_initial_list(list(lst)))
 
 if PRINT_EXPECTED_BID:
-    bid_probs = hand_evaluator.generate_bid_probabilities()
+    print("PRINT_EXPECTED+BID")
+    bid_probs = hand_evaluator.generate_tricks_won_probabilities()
     ES_per_bid = bid_probs['expected_scores']
-    predicted_bid = bot_players[0].determine_bid(
+    predicted_bid = bot_players[0].determine_ES_bid(
         expected_scores=ES_per_bid,
-        position=0,
         table_size=len(hands),
         hand_size=HAND_SIZE,
-        points_margin=0,
-        current_bids={} # Naive to use a list as you won't know if the total score leader is before you
+        current_bids={}
 
     )
     print(f"Predicted bid: {predicted_bid}, Mode: {bid_probs['mode']}")
+
+
+if PRINT_NAIVE_MONTE_CARLO_ESTIMATE_MOVE:
+    print("PRINT_MONTE_CARLO_ESTIMATE_MOVE")
+    # Generate heuristic bid
+    local_state = copy.copy(root_state)
+    local_state.bids = {}
+    for i, player in enumerate(bot_players):
+        he = HandEvaluator(
+            state=root_state,
+            perspective=player.name,
+            N_rollouts=N_ROLLOUTS
+        )
+
+        bid_probs = he.generate_tricks_won_probabilities(
+            rollout_type=ROLLOUT_TYPE)
+        ES_per_bid = bid_probs['expected_scores']
+
+        sim = RolloutSimulator(root_state)
+        initial_bids = he._bid_initialiser(simulator=sim)
+
+        # Update local state
+        local_state.bids = initial_bids
+
+        # Predict move now
+        optimal_move = player.determine_naive_move(
+            current_trick=local_state.current_trick,
+            trump_suit='Diamonds',
+            legal_moves=local_state.get_legal_moves(player.name),
+            bids = local_state.bids,
+            round_score={p.name: 0 for p in bot_players}
+        )
+
+
+        print(id_to_initials(optimal_move)) # Works perfectly

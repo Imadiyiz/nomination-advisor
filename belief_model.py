@@ -8,7 +8,7 @@ from Utils.types import *
 
 
 # Purposefully decided not to add a score attribute to the belief model as I believe,
-# that the score shouldn;t be bound to the belief model class as it would need update for each
+# that the score shouldn't be bound to the belief model class as it would need update for each
 # instance and it would become coupled with the instance even though the score does affect the belief model
 @dataclass
 class BeliefModel:
@@ -63,10 +63,11 @@ class BeliefModel:
             hands = dict(self.hand_sizes)  # local copy for altering
             remaining_cards = list(self.unknown_cards)
             random.shuffle(remaining_cards)
+            constraints = {p: int() for p in self.hand_sizes}
+            valid = True
 
-            for i in range(len(self.hand_sizes)):
+            for _ in range(len(self.hand_sizes) - 1):  # Do not need to sample for perspective player
                 attempts += 1
-                valid = True
                 constraints = {}
 
                 # Calculate possible card pool size per player
@@ -82,7 +83,7 @@ class BeliefModel:
 
                     constraints[player] = len(possible_cards)
                     
-                player_to_sample = min(sorted(constraints, key=constraints.get))  # type: ignore
+                player_to_sample = min(sorted(constraints, key=constraints.get))  
 
                 possible_cards = [
                             c for c in remaining_cards
@@ -93,6 +94,7 @@ class BeliefModel:
                 size = hands[player_to_sample]  # Size of the hand to be played
                 if len(possible_cards) < size:
                     valid = False  
+                    print("INvalid assignment")
                     break
 
                 # assigns cards to player consistent with world constraints

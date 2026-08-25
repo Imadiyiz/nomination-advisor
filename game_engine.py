@@ -130,7 +130,12 @@ class GameState:
             new_trick = ()
             new_leader = winner
             new_cards_remaining -= 1
-            new_total_scores = self._update_total_score(new_round_scores)
+
+            # Only update total scores if there are bids present
+            if self.bids:
+                new_total_scores = self._update_total_score(new_round_scores)
+            else:
+                new_total_scores = self.total_scores
 
         return GameState(
             hands=new_hands,
@@ -148,13 +153,14 @@ class GameState:
     def _update_total_score(self, round_scores: dict[PlayerStr, int]) -> dict[PlayerStr, int]:
         """Should be called after a round concludes to ensure that the total score is updated to current gamestate.
         Receives the latest round_score and returns new total_score dictionary"""
+        
         _total_scores = dict(self.total_scores)
         for player, score in round_scores.items():
+
             if score == self.bids[player]:
                 _total_scores[player] += calculate_correct_bid_score(score)
-            else:
-                _total_scores[player] += score  # Fix later need to update total score, score should be an int tho
-
+            elif score != self.bids[player]:
+                _total_scores[player] += score  
         return _total_scores
 
 

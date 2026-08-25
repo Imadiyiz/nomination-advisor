@@ -1,5 +1,4 @@
 # Bot player who will make decisions during simulation
-import math
 import random
 
 from belief_model import BeliefModel
@@ -28,13 +27,11 @@ class BotPlayer:
         self.name = name
         self.belief_model = belief_model
 
-    def determine_bid(self, expected_scores: dict[int, float],
-                      position: int,
+    def determine_ES_bid(self, expected_scores: dict[int, float],
                       table_size: int,
-                      points_margin: int,
                       current_bids: dict[PlayerStr, int],
                       hand_size: int,
-                      restriction:int = -1) -> int: # Don't like current_bids being a list, should be dict with player names
+                      restriction:int = -1) -> int:
         """Determines a bid based on the distribution of their ES 
         (Expected Score). Also accounts for their position at the
         table, the table size and the points margin from the leader
@@ -46,7 +43,8 @@ class BotPlayer:
         core_avg_bid = (
             table_size / hand_size
         )
-
+        decision_risk = self.heuristics.risk_tolerance
+        """
         # Determine whether the previous players are overbidding or underbidding
         CURRENT_BID_MARGIN = curr_bid_sum - (core_avg_bid) * len(current_bids)  
         
@@ -73,7 +71,8 @@ class BotPlayer:
         elif position == table_size - 1:
             decision_risk = min(1, decision_risk * BIOI * 0.5) # Take less risk knowing bot can't dictate play
 
-        print("Pos Margin decision_risk", decision_risk)
+        print("Pos Margin decision_risk", decision_risk)"""
+
         # Clean distribution dict from null values
         expected_scores_list = [(i, dist) for i, dist in expected_scores.items() if dist > 0.0]
         print(expected_scores_list)
@@ -109,9 +108,9 @@ class BotPlayer:
         # Distribution should not have restricted bid within it
 
 
-    def determine_baseline_bid(self, hand: set[CardInt], 
+    def determine_SC_bid(self, hand: set[CardInt], 
                                trump_suit: TrumpStr,
-                               player_amount: int,
+                               table_size: int,
                                restriction: int = -1) -> int:
         """Naively determines bid solely based on hand strength
            Accepts a hand parameter instead of using actual hand as.
@@ -119,17 +118,14 @@ class BotPlayer:
 
         hand_size = len(hand)
 
-        if self.belief_model is not None:  # Ensure belief model exists before attempting to calculate hand sizes
-            player_amount = len(self.belief_model.hand_sizes)
-
-        if player_amount and not (3 <= player_amount <= 6):
+        if table_size and not (3 <= table_size <= 6):
             raise ValueError("Incorrect amount of players submitted, must be between 3-6")
 
         trump_id = SUIT_FROM_INITIAL[trump_suit[0].upper()]
         strong_cards = [card for card in hand 
                         if self._is_strong_card(card,
                                                 trump_id, 
-                                                player_amount,
+                                                table_size,
                                                 hand_size)]
 
         # Expects to win with each strong card
@@ -147,7 +143,7 @@ class BotPlayer:
 
     def _is_strong_card(self, card: CardInt,
                         trump_id: int,
-                        player_amount: int,
+                        table_size: int,
                         hand_size: int) -> bool:
 
         """Trump cards over X amount and high cards over Y amount are strong (assumes 4 players). 
@@ -160,7 +156,7 @@ class BotPlayer:
         # Ensures that the strong card pool is at least the minimum required
         # to make the expected strong cards in play the number of cards per hand.
         strong_cards_target = self._generate_strong_card_target(
-            hand_size, player_amount)  
+            hand_size, table_size)  
 
         strong_cards = []
         trump_threshold = 12
@@ -183,11 +179,11 @@ class BotPlayer:
 
     def _generate_strong_card_target(self, 
                                      hand_size:int,
-                                     player_amount: int):
-        """Based off hand_size and player_amount generates smallest strong card pool target which makes the
+                                     table_size: int):
+        """Based off hand_size and table_size generates smallest strong card pool target which makes the
         expected strong cards within play greater than hand size."""
 
-        PC = hand_size * player_amount
+        PC = hand_size * table_size
         TC = 52
         HS = hand_size
         return int(round((TC*HS) / PC, 0))
@@ -208,6 +204,10 @@ class BotPlayer:
         # scenario 3: Wanr to lose, play highest value non-winning card
         # scenario 4: Going firsr, if you want to win play highest card else play lowest card (non trump) 
 
+
+        # Can not make a naive move without knowing bid
+        if not bids or self.name not in bids:
+            raise ValueError(f"{self.name} is not found in bids list. Can not predict move without valid bid") 
         trump_suit_id = SUIT_FROM_INITIAL[trump_suit[0].upper()]
         current_trick_list = [trick[1] for trick in current_trick]
         winning_trump_cards = []

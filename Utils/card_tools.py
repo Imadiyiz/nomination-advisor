@@ -1,4 +1,5 @@
 from Utils.types import CardInt, TrumpStr
+from collections.abc import Iterable
 
 # format for standard english
 
@@ -76,6 +77,6 @@ def initials_to_id(initials: str) -> CardInt:
 
     return suit * 13 + rank
 
-def id_to_initial_list(id_list: list[CardInt]) -> list[str]:
+def id_to_initial_list(id_list: Iterable[CardInt]) -> list[str]:
      """Turns list of card ids into a list of card initials"""
      return [id_to_initials(id) for id in id_list]
