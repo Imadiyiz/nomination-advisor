@@ -6,6 +6,7 @@ import pytest
 
 from bot import BotPlayer
 from Classes.deck import Deck
+from Utils.types import CardInt
 
 N_ROLLOUTS = 100
 
@@ -38,7 +39,8 @@ class TestBotPlayer:
     @pytest.mark.parametrize('hand_size', range(6,9), indirect=True) # Dont pass it straight into the function
     def test_determine_baseline_bid_respects_restriction(self,
                                                           default_bot_player: BotPlayer,
-                                                          default_hand: set[int]):
+                                                          default_hand: set[int],
+                                                          player_amount: int):
 
         bot = default_bot_player
 
@@ -47,10 +49,10 @@ class TestBotPlayer:
         for _ in range(N_ROLLOUTS):
             restriction = random.choice(range(-1, 8))
 
-            bid = bot.determine_baseline_bid(
+            bid = bot.determine_strong_card_bid(
             hand=default_hand,
             trump_suit='Diamonds',
-            player_amount=4,
+            table_size=player_amount,
             restriction = restriction
         )
             assert bid != restriction
@@ -86,10 +88,10 @@ class TestBotPlayer:
                 if i == len(default_bots) - 1:
                     banned = hand_size - bid_total
 
-                bid = bot.determine_baseline_bid(
+                bid = bot.determine_strong_card_bid(
                     hand=random_hands[i],
                     trump_suit='Diamonds',
-                    player_amount = player_amount,
+                    table_size = player_amount,
                     restriction = banned
                 )  # Implement restricted bid logic
 
@@ -134,7 +136,8 @@ class TestBotPlayer:
     def test_determine_bid_returns_valid_bid(self,
         default_bot_player: BotPlayer,
         hand_size: int,
-        player_amount: int
+        player_amount: int,
+        default_hand: set[CardInt]
     ):
         """Bid must always be a valid bid and must respect the restriction."""
 
@@ -152,15 +155,13 @@ class TestBotPlayer:
 
             restriction = random.choice(range(-1, hand_size + 1))
 
-            bid = bot.determine_bid(
+            bid = bot.determine_expected_score_bid(
                 expected_scores=expected_scores,
-                position=random.randrange(player_amount),
+                hand=default_hand,
                 table_size=player_amount,
-                points_margin=random.randint(-30, 30),
                 current_bids={f"Bot {i}": random.randint(0, hand_size) for i in range(
                     random.randint(0, player_amount - 1)
                 )},
-                hand_size=hand_size,
                 restriction=restriction
             )
 
@@ -168,7 +169,8 @@ class TestBotPlayer:
             assert bid != restriction
 
     def test_determine_bid_prefers_best_expected_score(self,
-    default_bot_player: BotPlayer):
+    default_bot_player: BotPlayer,
+    default_hand: set[CardInt]):
         """Deterministic test where the bot should bid the bid with the greatest expected score"""
 
         for _ in range(N_ROLLOUTS):
@@ -182,13 +184,11 @@ class TestBotPlayer:
                 4: 0.05,
             }
 
-            bid = bot.determine_bid(
+            bid = bot.determine_expected_score_bid(
                 expected_scores=expected_scores,
-                position=1,
+                hand=default_hand,
                 table_size=4,
-                points_margin=0,
                 current_bids={'Player 1':1,},
-                hand_size=8,
                 restriction=-1
             )
 
@@ -196,7 +196,8 @@ class TestBotPlayer:
 
 
     def test_determine_bid_high_risk_allows_variation(
-    self, default_bot_player: BotPlayer):
+    self, default_bot_player: BotPlayer,
+    default_hand):
         bot = default_bot_player
         bot.heuristics.risk_tolerance = 1.0
 
@@ -209,13 +210,11 @@ class TestBotPlayer:
         bids = []
 
         for _ in range(N_ROLLOUTS):
-            bid = bot.determine_bid(
+            bid = bot.determine_expected_score_bid(
                 expected_scores=expected_scores,
-                position=1,
+                hand=default_hand,
                 table_size=4,
-                points_margin=0,
                 current_bids={},
-                hand_size=8,
                 restriction=-1
             )
 

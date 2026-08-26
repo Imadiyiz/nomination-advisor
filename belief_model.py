@@ -94,7 +94,6 @@ class BeliefModel:
                 size = hands[player_to_sample]  # Size of the hand to be played
                 if len(possible_cards) < size:
                     valid = False  
-                    print("INvalid assignment")
                     break
 
                 # assigns cards to player consistent with world constraints

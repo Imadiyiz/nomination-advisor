@@ -44,7 +44,6 @@ class HandEvaluator:
             round_scores=dict(self.state.round_scores),
             total_scores=dict(self.state.total_scores),
             bids=dict(self.state.bids),
-            cards_remaining=int(self.state.cards_remaining)
         ) # Adjusted this so that it is not possible to change gamestate for HE instance
 
         return determinised_state
@@ -241,7 +240,7 @@ class HandEvaluator:
         for i, bot in enumerate(simulator.bot_players_map.values()):
             if i == player_amount - 1:
                 banned_bid = hand_size - bid_total
-            bid = bot.determine_SC_bid(
+            bid = bot.determine_strong_card_bid(
                 hand=simulator.state.hands[bot.name],
                 trump_suit=simulator.state.trump_suit,
                 table_size=len(simulator.state.hands),

@@ -1,8 +1,9 @@
 # Contents of the Player class python file
 
-from .card import Card
 from dataclasses import dataclass, field
-from typing import List, Optional
+
+from .card import Card
+
 
 @dataclass
 class Player:
@@ -12,7 +13,7 @@ class Player:
     
     """
     name: str = "AI"
-    hand: List[Card] = field(default_factory=list) #each player gets their own hand list
+    hand: list[Card] = field(default_factory=list) #each player gets their own hand list
     total_score: int = 0
     round_score: int = 0
     bid: int = -1 # must be -1 because 0 is a valid bid

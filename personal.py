@@ -1,12 +1,16 @@
+import copy
+
 from bot import BotPlayer
 from Classes.deck import Deck
 from game_engine import GameState
 from hand_evaluator import HandEvaluator
+from rollout_simulator import RolloutSimulator
 from Utils.card_tools import *
 from Utils.hand_generators import *
 from Utils.types import *
-from rollout_simulator import RolloutSimulator
-import copy
+
+""" Can't be called personal_test.py anymore as pytest was picking this up.
+I assumed that pytest only picked up test.py files that started with test_"""
 
 # Test Parameters
 #players_tuple = ("strong", "weak", "suited", "random")
@@ -17,6 +21,7 @@ current_trick = ()
 bot_players = [BotPlayer(name = name) for name in players_tuple]
 deck = Deck()
 my_player = players_tuple[0]
+cards_per_round = [8,7,6,6,7,8]
 
 # Constants
 HAND_SIZE = 8
@@ -28,7 +33,7 @@ ROLLOUT_TYPE = 'RANDOM'
 
 PRINT_EXPECTED_BID = False
 PRINT_HANDS = True
-PRINT_MONTE_CARLO_ESTIMATE_MOVE = True
+PRINT_MONTE_CARLO_ESTIMATE_MOVE = False
 PRINT_BOT_ESTIMATE_MOVE = False
 PRINT_GAME_SIMULATION = True
 
@@ -60,7 +65,6 @@ root_state = GameState(
     player_order=tuple(players),
     round_scores={p: 0 for p in players},
     total_scores={p: 0 for p in players},
-    cards_remaining=8                  # 8 cards each
 )
 
 hand_evaluator = HandEvaluator(
@@ -177,4 +181,90 @@ if PRINT_MONTE_CARLO_ESTIMATE_MOVE:
         # It isn't going to work as the second player in the iteration uses a root state where they shouldn't be going first
         # I could edit the tuple to prove im right
         # I was right
-    
+
+
+if PRINT_GAME_SIMULATION:
+    print("PRINT_GAME_SIMULATION")
+
+    for i in range(len(cards_per_round)):
+        # Hand Assignment
+        deck = Deck() # Reset deck
+        hands = (
+                (bot_player, generator(deck, cards_per_round[i]))
+                for bot_player, generator in zip(
+                    players, 
+                    [gen for gen in hand_generators]
+                    )
+            )
+
+        hands = dict(hands)
+        deck = Deck() # Reset deck
+
+        # Generate heuristic bid
+        local_state = copy.deepcopy(root_state)
+        local_state.bids = {}
+        print("Original Local player order", local_state.player_order)
+
+        # Iterate a round
+        for j in range(cards_per_round[i]):
+            # Iterate a trick
+            for k, player in enumerate(bot_players):
+
+                # Have to iterate order to simulate a round and ensure players comply with restraints
+                # e.g a player in second position should not be able to play first
+                local_state.player_order = tuple(
+                root_state.player_order[k:] + 
+                        root_state.player_order[:k])
+
+                # Changes evaluator based on player
+                he = HandEvaluator(
+                    state=root_state,
+                    perspective=player.name,
+                    N_rollouts=N_ROLLOUTS
+                )
+
+                bid_probs = he._calculate_tricks_won_probabilities(
+                    rollout_type=ROLLOUT_TYPE)
+                ES_per_bid = bid_probs['raw_expected_scores']
+
+                sim = RolloutSimulator(root_state)
+                initial_bids = he._strong_card_bid_initialiser(simulator=sim)
+
+                # bids can not equal total tricks
+                assert sum(initial_bids.values()) != HAND_SIZE  # Need to put this in a test
+
+                # Update local state
+                local_state.bids = initial_bids
+                he.state = local_state  # Update state
+                optimal_move = he.estimate_optimal_move()['optimal_move']
+                local_state.apply_move(player.name, optimal_move)
+                print(optimal_move)
+
+
+                # Leader for next round, generates candidates in case of draw
+
+                ### comment up
+                # max_score = max(score for score in local_state.round_scores.values())
+                """        leader_candidates = [player for player
+                                    in bot_players 
+                                    if local_state.round_scores[
+                                        player.name] == max_score]
+                leader = random.choice(leader_candidates)
+                leader_idx = local_state.player_order.index(leader.name)
+                # Update order for next round based on winner
+                local_state.player_order = tuple(
+                            root_state.player_order[leader_idx:] + 
+                                    root_state.player_order[:leader_idx])"""
+            
+                print("Bids", local_state.bids)
+                print("Round scores", local_state.round_scores)
+                
+                print("Local state player order", local_state.player_order)
+            
+            root_state = local_state  # New concrete truth
+            print("Crash here")
+        print(f"Got to end of round {i + 1}")
+    print("Final Scores", root_state.total_scores)
+
+    # No more crashes
+    # This is never going to be correct I am cutting my losses

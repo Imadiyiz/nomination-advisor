@@ -62,7 +62,7 @@ class Game:
         }
 
         self.round = 1
-        self.cards_per_round = [2,3,6,6,7,8] #change to 8
+        self.cards_per_round = [8,7,6,6,7,8]
         self.phases = {
             Phase.PLAYER_SELECTION: self.handle_player_selection,
             Phase.HAND_ASSIGNMENT: self.handle_hand_assignment,

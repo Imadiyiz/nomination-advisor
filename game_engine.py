@@ -6,12 +6,15 @@ from Utils.types import *
 
 # This GameState class is for showing what the gamestate is after actions occur
 
+# Can get orchestration from rollout round and iterate it 6 times
+
 @dataclass()
 class GameState:
 
     """
 
-    Only the Truth, fully concrete
+    Only the Truth, fully concrete. Responsible for the state of the current game. Is not 
+    responsible for facilitating gameplay other than applying moves for rollouts.
     Attributes:
         
     """
@@ -22,48 +25,46 @@ class GameState:
     player_order: tuple[PlayerStr, ...]   # fixed seating order
     round_scores: dict[PlayerStr, int]
     total_scores: dict[PlayerStr, int]
-    cards_remaining: int
     winner: PlayerStr | None = None            # Winner of the previous trick
 
     # Must use default_factory for when declaring mutable types
     bids: dict[PlayerStr, int]  = field(default_factory=dict)      # Don't always have bids assigned and 
     # Private attribute
-    _leader: PlayerStr = ''              
-
-    def __post_init__(self):
-        if not self._leader:
-            self._leader = self._get_leader(self.player_order, self.current_trick)
+    _leader: PlayerStr | None = None
 
     # must be used to avoid generating inaccurate worlds due to inaccurate ordering
-    def _get_leader(self, players: tuple[PlayerStr, ...], current_trick: tuple[tuple[PlayerStr, CardInt],...] ) -> str:
+    def _get_leader(self) -> str:
         """
         Returns a valid leader given the current trick restraints
         """
 
         if self._leader:
             return self._leader
-        
-        if not current_trick:
-            return players[0]
-        leader = current_trick[0][0]
 
-        if leader not in players:
+        # Leader is first player in tuple if current trick is empty
+        if not self.current_trick:
+            return self.player_order[0] 
+
+        # Leader is who played the first card in the trick    
+        leader = self.current_trick[0][0] 
+
+        if leader not in self.player_order:
             raise RuntimeError("The player who played the first trump card has not been registered")
         return leader
 
-    def _get_turn_order(self) -> tuple[PlayerStr, ...]:
-        """Returns player order based on game leader's pos index """
-
-        start_index = self.player_order.index(self._leader)
-
-        return (
-        self.player_order[start_index:] +
-        self.player_order[:start_index]
-        )
 
     def next_player(self) -> PlayerStr:
-        order = self._get_turn_order()
-        return order[len(self.current_trick)]
+        """Determines next player to perform play a card. Based on the
+        who is the leader."""
+
+        # Need a leader in order to figure who is next
+        if not self._leader:
+            self._leader = self._get_leader()
+
+        # Tested and works¦
+        leader_idx = self.player_order.index(self._leader)
+        next_player_idx = max(0, leader_idx + len(self.current_trick) % len(self.player_order))
+        return self.player_order[next_player_idx]
 
     def get_legal_moves(self, player: PlayerStr) -> set[CardInt]:
         """
@@ -76,7 +77,14 @@ class GameState:
         player_hand = self.hands[player]
 
         if not player_hand:
-            raise ValueError(f"No Cards in {player}'s hand at all, likely that it is not truly {player}'s turn")
+            print("HANDS, ", self.hands.items())
+            raise ValueError(f"""
+        No Cards in {player}'s hand at all, may not be {player}'s turn.
+        DIagnosis:: 
+        Bids: {self.bids},
+        RS: {self.round_scores},
+        TS: {self.total_scores},
+        current_trick: {self.current_trick}""")
 
         if not self.current_trick:
             return set(player_hand)
@@ -102,12 +110,11 @@ class GameState:
         winner = None
 
         if card not in self.get_legal_moves(player):
-            print("")
-            print(f"Illegal move attempted by {player}: {card}")
-            print(f"Player's hand: {self.hands[player]}")
-            print(f"Current trick: {self.current_trick}")
-            print(f"legal moves: {self.get_legal_moves(player)}")
-            raise ValueError("Illegal move - Check world status")
+            raise ValueError(f"""Illegal move attempted by {player}: {card}")
+            Player's hand: {self.hands[player]}
+            Current trick: {self.current_trick}
+            legal moves: {self.get_legal_moves(player)}
+            Check World Constraints""")
         
 
         new_hands = {
@@ -121,7 +128,6 @@ class GameState:
         new_trick = tuple(self.current_trick + ((player, card),))
 
         new_leader = self._leader
-        new_cards_remaining = self.cards_remaining
 
         # if trick complete, resolve it
         if len(new_trick) == len(self.player_order):
@@ -129,7 +135,6 @@ class GameState:
             new_round_scores[winner] += 1
             new_trick = ()
             new_leader = winner
-            new_cards_remaining -= 1
 
             # Only update total scores if there are bids present
             if self.bids:
@@ -145,7 +150,6 @@ class GameState:
             player_order= self.player_order,
             round_scores=new_round_scores,
             total_scores=new_total_scores,
-            cards_remaining=new_cards_remaining,
             bids=dict(self.bids), 
             winner = winner
         )
@@ -183,9 +187,7 @@ class GameState:
         
         # Lead suit evaluation
         lead_cards = [
-            (p, c) for p, c in trick if get_suit_str(c) == lead_suit
-        ]
-
+            (p, c) for p, c in trick if get_suit_str(c) == lead_suit]
         return max(lead_cards, key=lambda lc: get_rank(lc[1]))[0]
 
     
@@ -194,7 +196,7 @@ class GameState:
         Decides whether the current round has ended
         """
         # Terminal state if there are no cards remaining in play
-        return self.cards_remaining == 0
+        return sum([len(hand) for hand in self.hands.values()]) == 0
       
     
     def is_trick_terminal(self) -> bool:

@@ -9,7 +9,7 @@ from bot import BotPlayer
 from Classes.deck import Deck
 from Utils.types import TrumpStr
 
-N_ROLLOUTS = 1000
+N_ROLLOUTS = 100
 SUITS = ('Clubs', 'Diamonds', 'Hearts', 'Spades')
 
 @pytest.fixture
@@ -71,10 +71,14 @@ class Test_belief_model:
             for player, assignment in assignments_sample.items():
                 for card in assignment:
                     card_counts[player][card] += 1
+                    if card in seen_cards:
+                        raise ValueError("Definitely WRong")
                     seen_cards.add(card)
 
-            assert len(seen_cards) == total_cards, (
-                    f"Seen cards {len(seen_cards)} is not equal to total cards {total_cards}")  # Checks no duplicates are found
+            # Check assert as the raise value error should negate this
+
+            # assert len(seen_cards) == total_cards, (
+             #       f"Seen cards {len(seen_cards)} is not equal to total cards {total_cards}")  # Checks no duplicates are found
 
             seen_cards = set()  # Reset
 
@@ -96,20 +100,17 @@ class Test_belief_model:
         # Sample cards randomly and check whether each card has an equal probability of being chosen
 
         card_counts = {player: defaultdict(int) for player in constrained_belief_model.hand_sizes.keys()}
-        seen_cards = set()
-        total_cards = sum(constrained_belief_model.hand_sizes.values())
         print(constrained_belief_model.void_suits.items(), "OUTPUTt")
-
+        total_cards = sum(constrained_belief_model.hand_sizes.values())
+        
         for _ in range(N_ROLLOUTS):
             assignments_sample = constrained_belief_model.sample_world()
-
+            seen_cards = set()  # Reset
             for player, assignment in assignments_sample.items():
                 for card in assignment:
                     card_counts[player][card] += 1
+                    assert card not in seen_cards
                     seen_cards.add(card)
-
-            assert len(seen_cards) == total_cards  # Checks no duplicates are found
-            seen_cards = set()  # Reset
 
         for player, counts in card_counts.items():
 

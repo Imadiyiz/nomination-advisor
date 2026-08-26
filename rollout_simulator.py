@@ -62,7 +62,7 @@ class RolloutSimulator:
                 )
 
             if move is None:
-                raise ValueError(f"Invalid move selected by {player.name}, {move}, is not a valid move")
+                raise ValueError(f"""Invalid move selected by {player.name}, {move}, is not a valid move.""")
 
             self.state = self.state.apply_move(player.name, move)
 

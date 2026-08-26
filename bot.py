@@ -27,7 +27,7 @@ class BotPlayer:
         self.name = name
         self.belief_model = belief_model
 
-    def determine_ES_bid(self, 
+    def determine_expected_score_bid(self, 
                       expected_scores: dict[int, float],
                       table_size: int,
                       current_bids: dict[PlayerStr, int],
@@ -110,7 +110,7 @@ class BotPlayer:
         # Distribution should not have restricted bid within it
 
 
-    def determine_SC_bid(self, hand: set[CardInt], 
+    def determine_strong_card_bid(self, hand: set[CardInt], 
                                trump_suit: TrumpStr,
                                table_size: int,
                                restriction: int = -1) -> int:
