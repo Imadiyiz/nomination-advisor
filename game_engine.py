@@ -26,6 +26,7 @@ class GameState:
     round_scores: dict[PlayerStr, int]
     total_scores: dict[PlayerStr, int]
     winner: PlayerStr | None = None            # Winner of the previous trick
+    trick_completed: bool = False
 
     # Must use default_factory for when declaring mutable types
     bids: dict[PlayerStr, int]  = field(default_factory=dict)      # Don't always have bids assigned and 
@@ -110,6 +111,7 @@ class GameState:
 
         # Initially there isn't a winner
         winner = None
+        new_trick_completed = False
 
         # Can not proceed with empty hand
         if not self.hands[player]:
@@ -131,7 +133,7 @@ class GameState:
         }
         new_round_scores = dict(self.round_scores)
         new_trick = tuple(self.current_trick + ((player, card),))
-        new_leader = self._leader
+        new_leader = str(self._leader)
         new_total_scores = dict(self.total_scores)
 
         # if trick complete, resolve it
@@ -142,6 +144,7 @@ class GameState:
             new_leader = winner
             new_total_scores = self._calculate_new_total_score(
                 new_hands, new_round_scores)
+            new_trick_completed = True
 
         return GameState(
             hands=new_hands,
@@ -152,7 +155,8 @@ class GameState:
             round_scores=new_round_scores,
             total_scores=new_total_scores,
             bids=dict(self.bids), 
-            winner = winner
+            winner = winner,
+            trick_completed = new_trick_completed
         )
 
     def _calculate_new_total_score(self,
@@ -163,12 +167,12 @@ class GameState:
         Receives new hands dictionary and the latest round score"""
 
         # Only update total score if round has finished
-        if not self.is_round_terminal(new_hands):
-            return self.total_scores
+        if not self._is_round_terminal(new_hands):
+            return dict(self.total_scores)
 
         # Only update total scores if there are bids present
         if not self.bids:
-            return self.total_scores
+            return dict(self.total_scores)
 
         # Update new total scores depending on whether the player satisifed their bid
         new_total_scores = self.total_scores
@@ -202,7 +206,7 @@ class GameState:
         return max(lead_cards, key=lambda lc: get_rank(lc[1]))[0]
 
 
-    def is_round_terminal(self, new_hand: dict[PlayerStr, set[CardInt]]) -> bool:
+    def _is_round_terminal(self, new_hand: dict[PlayerStr, set[CardInt]]) -> bool:
         """
         Decides whether the current round has ended, judging by the amount 
         of cards in each players hands in the most recent hand dict. 
@@ -210,10 +214,3 @@ class GameState:
         """
         # Terminal state if there are no cards remaining in play
         return sum([len(hand) for hand in new_hand]) == 0
-      
-    
-    def is_trick_terminal(self) -> bool:
-        """
-        Decides whether the current trick has ended. Terminal state if a winner
-        has been declared"""
-        return self.winner != None   

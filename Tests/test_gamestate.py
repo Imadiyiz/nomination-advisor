@@ -39,7 +39,7 @@ def root_state(default_bots):
 
 @pytest.fixture
 def bot_name(default_bots):
-    return default_bots[0]
+    return default_bots[0].name
 
 class TestGameState:
     """"Test functionality of GameState class, as it should be responsible for storing
@@ -133,16 +133,19 @@ class TestGameState:
         assert bot_name in rs.round_scores
         rs.player_order = (rs.player_order[0],)
         rs.hands[bot_name] = {4}
-        rs.apply_move(bot_name, 4)
+        new_state = rs.apply_move(bot_name, 4)
 
         assert rs.round_scores[bot_name] == 0
-        assert rs.winner is None  # winner resets
-        assert sum(score for score in rs.total_scores.values()) == 1
+        assert new_state.round_scores[bot_name] == 1
 
-        # Check trick updates correctly
-        # Check leader changes with win
-        # Check leader stays the same without win
         # Check winner is declared if trick complete
+        assert new_state.winner == bot_name  
+
+        # Check leader changes with win
+        assert sum(score for score in rs.total_scores.values()) == 0
+        assert sum(score for score in new_state.round_scores.values()) == 1
+        # Check trick updates correctly
+        # Check leader stays the same without win
         # Check original state has not been corrupted
 
     def test_update_total_score(self, root_state: GameState):
@@ -157,10 +160,10 @@ class TestGameState:
     def test_is_round_terminal(self, root_state: GameState, bot_name: PlayerStr):
         """Ensure that the round terminates when there are no more cards to play"""
         rs = deepcopy(root_state)
-        assert rs.is_round_terminal() is True
+        assert rs.is_round_terminal(rs.hands) is True
 
         rs.hands[bot_name] = {1, 2, 3, 4, 5, 6}
-        assert rs.is_round_terminal() is False
+        assert rs.is_round_terminal(rs.hands) is False
 
     def test_is_trick_terminal(self, root_state: GameState, bot_name):
         """Ensure that the round terminates when there are no more cards to play"""

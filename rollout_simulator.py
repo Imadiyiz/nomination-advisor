@@ -24,7 +24,8 @@ class RolloutSimulator:
         Returns the scores from the round
         
         """
-        self.state.winner = None  # Reset winner to ensure the trick is not considered complete at the start
+        # Shouldn't have to reset winner here anymore
+        # change to a for loop based on cards to plays in round
         while not self.state.is_round_terminal():
             
             player = self.state.next_player()
@@ -44,7 +45,8 @@ class RolloutSimulator:
         during the rollout, including perspective.
         
         """
-        self.state.winner = None  # Reset winner to ensure the trick is not considered complete at the start
+
+        # change to a for loop based on cards to plays in round
         while not self.state.is_round_terminal():
 
             player = self.bot_players_map[self.state.next_player()]
