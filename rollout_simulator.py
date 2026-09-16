@@ -2,14 +2,15 @@ import copy
 import random
 
 from bot import BotPlayer
-from game_engine import GameState
+from game_state import GameState
 from Utils.card_tools import *
 from Utils.types import *
 
 
 class RolloutSimulator:
     """
-    Simulates the actions within a rollout applying moves in logical order
+    Simulates the actions within a rollout applying moves in logical order.
+    Does not take into account the perspective of the player, and instead simulates the round as if all players are bots.
     """
     def __init__(self, state: GameState):
         # local mutable copy
@@ -24,9 +25,9 @@ class RolloutSimulator:
         Returns the scores from the round
         
         """
-        # Shouldn't have to reset winner here anymore
-        # change to a for loop based on cards to plays in round
-        while not self.state.is_round_terminal():
+
+        # Loop through the number of cards in the round, as each player will play one card per trick
+        for _ in range(len(list(self.state.hands.values())[0])):  # Assumes all the players havve the same amount of cards
             
             player = self.state.next_player()
             legal_moves = self.state.get_legal_moves(player)
@@ -46,8 +47,8 @@ class RolloutSimulator:
         
         """
 
-        # change to a for loop based on cards to plays in round
-        while not self.state.is_round_terminal():
+        # Loop through the number of cards in the round, as each player will play one card per trick
+        for _ in range(len(list(self.state.hands.values())[0])):  # Assumes all the players havve the same amount of cards
 
             player = self.bot_players_map[self.state.next_player()]
             legal_moves = self.state.get_legal_moves(player.name)

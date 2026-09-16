@@ -1,5 +1,5 @@
 from belief_model import BeliefModel
-from game_engine import GameState
+from game_state import GameState
 from rollout_simulator import RolloutSimulator
 from Utils.card_tools import *
 from Utils.nom_rule_tools import calculate_correct_bid_score

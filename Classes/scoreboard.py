@@ -103,3 +103,16 @@ class Scoreboard:
     def reset_round_scoreboard(self):
 
         self.round_scoreboard = {}
+
+    def get_game_winner(self) -> str:
+        """
+        Returns the player with the highest score in the total scoreboard
+
+        Returns:
+            str: The name of the player with the highest score
+        """
+
+        if not self.total_scoreboard:
+            raise ValueError("Total scoreboard is empty, unable to determine winner")
+
+        return max(self.total_scoreboard.items(), key=lambda x: x[1])[0]

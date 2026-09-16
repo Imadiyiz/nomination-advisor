@@ -156,13 +156,14 @@ class BotPlayer:
             return False
 
         # Ensures that the strong card pool is at least the minimum required
-        # to make the expected strong cards in play the number of cards per hand.
+        # to make the expected strong cards in play the same as the amount of cards per hand.
         strong_cards_target = self._generate_strong_card_target(
             hand_size, table_size)  
 
         strong_cards = []
-        trump_threshold = 12
-        high_threshold = 12
+        # Maximum card value to be considered strong (Ace is 12)
+        trump_threshold = 12 
+        high_threshold = 12 
 
         while len(strong_cards) < strong_cards_target:
         

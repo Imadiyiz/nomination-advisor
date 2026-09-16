@@ -62,7 +62,7 @@ class Game:
         }
 
         self.round = 1
-        self.cards_per_round = [8,7,6,6,7,8]
+        self.cards_per_round = [1]#[8,7,6,6,7,8]
         self.phases = {
             Phase.PLAYER_SELECTION: self.handle_player_selection,
             Phase.HAND_ASSIGNMENT: self.handle_hand_assignment,
@@ -116,8 +116,12 @@ class Game:
                 else:
                     raise ValueError(f"Unknown game phase: {self.phase}") 
 
+        # What happens when the game is over
+        print("Game Over")
+        print("Final Scoreboard: ", self.scoreboard.display(round=False))
+        print(f"Winner: {self.scoreboard.get_game_winner()}")
         
-    def handle_player_selection(self):
+    def handle_player_selection(self): 
         """
         Player selection logic and initialises the scoreboards as they rely on player selection
 
@@ -305,7 +309,7 @@ class Game:
         """
         Scoring logic
         """
-        if self.round < 6:
+        if self.round < 1:  # 6
             self.round += 1
             #display total scoreboard
             print("Scoreboard before ts", self.scoreboard.total_scoreboard)

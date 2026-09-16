@@ -2,7 +2,7 @@ import copy
 
 from bot import BotPlayer
 from Classes.deck import Deck
-from game_engine import GameState
+from game_state import GameState
 from hand_evaluator import HandEvaluator
 from rollout_simulator import RolloutSimulator
 from Utils.card_tools import *
@@ -86,7 +86,7 @@ if PRINT_EXPECTED_BID:
     local_state = copy.deepcopy(root_state)
     bid_probs = hand_evaluator._calculate_tricks_won_probabilities()
     ES_per_bid = bid_probs['raw_expected_scores']
-    predicted_bid = bot_players[0].determine_ES_bid(
+    predicted_bid = bot_players[0].determine_expected_score_bid(
         hand=local_state.hands[bot_players[0].name],
         expected_scores=ES_per_bid,
         table_size=len(hands),

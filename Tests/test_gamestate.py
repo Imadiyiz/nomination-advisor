@@ -6,7 +6,7 @@ import pytest
 
 from bot import BotPlayer
 from Classes.deck import Deck
-from game_engine import GameState
+from game_state import GameState
 from Utils.types import *
 
 
@@ -152,25 +152,67 @@ class TestGameState:
         """Ensure that the total score is updated when the conditions are right to do 
         so"""
 
-
-        # Testing this as there is a mistake with total score
-
-        pass
-
-    def test_is_round_terminal(self, root_state: GameState, bot_name: PlayerStr):
-        """Ensure that the round terminates when there are no more cards to play"""
+        # Reset
         rs = deepcopy(root_state)
-        assert rs.is_round_terminal(rs.hands) is True
 
-        rs.hands[bot_name] = {1, 2, 3, 4, 5, 6}
-        assert rs.is_round_terminal(rs.hands) is False
+        # Ensure that players have cards in their hands
+        for i, player in enumerate(rs.player_order):
+            rs.hands[player] = {1 + i}
 
-    def test_is_trick_terminal(self, root_state: GameState, bot_name):
-        """Ensure that the round terminates when there are no more cards to play"""
-        assert root_state.is_trick_terminal() is False
+        # Check that total score is not updated if round is not complete
+        assert sum(score for score in rs.total_scores.values()) == 0 
 
-        root_state.winner = bot_name
-        assert root_state.is_trick_terminal() is True
+        # Check that total score is not updated if there are no bids
+        assert sum(bid for bid in rs.bids.values()) == 0
+        for player in rs.player_order:
+            legal_moves = rs.get_legal_moves(player)
+            if legal_moves:
+                rs = rs.apply_move(player, legal_moves.pop())
+                assert sum(score for score in rs.total_scores.values()) == 0
+
+        # Reset
+        rs = deepcopy(root_state)
+
+        # Ensure that players have cards in their hands
+        for i, player in enumerate(rs.player_order[:-1]):
+            rs.hands[player] = {1 + i}
+            rs.bids[player] = 1  # Set bids to ensure total score is updated when round is complete 
+
+        rs.hands[rs.player_order[-1]] = {51}
+        rs.bids[rs.player_order[-1]] = 0  # Ensures that the bids are not equal to the total tricks played
+
+        # Check that total score is updated if round is complete and there are bids
+        assert sum(score for score in rs.total_scores.values()) == 0
+
+        # generate a complete round by having each player play a card until the round is complete
+        for player in rs.player_order:
+            legal_moves = rs.get_legal_moves(player)
+            if legal_moves:
+                rs = rs.apply_move(player, legal_moves.pop())
+
+            if player != rs.player_order[-1]:  # Don't check last player to play
+                assert sum(score for score in rs.total_scores.values()) == 0
+
+        # Doesnt update
+        assert sum(score for score in rs.total_scores.values()) != 0
+
+        # Check that total score is not updated if round is not complete
+        rs = deepcopy(root_state)
+
+        # Ensure that players have cards in their hands
+        for i, player in enumerate(rs.player_order[:-1]):
+            rs.hands[player] = {1 + i, 12 + i, 22 + i}
+            rs.bids[player] = 1
+
+        rs.hands[rs.player_order[-1]] = {51}
+        rs.bids[rs.player_order[-1]] = 0  # Ensures that the bids are not equal to the total tricks played
+
+        assert sum(score for score in rs.total_scores.values()) == 0
+        for player in rs.player_order:
+            legal_moves = rs.get_legal_moves(player)
+            if legal_moves:
+                rs = rs.apply_move(player, legal_moves.pop())
+            assert sum(score for score in rs.total_scores.values()) == 0
     
     def test_resolve_trick(self, root_state: GameState):
         """Ensure that the player who has played the winning card in the trick
@@ -194,14 +236,12 @@ class TestGameState:
                 ('BOT0', 1), ('BOT1', 2), ('BOT2', 4),)
         assert high_card_state._resolve_trick(
         high_card_state.current_trick) == 'BOT2'  
-
-
+        
         no_order_state = deepcopy(root_state)  
         no_order_state.current_trick = (
                 ('BOT0', 1), ('BOT1', 50), ('BOT2', 30),)
         assert no_order_state._resolve_trick(
         no_order_state.current_trick) == 'BOT0' 
-
 
         # Checks that error occurs when the trick is empty
         with pytest.raises(ValueError):

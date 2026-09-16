@@ -94,8 +94,8 @@ Hand evaluator is just not fitting in with the current artchitecture, it just fe
 I dont know how the calculate expected score truly works with math given to me by AI
 
 
-Random thought, if theres a tiebreaker during the round instead of completely gaining an advantage with lucj
+Random thought, if theres a tiebreaker during the round instead of completely gaining an advantage with luck
 why not let the winner of the coin toss, choose whether to go first or to decide trump, before viewing cards obviously
 Just makes more sense than getting both via coin toss. Seems like too big of an advantage.
 
-Currently refactoring some parts of gamestate so that it is immutable and does the job it was designed to do, altho¦¦¦¦ugh it has been a steep learning curve doing the testing, I wish I put more effort into doing it before as it exposed me to future headaches which I can now avoid. I truly understand the code better and my diagnostic skills have improved tremendously through this project.
+Currently refactoring some parts of gamestate so that it is immutable and does the job it was designed to do, although it has been a steep learning curve doing the testing, I wish I put more effort into doing it before as it exposed me to future headaches which I can now avoid. I truly understand the code better and my diagnostic skills have improved tremendously through this project.
