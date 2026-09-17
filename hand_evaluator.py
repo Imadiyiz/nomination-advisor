@@ -59,20 +59,19 @@ class HandEvaluator:
         expected_scores = {}
 
         # Calculate the amount of legal moves the player can make
-        true_legal_moves = self.state.get_legal_moves(self.perspective)
+        legal_moves = self.state.get_legal_moves(self.perspective)
 
 
         # Generate move win percentage per card
-        for card_to_play in true_legal_moves: 
+        for card_to_play in legal_moves: 
             # Simulates a round where the perspective has played their move
             expected_score = self._simulate_round_for_expected_move(player=self.perspective,
-                                                                             move=card_to_play,
-                                                                             bid=perspective_bid,
-                                                                             rollout_type=rollout_type)
+                                                                    move=card_to_play,
+                                                                    bid=perspective_bid,
+                                                                    rollout_type=rollout_type)
             expected_scores[card_to_play] = expected_score
     
         # Expected score for the card played if the card was played at all
-
         if not expected_scores:
             return {}
 
@@ -133,24 +132,19 @@ class HandEvaluator:
         tricks_won_freq = {b: 0 for b in range(9)}
         tricks_won_distribution = {b: 0.0 for b in range(9)}
         tricks_won = 0
-        initial_bids = {}
-
-        # simulator instance created with a sampled possible world consistent with perspective beliefs
-        sim = RolloutSimulator(self._get_determinised_state())
-
-        # Determine initial/placeholder bid
-        if not sim.state.bids:
-            initial_bids = self._strong_card_bid_initialiser(simulator=sim)
-
 
         for _ in range(self.N_rollouts):
 
             # Determinised state used for simulation needs updated initial bids
             d_state = self._get_determinised_state()
-            if initial_bids:
-                d_state.bids = initial_bids
 
+            # simulator instance created with a sampled possible world consistent with perspective beliefs
             simulator = RolloutSimulator(d_state)
+
+            # Determine initial/placeholder bid
+            if not simulator.state.bids:
+                simulator.state.bids = self._strong_card_bid_initialiser(simulator=simulator)
+
             # Determine type of rollout
             rollout_map = {
                 'RANDOM' : simulator.random_rollout_round,
@@ -179,7 +173,7 @@ class HandEvaluator:
 
         Args:
             simulation_type: (str)
-            RANDOM, BASELINE
+            RANDOM, NAIVE
         Returns expected score achieved when playing a move:
         """
 
@@ -188,10 +182,13 @@ class HandEvaluator:
 
         total_move_score = 0 
         # determinised state which is derived from root state but can be altered to perform MC
-        d_state = self._get_determinised_state().apply_move(
-                player=player, card=move) # Applies the intended move to the state before evaluating the remaining moves
+        
 
         for _ in range(self.N_rollouts):
+
+            # Must put it within the loop as the determinised state is altered with each move
+            d_state = self._get_determinised_state().apply_move(
+                            player=player, card=move) # Applies the intended move to the state before evaluating the remaining moves
     
             # simulator instance created with a sampled possible world consistent with perspective beliefs
             simulator = RolloutSimulator(d_state)  
@@ -211,8 +208,6 @@ class HandEvaluator:
                 total_move_score += tricks_won
 
         # Calculate Expected Score
-
-     
         return round(total_move_score / self.N_rollouts, 1)
 
     def _calculate_scores_per_bid(self, distribution: dict[int, float]) -> dict[int, float]:

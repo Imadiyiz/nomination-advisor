@@ -7,14 +7,15 @@ class InitialTrumpFlow:
     """
     def __init__(self):
         
-        self.context = {'manual_trump_generation' : '',
-                        'trump_card_initials': ''}
+        self.context = {'manual_trump_generation' : None,
+                        'trump_card_initials': None}
         
         self.stepManager = StepManager()
     
     def run(self, valid_card_initials):
 
         validate_args = {'valid_card_initials' : valid_card_initials}
+        
         #step 1: Determine auto or manual trump selection
         while True:
             print(f"""Determine Initial Trump""")

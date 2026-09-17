@@ -1,59 +1,59 @@
-from Classes.bidding_manager import BiddingManager
+from game_state import GameState
+from Utils.types import CardInt, PlayerStr, TrumpStr
+
+from Classes.ui_manager import player_hand_str_creator
 
 from .step_manager import *
 
 
 class BiddingFlow:
     """
-    Handles the flow of steps to player bids
+    Handles the flow of steps to player bids. Accepts a state object and returns the updated gamestate truth.
+    This includes the new bids
     """
-    def __init__(self, player_queue: list[Player]):
+    def __init__(self, state: GameState):
         
         self.context = {
             "": [],
             }
         
         self.stepManager = StepManager()
-        self.player_queue = player_queue
+        self.player_queue = state.get_player_queue()
     
-    def run(self, round_no: int, max_cards: int,
-            players: list[Player], 
-            bidding_manager: BiddingManager, trump_suit: str):
+    def run(self,
+            players: list[PlayerStr], 
+            state: GameState):
         
         print("Bidding Phase Commencing\n")
         
-        for player in players:
+        for i, player in enumerate(players):
 
-            self._run_single_player_bid(
-                round_no=round_no,
+            is_handicapped = False
+            if i == len(player) - 1:
+                is_handicapped = True
+
+            new_state = self._run_single_player_bid(
                 player=player,
-                max_cards=max_cards,
-                trump_suit=trump_suit,
-                bidding_manager=bidding_manager,
+                state = state,
+                is_handicapped = is_handicapped
             )    
+
+            state = new_state  # Update state for next player
 
 
     def _run_single_player_bid(self,
-                              player: Player,
-                              round_no: int,
-                              max_cards: int, 
-                              bidding_manager: BiddingManager,
-                              trump_suit: str
+                              player: PlayerStr,
+                              state: GameState,
+                              restriction: int = -1,
+                              is_handicapped: bool = False
                               ):
-        # only have forbidden bid if player is last to bid
-        if player.handicapped_bid:
-            forbidden_bid = bidding_manager.calculate_banned_number(max_cards)
-        else:
-            forbidden_bid = -1
 
         while True:
             bid_value = self._prompt_for_bid(
                 player=player, 
-                forbidden_bid=forbidden_bid,
-                bidding_manager=bidding_manager, 
-                trump_suit=trump_suit,
-                round_no=round_no, 
-                max_cards=max_cards,
+                state = state,
+                forbidden_bid=restriction,
+                is_handicapped=is_handicapped
                 )
             
             if not bid_value and bid_value != 0:
@@ -62,27 +62,19 @@ class BiddingFlow:
             if bid_value == "BACK":
                 continue
 
-            if bidding_manager.successful_player_bid(
-                player=player,
-                forbidden_bid=forbidden_bid,
-                bid_amount=bid_value
-            ):
-                
-                bidding_manager.update_current_bids(
-                    player_queue=self.player_queue)
-
-                print(f"{player.name} bid {bid_value}")
-                return bid_value
+            # Ensure the bid is valid
+            if 0 <= bid_value <= 8 and bid_value != restriction:
+                state.bids[player] = bid_value
+                print(f"{player} bid {bid_value}")
+                return state  # Update state
         
             print("Invalid bid, try again")
 
     def _prompt_for_bid(self,
-                            player: Player,
-                            round_no: int,
-                            max_cards: int, 
-                            bidding_manager: BiddingManager,
-                            trump_suit: str,    
-                            forbidden_bid: int    
+                            player: PlayerStr,
+                            state: GameState,
+                            forbidden_bid: int,
+                            is_handicapped: bool = False
         ):
         """
         Private method which runs the prompt for bid and returns the value of the bid
@@ -91,20 +83,22 @@ class BiddingFlow:
         Returns
             int: Legal bid made by player
         """
+        player_hand_str = player_hand_str_creator(player, state)
 
         while True:
                 clear_screen()
                 print(
-f"""Round {round_no}: {max_cards} cards per hand""")
+f"""Round {state.round}: {state.CARDS_PER_ROUND[state.round - 1]} cards per hand""")
 
                 result = self.stepManager.run_step(
                     step = BiddingMenuStep(),
                     prompt_args={
                         "player": player,
-                        "trump_suit": trump_suit,
-                        "current_bids": bidding_manager.current_bids,
+                        "player_hand_str": player_hand_str,
+                        "trump_suit": state.trump_suit,
+                        "current_bids": state.bids,
                         "forbidden_bid": forbidden_bid,
-                        "max_cards": max_cards},
+                        "is_handicapped": is_handicapped},
                     validate_args={"forbidden_bid" : forbidden_bid}
                     )
                 

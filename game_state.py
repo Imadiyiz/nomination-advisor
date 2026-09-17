@@ -27,12 +27,18 @@ class GameState:
     total_scores: dict[PlayerStr, int]
     winner: PlayerStr | None = None            # Winner of the previous trick
     trick_completed: bool = False
+    perspective = PlayerStr  # Used during single player games, does not affect MC sim
     
 
     # Must use default_factory for when declaring mutable types
     bids: dict[PlayerStr, int]  = field(default_factory=dict)      # Don't always have bids assigned and 
     # Private attribute
     _leader: PlayerStr | None = None
+    round: int = 1
+    game_over: bool = False
+
+    # Constants
+    CARDS_PER_ROUND = (8,7,6,6,7,8)
 
     # must be used to avoid generating inaccurate worlds due to inaccurate ordering
     def _get_leader(self) -> str:
@@ -54,6 +60,13 @@ class GameState:
             raise RuntimeError("The player who played the first trump card has not been registered")
         return leader
 
+    def get_player_queue(self) -> list[PlayerStr]:
+        """Returns a list of the players in turn order"""
+        if not self._leader:
+            self._leader = self._get_leader()
+
+        leader_idx = self.player_order.index(self._leader)
+        return list(self.player_order[leader_idx:] + self.player_order[:leader_idx])
 
     def next_player(self) -> PlayerStr:
         """Determines next player to perform play a card. Based on the
@@ -136,6 +149,8 @@ class GameState:
         new_trick = tuple(self.current_trick + ((player, card),))
         new_leader = str(self._leader)
         new_total_scores = dict(self.total_scores)
+        new_round = int(self.round)
+        new_game_over = bool(self.game_over)
 
         # if trick complete, resolve it
         if len(new_trick) == len(self.player_order):
@@ -146,6 +161,11 @@ class GameState:
             new_total_scores = self._calculate_new_total_score(
                 new_hands, new_round_scores)
             new_trick_completed = True
+            new_round += 1
+
+            if new_round > 6:
+                new_game_over = True
+            
 
         return GameState(
             hands=new_hands,
@@ -157,7 +177,9 @@ class GameState:
             total_scores=new_total_scores,
             bids=dict(self.bids), 
             winner = winner,
-            trick_completed = new_trick_completed
+            trick_completed = new_trick_completed,
+            round = new_round,
+            game_over = new_game_over,
         )
 
     def _calculate_new_total_score(self,
@@ -205,3 +227,9 @@ class GameState:
         lead_cards = [
             (p, c) for p, c in trick if get_suit_str(c) == lead_suit]
         return max(lead_cards, key=lambda lc: get_rank(lc[1]))[0]
+
+
+
+
+# TODO: How does the round score ever reset and how does GameState ever terminate, maybe orchestrator loops until gamestate is over
+# TODO: Refactor the scoreboard as it is the second source of truth, it is only useul for cli output and resettiing

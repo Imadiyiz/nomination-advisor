@@ -1,6 +1,7 @@
 # Contents of the Scoreboard class which keeps track of the scores in the game
-from Classes.card import Card
-from Classes.player import Player
+from Utils.types import PlayerStr, CardInt
+
+from game_state import GameState
 
 
 class Scoreboard:
@@ -9,15 +10,12 @@ class Scoreboard:
     Note: Why is it necessary to keep passing the player list to the scoreboard if this never changes
     """
 
-    def __init__(self, players: list[Player]):
-        self.round_scoreboard = {p.name: 0 for p in players}
-        self.total_scoreboard = {p.name: 0 for p in players}
-        self.name_to_player = {}
-        for player in players:  # In case the score needs to access the player instance's bid
-            self.name_to_player[player.name] = player
+    def __init__(self, players: list[PlayerStr]):
+        self.round_scoreboard = {p: 0 for p in players}
+        self.total_scoreboard = {p: 0 for p in players}
         
         
-    def display(self, round: bool = True) -> str:
+    def display(self, state: GameState, round: bool = True) -> str:
         """
         Function for outputting the scores in the game
 
@@ -38,7 +36,7 @@ class Scoreboard:
         )
 
         return " | ".join([
-            f"{name} {score} ({self.name_to_player[name].bid})" 
+            f"{name} {score} ({state.bids[name]})" 
             for name, score in formatted_scoreboard
         ]
 
@@ -49,44 +47,6 @@ class Scoreboard:
 
         )
     
-    def update_round_scoreboard(self, player_list:list[Player], winner_card: Card):
-        """
-        Updates the round scoreboard using the player bids and the player score from the round
-
-        Args:
-            player_list (list[Player]): List of players used to update the round scoreboard
-            winner_card (Card): The winner card is used to determine the who won the round
-        """
-        #update round score winner 
-        for _player in player_list:
-            if _player == winner_card.owner:
-                _player.round_score +=1 
-            self.round_scoreboard[_player.name] = _player.round_score
-    
-    def update_total_scoreboard(self, player_list:list[Player], max_cards: int = 8):
-        """
-        Updates the total scoreboard using the player bids and the player score from the round
-
-        Args:
-            player_list(list[Player]): Required to iterate throught every player
-            max_cards (int): Enables function to caluculate the new scores
-        """
-
-        # initialise total_scoreboard if it does not exist
-        if not self.total_scoreboard:
-            print("No total scoreboard", self.total_scoreboard)
-            for _player in player_list:
-                self.total_scoreboard[_player.name] = 0
-
-        for _player in player_list:
-            #check if they got their score correct
-            multiplier = 2 if _player.bid == max_cards else 1
-
-            if _player.bid == _player.round_score:
-                self.total_scoreboard[_player.name] += (_player.bid + 10) * multiplier  
-            else:
-                self.total_scoreboard[_player.name] += _player.round_score
-
     def reorder_round_scoreboard(self, player_queue:list):
         """
         Reorders the round scoreboard to ensure it aligns with the current bids
@@ -103,16 +63,3 @@ class Scoreboard:
     def reset_round_scoreboard(self):
 
         self.round_scoreboard = {}
-
-    def get_game_winner(self) -> str:
-        """
-        Returns the player with the highest score in the total scoreboard
-
-        Returns:
-            str: The name of the player with the highest score
-        """
-
-        if not self.total_scoreboard:
-            raise ValueError("Total scoreboard is empty, unable to determine winner")
-
-        return max(self.total_scoreboard.items(), key=lambda x: x[1])[0]

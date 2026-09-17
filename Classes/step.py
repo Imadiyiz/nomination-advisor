@@ -1,8 +1,7 @@
 # contains variations of the Step class
 
 from Utils.cli_tools import *
-from .player import Player
-from Utils.ViewFormat import *
+from ui_manager import CLI_format_hand
 
 
 class Step:
@@ -101,10 +100,11 @@ class BiddingMenuStep(Step):
     """
 
     prompt_required_arguments = {"player", 
+                                 "player_hand_str",
                                  "trump_suit",
                                  "current_bids",
                                  "forbidden_bid",
-                                 "max_cards",}
+                                 "is_handicapped"}
     
     validate_required_arguments = {"forbidden_bid"}
     
@@ -114,13 +114,14 @@ class BiddingMenuStep(Step):
         if missing:
             raise RuntimeError(f"Missing context {missing}")
 
-        player = args['player']        
+        player = args['player']
+        player_hand_str = args['player_hand_str']        
         trump_suit = args['trump_suit']        
         current_bids = args['current_bids']
-        max_cards = args['max_cards']
         forbidden_bid = args['forbidden_bid']
+        is_handicapped = args['is_handicapped']
 
-        if forbidden_bid > -1 and player.handicapped_bid:
+        if forbidden_bid > -1 and is_handicapped:
             bidding_line = f"""{player}, enter your bid (BANNED: {forbidden_bid}) > """
         else:
             bidding_line = f"{player} enter your bid > " 
@@ -128,7 +129,7 @@ class BiddingMenuStep(Step):
         return f"""{player}'s turn bidding\n
 Current bids: {current_bids}
 Trump: {trump_suit}
-Hand: {player.display_hand_str(max_cards)}
+Hand: {player_hand_str}
 
 {bidding_line}"""
 
@@ -309,9 +310,11 @@ class PlayerPlayCardStep(Step):
     Local player playing
     """
     
-    prompt_required_arguments = {"player", 
+    prompt_required_arguments = {"player_name",
+                                 "player_hand",
+                                 "expanded_player_hand_str"
                                    "trump_suit",
-                                   "table",
+                                   "table_str",
                                    "scoreboard"}
     
     validate_required_arguments = {"player"
@@ -327,16 +330,18 @@ class PlayerPlayCardStep(Step):
             raise RuntimeError(f"Missing context: {missing}")
         
         scoreboard = args['scoreboard']
-        player = args['player']
+        player_hand = args['player_hand']
+        expanded_player_hand_str = args['expanded_player_hand_str']
+        player_name = args['player_name']
         trump_suit = args['trump_suit']
-        table = args['table']
+        table_str = args['table']
 
-        player_headline_string = f"▶\t {player.name} to play\t|\tTrump: {trump_suit}"
+        player_headline_string = f"▶\t {player_name} to play\t|\tTrump: {trump_suit}"
         round_scoreboard_string = f"Round score: {scoreboard.display()}"
-        table_string = f"Table:\n{table.display_stack()}"
-        hand_string = f"Hand:\n{format_hand(player.hand)}"
-        choose_card_string = f"Choose card [1-{len(player.hand)}] > "
-        
+        if len(player_hand) > 1:
+            choose_card_string = f"Choose card [1-{len(player_hand)}] > "
+        else:
+            choose_card_string = f"Choose card [1] > "       
         clear_screen() #3
         return (
             "".join([
@@ -346,9 +351,9 @@ class PlayerPlayCardStep(Step):
                 round_scoreboard_string, 
                 "\n",
                 "\n",
-                table_string,
+                table_str,
                 "\n",
-                hand_string, 
+                expanded_player_hand_str, 
                 "\n",
                 "\n",
                 choose_card_string
@@ -366,15 +371,15 @@ class PlayerPlayCardStep(Step):
         if missing:
             raise RuntimeError(f"Missing context: {missing}")
         
-        player = args['player']
+        player_hand = args['player_hand']
         
         if not user_input.isdigit():
             raise ValueError("Must enter a number")
 
         index = int(user_input)
 
-        if  index < 1 or index > len(player.hand):
-            raise ValueError(f"Must enter a valid number ({1}-{len(player.hand)})")
+        if  index < 1 or index > len(player_hand):
+            raise ValueError(f"Must enter a valid number ({1}-{len(player_hand)})")
         
         if user_input == '':
             raise ValueError("Must enter a value")
@@ -394,7 +399,8 @@ class OpponentPlayCardStep(Step):
     Opponent player playing
     """
     
-    prompt_required_arguments = {"opponent", 
+    prompt_required_arguments = {"opponent_name",
+                                 "opponent_hand_str" 
                                    "trump_suit",
                                    "table",
                                    "scoreboard",}
@@ -410,14 +416,13 @@ class OpponentPlayCardStep(Step):
             raise RuntimeError(f"Missing context: {missing}")
         
         scoreboard = args['scoreboard']
-        opponent = args['opponent']
+        opponent_hand_str = args['opponent_hand_str']
+        opponent_name = args['opponent_name']
         trump_suit = args['trump_suit']
-        table = args['table']
+        table_str = args['table_str']
         
-        player_headline_string = f"▶\t{opponent.name} to play\t|\tTrump: {trump_suit}"
+        player_headline_string = f"▶\t{opponent_name} to play\t|\tTrump: {trump_suit}"
         round_scoreboard_string = f"Round score: {scoreboard.display(round=True)}"
-        table_string = f"Table:\n{table.display_stack()}"
-        hand_string = f"Hand:\n{format_hand(opponent.hand)}"
         choose_card_string = f"Enter initials of card e.g. '7H' > "
         
         clear_screen() #3
@@ -429,10 +434,10 @@ class OpponentPlayCardStep(Step):
                 round_scoreboard_string, 
                 "\n",
                 "\n",
-                table_string,
+                table_str,
                 "\n",
                 "\n",
-                hand_string, 
+                opponent_hand_str, 
                 "\n",
                 "\n",
                 choose_card_string
@@ -517,7 +522,9 @@ class IterableLocalAddCardStep(Step):
     Step for adding card to local player's hand
     """
     
-    prompt_required_arguments = {"player", "maximum_cards"}
+    prompt_required_arguments = {"player_hand",
+                                 "maximum_cards",
+                                 "player_hand_str"}
     
     validate_required_arguments = {"valid_card_initials"}
 
@@ -529,11 +536,11 @@ class IterableLocalAddCardStep(Step):
         if missing:
             raise RuntimeError(f"Missing context: {missing}")
         
-        player = args['player']
+        player_hand = args['player_hand']
+        player_hand_str = args['player_hand_str']
         max_cards = args['maximum_cards']
 
-        cards_remaining_line = f"Cards remaining: {max_cards-len(player.hand)}"
-        current_hand_line = f"Current Hand:\n {player.display_hand_str(max_cards)} "
+        cards_remaining_line = f"Cards remaining: {max_cards-len(player_hand)}"
         prompt_line = "Enter card initials (e.g. JH, 10D) > "
         
         return (
@@ -541,7 +548,7 @@ class IterableLocalAddCardStep(Step):
                 "\n",
                 cards_remaining_line,
                 "\n",
-                current_hand_line,
+                player_hand_str,
                 "\n",
                 prompt_line
                 ]

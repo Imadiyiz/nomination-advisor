@@ -60,15 +60,28 @@ def id_to_initials(card: CardInt) -> str:
     return f"{get_rank(card)}{get_suit_str(card)[0].upper()}"
 
 def initials_to_prose(value: str, suit: str) -> str:
-    """ Returns prose from receiving the value and suit part of the initials"""
+    
     if RANK_FROM_INITIAL[value] >= 9: # Must be picture card
-         for item in VALUE_PROSE:
+        for item in VALUE_PROSE:
               if value == item[0]:
                    value = item
+    return f"{value} {SUITS_TO_SYMBOL[suit]}"
+
+def id_to_prose(card: CardInt) -> str:
+    """ Returns prose from receiving card integer"""
+
+    value = get_rank(card)
+    suit = SUITS[card // 13]
+
+    if RANK_FROM_INITIAL[value] >= 9: # Must be picture card
+        for item in VALUE_PROSE:
+            if value == item[0]:
+                value = item
     for item in SUITS:
-         if item[0] == suit:
-              suit = item
-    return f"{value} {suit}"
+        if item[0] == suit:
+            suit = item
+
+    return f"{value} {SUITS_TO_SYMBOL[suit]}"
 
 def initials_to_id(initials: str) -> CardInt:
 

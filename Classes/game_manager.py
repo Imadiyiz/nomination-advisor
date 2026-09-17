@@ -2,25 +2,24 @@
 
 from enum import Enum
 
-from Utils.card_tools import SUITS_TO_SYMBOL, initials_to_id
+from Utils.card_tools import SUITS_TO_SYMBOL, initials_to_id, get_suit_str, id_to_prose
 from Utils.cli_tools import clear_screen
+from Utils.types import CardInt, PlayerStr, TrumpStr
 
 from .bidding_flow import BiddingFlow
-from .bidding_manager import BiddingManager
-from .card import Card
 from .deck import Deck
 from .initial_trump_flow import InitialTrumpFlow
 from .iterative_trump_flow import IterativeTrumpFlow
 from .local_card_assignment import LocalCardAssignmentFlow
 from .player import Player
 from .player_setup_flow import PlayerSetupFlow
-from .player_state_manager import PlayerStateManager
 from .playing_flow import PlayingFlow
 from .scoreboard import Scoreboard
 from .step import *
-from .table import Table
 from .trump_manager import TrumpManager
 from .ui_manager import UIManager
+
+from game_state import GameState
 
 VALID_CARD_INITIALS = {
     (f"{rank}{suit}")
@@ -62,7 +61,7 @@ class Game:
         }
 
         self.round = 1
-        self.cards_per_round = [1]#[8,7,6,6,7,8]
+        self.cards_per_round = (1)#[8,7,6,6,7,8]
         self.phases = {
             Phase.PLAYER_SELECTION: self.handle_player_selection,
             Phase.HAND_ASSIGNMENT: self.handle_hand_assignment,
@@ -95,15 +94,11 @@ class Game:
 
         #Generates objects for the game
         self.UIManager = UIManager()
-        self.table = Table(self.UIManager)
-        self.biddingManager = BiddingManager(self.UIManager)
-        self.playerStateManager = PlayerStateManager(self.player_queue)
         self.trumpManager = TrumpManager(self.UIManager)
         self.playerSetupFlow = PlayerSetupFlow()
         self.biddingFlow = BiddingFlow(self.player_queue)
         self.initialTrumpFlow = InitialTrumpFlow()
-        self.localCardAssignmentFlow = LocalCardAssignmentFlow(
-            VALID_CARD_INITIALS)
+        self.localCardAssignmentFlow = LocalCardAssignmentFlow(VALID_CARD_INITIALS)
 
     def run_game_phases(self):
         """
@@ -143,11 +138,19 @@ class Game:
                 opponent=opponents_flags[index])
             )
 
-        # round player_queue
-        self.temp_player_queue = self.player_queue
-
         # Can initialise scoreboard now
         self.scoreboard = Scoreboard(self.player_queue)
+
+        # Can initialise the gamestate object now, as it requires the player queue to be initialised
+        self.game_state = GameState(
+            player_order=tuple(player.name for player in self.player_queue), 
+            hands={player.name: set(player.hand) for player in self.player_queue},
+            trump_suit=self.trump_suit,
+            current_trick=(),
+            round_scores={player.name: 0 for player in self.player_queue},
+            total_scores={player.name: 0 for player in self.player_queue},
+            bids={player.name: 0 for player in self.player_queue})
+
 
         self.phase = Phase.HAND_ASSIGNMENT
 
@@ -166,14 +169,15 @@ class Game:
         for player in self.player_queue:
 
             # local players only
-            if not player.opponent: 
+            if player.opponent is False: 
                 self.localCardAssignmentFlow.generate_prompt(player)
                 
                 #iterate for amount of cards in hand for the current round
-                while len(player.hand) < self.cards_per_round[self.round-1]:
+                while len(self.game_state.hands[player.name]) < self.cards_per_round[self.round-1]:
 
+                    player_card_list = self.game_state.hands[player.name]
                     choice_of_initials = self.localCardAssignmentFlow.assign_card(
-                        player, max_cards
+                        player, max_cards, player_card_list
                     )
                     
                     # choice of initials has not been sanitised ANYMORE
@@ -184,8 +188,7 @@ class Game:
                     chosen_card = self.deck.draw_specific_card(choice_of_initials)
                     print(chosen_card, "chosen card")
                     if chosen_card:
-                        player.hand.append(chosen_card)
-                        player.own_hand()
+                        self.game_state.hands[player.name].add(chosen_card)
                     else:
                         print(f"{choice_of_initials} is no longer in the deck")
                         print(len(self.deck))
@@ -203,8 +206,8 @@ class Game:
         """
 
         clear_screen() #2
-        cards =  self.cards_per_round[self.round-1]
-        print(f"ROUND {self.round} - Bidding Phase ({cards} cards per hand)\n")
+        max_cards =  self.cards_per_round[self.round-1]
+        print(f"ROUND {self.round} - Bidding Phase ({max_cards} cards per hand)\n")
 
         context = self.initialTrumpFlow.run(VALID_CARD_INITIALS)
         manual_trump_generation = context['manual_trump_generation']
@@ -221,23 +224,23 @@ class Game:
                 card = self.deck.draw_specific_card(trump_card_initials)
             else:
                 return
+            
             if not card:
                 print("Invalid card")
                 return
         
-            self.trump_suit = card.suit
+            self.game_state.trump_suit = get_suit_str(card)
 
         self.phase = Phase.BIDDING
     
-    def select_trump_automatically(self):
+    def select_trump_automatically(self) -> CardInt:
 
         clear_screen()
         trump_card = self.deck.draw_random()
-        #determine trump
         #since deck is already shuffled, pick first card
         # choose the trump after cards have been assinged to players
-        self.trump_suit = trump_card.suit
-        print(f"Random trump card - {trump_card}")
+        self.game_state.trump_suit = get_suit_str(trump_card)
+        print(f"Random trump card - {id_to_prose(trump_card)}")
         print("Trump suit: ", self.trump_suit)
 
         return trump_card
@@ -248,16 +251,16 @@ class Game:
         Bidding logic
         """
 
+        # NOTE Should the game object keep the max cards variable
         self.max_cards = self.cards_per_round[self.round-1]
-        self.playerStateManager.reset_players_handicap()
 
         #dealer shifts every time bidding starts
-        if self.round > 1:
-            self.player_queue = self.playerStateManager.update_dealer_order(self.player_queue)
+        # Gamestate takes care of that now
         
+        # Players still need to be told that they are handicapped  ## Fix
         self.player_queue[-1].handicapped_bid = True
         self.biddingManager.reset_bids(self.player_queue)
-        self.biddingManager.update_current_bids(self.player_queue)
+        self.game_state.bids = {player.name: 0 for player in self.player_queue} # reset gamestate bids
 
         #starts the bidding process
         self.biddingFlow.run(
@@ -375,7 +378,7 @@ class Game:
           
             
 
-    def _local_play_card(self, player:Player, selected_card: Card):
+    def _local_play_card(self, player: PlayerStr, selected_card: CardInt):
         """
         Plays card to the table for local player and removes card from hand
 
@@ -387,8 +390,8 @@ class Game:
             ):
                 return None
         
-        #after playing the card remove it from the player hand
-        player.remove_card(card=selected_card)
+        #after playing the card remove it from the player hand  ##Fix
+        self.game_state.hands[player].remove(selected_card)
         return True
 
 

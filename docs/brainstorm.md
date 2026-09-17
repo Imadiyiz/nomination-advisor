@@ -99,3 +99,7 @@ why not let the winner of the coin toss, choose whether to go first or to decide
 Just makes more sense than getting both via coin toss. Seems like too big of an advantage.
 
 Currently refactoring some parts of gamestate so that it is immutable and does the job it was designed to do, although it has been a steep learning curve doing the testing, I wish I put more effort into doing it before as it exposed me to future headaches which I can now avoid. I truly understand the code better and my diagnostic skills have improved tremendously through this project.
+
+16/09/26
+
+Currently refactoring game manager to incorporate game_state correctly, bumped into lots of 

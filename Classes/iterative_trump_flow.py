@@ -1,3 +1,5 @@
+from Utils.types import PlayerStr
+
 from .step_manager import *
 
 
@@ -11,7 +13,7 @@ class IterativeTrumpFlow:
         
         self.stepManager = StepManager()
     
-    def run(self, player):
+    def run(self, player: PlayerStr):
 
         suits_map = {'C': 'Clubs',
                       'S': 'Spades',

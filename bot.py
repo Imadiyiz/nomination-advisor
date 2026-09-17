@@ -204,17 +204,18 @@ class BotPlayer:
 
         # scenario 1: Want to win but someone else has trumped, must trump higher
         # scenario 2: Want to to win, no one else has trumped
-        # scenario 3: Wanr to lose, play highest value non-winning card
+        # scenario 3: WanT to lose, play highest value non-winning card
         # scenario 4: Going firsr, if you want to win play highest card else play lowest card (non trump) 
 
 
         # Only one option
         if len(legal_moves) == 1:
-            return next(iter(legal_moves))
+            return legal_moves.pop()
 
         # Can not make a naive move without knowing bid
         if not bids or self.name not in bids:
             raise ValueError(f"{self.name} is not found in bids list. Can not predict move without valid bid") 
+        
         trump_suit_id = SUIT_FROM_INITIAL[trump_suit[0].upper()]
         current_trick_list = [trick[1] for trick in current_trick]
         winning_trump_cards = []
@@ -263,35 +264,16 @@ class BotPlayer:
         # Decides whether to win bid, opts to win bid even after over scoring bid as there is a slight incentive
         try_win = bid_margin != 0
 
-        # Scenario 4 where player is first to play, purposely overplays in order to take advantage of playing first
-        if not winning_card and try_win:
-            if trump_cards_in_possesion:
-                return trump_cards_in_possesion[-1]
-            else:
-                return normal_cards_in_possesion[-1] if normal_cards_in_possesion else highest_legal_move
-        elif not winning_card and not try_win:
-            return normal_cards_in_possesion[0] if normal_cards_in_possesion else lowest_legal_move
 
-        # Scenario 3 trying to lose, must discard most valuable non-winning card (trumps are more valuable than high cards)
-        if not try_win and winning_card:
-            if trump_cards_in_possesion and winning_card_is_trump:
-                non_winning_trump_cards = [c for c in trump_cards_in_possesion if (
-                    c not in winning_trump_cards)]
-                return non_winning_trump_cards[0] if (
-                    non_winning_trump_cards
-                    ) else normal_cards_in_possesion[-1] if normal_cards_in_possesion else highest_legal_move
-            else:
-                return normal_cards_in_possesion[-1] if normal_cards_in_possesion else highest_legal_move
-
-        # Scenario 1 trying win but winning card is trump, must play higher trump or concede and play lowest legal move
-        elif try_win and winning_card_is_trump:
+        # Scenario 1: Trying win but winning card is trump, must play higher trump or concede and play lowest legal move
+        if try_win and winning_card_is_trump:
 
             if winning_trump_cards:
                 return winning_trump_cards[0]
             else:
                 return normal_cards_in_possesion[0] if normal_cards_in_possesion else lowest_legal_move
 
-        # Scenario 2 Trying to win and winning card is not trump
+        # Scenario 2: Trying to win and winning card is not trump
         elif try_win and not winning_card_is_trump:
             # First try to win using the suit that is currently winning.
             if winning_suit_cards:
@@ -302,6 +284,26 @@ class BotPlayer:
                 return trump_cards_in_possesion[0]
 
             # We cannot win the trick.
+            return normal_cards_in_possesion[0] if normal_cards_in_possesion else lowest_legal_move
+
+        # Scenario 3: Trying to lose, must discard most valuable non-winning card (trumps are more valuable than high cards)
+        if not try_win and winning_card:
+            if trump_cards_in_possesion and winning_card_is_trump:
+                non_winning_trump_cards = [c for c in trump_cards_in_possesion if (
+                    c not in winning_trump_cards)]
+                return non_winning_trump_cards[0] if (
+                    non_winning_trump_cards
+                    ) else normal_cards_in_possesion[-1] if normal_cards_in_possesion else highest_legal_move
+            else:
+                return normal_cards_in_possesion[-1] if normal_cards_in_possesion else highest_legal_move
+
+        # Scenario 4:  Where player is first to play, purposely overplays in order to take advantage of playing first
+        if not winning_card and try_win:
+            if trump_cards_in_possesion:
+                return trump_cards_in_possesion[-1]
+            else:
+                return normal_cards_in_possesion[-1] if normal_cards_in_possesion else highest_legal_move
+        elif not winning_card and not try_win:
             return normal_cards_in_possesion[0] if normal_cards_in_possesion else lowest_legal_move
 
         raise ValueError(f"""
