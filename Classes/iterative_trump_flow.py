@@ -26,9 +26,7 @@ class IterativeTrumpFlow:
         feedback_args = {'suits_map' : suits_map,
                          'player': player}
 
-        #step 1: Determine auto or manual trump selection
         while True:
-            print(f"""{player} determines trump for next round""")
 
             result = self.stepManager.run_step(
                 IterativeTrumpSelectionStep(),

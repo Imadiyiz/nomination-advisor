@@ -79,7 +79,7 @@ class TestBotPlayer:
 
             # Reset deck and cards
             deck = Deck()
-            random_hands = [{deck.draw_random().id for _ in range(hand_size)}
+            random_hands = [{deck.draw_random() for _ in range(hand_size)}
                         for i in range(len(default_bots))]
             
             # need last players order

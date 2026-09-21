@@ -1,11 +1,13 @@
 from Classes.scoreboard import Scoreboard
+from Classes.ui_manager import (
+    CLI_format_hand,
+    player_hand_str_creator,
+    table_str_creator,
+)
 from game_state import GameState
+from Utils.types import PlayerStr
 
 from .step_manager import *
-
-from Classes.ui_manager import table_str_creator, player_hand_str_creator
-
-from Utils.types import PlayerStr
 
 
 class PlayingFlow:

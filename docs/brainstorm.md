@@ -12,22 +12,6 @@ Goal: Ensure strong card d
 
 Want strong cards to be above hand size
 
-just trump 
-
-13/52 = 1/4
-
-3 players 6 cards
-
-18/4 = 4.5 strong cards on average
-
-trump and ace
-
-3 players 6 cards
-
-16/52 = 4/13 = 72/13 = 5.54
-
-create the equation
-
 SC = Strong Cards 
 TC = Total Cards = 52
 PC = Played Cards 
@@ -68,8 +52,6 @@ parameters = {
 
 ### Architecture thoughts
 
-I currently have a circular dependency within my architecture, in order to estimate a move, there must be initial bids to play for, however depending on how accurate I want these bids to be I will need to simulate games randomly to assess what the bot should expect to play given their hand strength.
-
 TO ESTIMATE NAIVE MOVE
 ES = Expected Score
 
@@ -102,4 +84,10 @@ Currently refactoring some parts of gamestate so that it is immutable and does t
 
 16/09/26
 
-Currently refactoring game manager to incorporate game_state correctly, bumped into lots of 
+Currently refactoring game manager to incorporate game_state correctly, bumped into lots of errors and bugs
+
+21/09/26
+
+Refactoring Game_manager still, running into decisions that need to be made. I quickly justify a decision and then leave it, then I come back to it and wonder why I did it. I need to either write it down, or make it more explicit the reason as to why I am doing things.
+
+ Still going through game_manager and I need to seperate core flow from assistant flow however, I have made progress. Very realistic for me to have a CPU playthrough as well as sim and Assistant. Assistant is obviously done, sim is also done, and single player would need slight configuration.

@@ -1,7 +1,7 @@
 # Holds helper methods which help enforce the rules of the nomination game
 
 from Utils.types import CardInt, TrumpStr
-from Utils.card_tools import SUIT_FROM_INITIAL
+from Utils.card_serialization import SUIT_FROM_INITIAL
 
 def calculate_correct_bid_score(tricks_won: int) -> int:
         """Based on Nomination rules returns correct bid score"""

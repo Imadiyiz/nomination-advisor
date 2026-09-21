@@ -1,7 +1,7 @@
 # Contents of the UIManager python file
 from game_state import GameState
-from Utils.card_tools import id_to_prose, id_to_initials
-from Utils.types import PlayerStr, CardInt
+from Utils.card_serialization import id_to_prose, id_to_initials
+from Utils.types import PlayerStr, CardInt, TrumpStr
 
 
 class UIManager:
@@ -14,6 +14,80 @@ class UIManager:
     
     def display_message(self, message:str):
         print(message)
+
+    def game_over_message(self, state: GameState):
+        """
+        Displays the game over message with the final scores and winner
+
+        Args:
+            state (GameState): The current game state object
+        """
+
+        final_scores = state.total_scores
+        winning_score = max(final_scores.values())
+
+        winning_players = [player for player in state.player_order
+                           if final_scores[player] == winning_score]
+
+        if len(winning_players) > 1:
+            print(f"Game Over:\n There is a draw. The winners are {" ,".join(winning_players)} with a score of {winning_score}")
+        else:
+            print(f"Game Over!\n The winner is {winning_players[0]} with a score of {winning_score}!")
+
+        print("\nFinal Scoreboard: ", self.scoreboard_display(state=state, round=False))
+
+    def scoreboard_display(self, state: GameState, round: bool = False) -> str:
+        """
+        Function for outputting the scores in the game
+
+        Args:
+            Round (bool): True by default and determines whether the display should be the 
+            round scoreboard or total scoreboard 
+
+        Returns:
+            List: Formatted and sorted version of the scoreboard for readability 
+        """
+
+        scoreboard = state.round_scores if round else state.total_scores
+
+        formatted_scoreboard = sorted(
+                    scoreboard.items(), 
+                    key= lambda x:x[1], #sort by the second element of each function
+                    reverse = True
+                )
+
+        return " | ".join([
+                f"{name} {score} ({state.bids[name]})" 
+                for name, score in formatted_scoreboard
+            ]
+    
+            ) if round else " | ".join([
+                f"{name} {score}" 
+                for name, score in formatted_scoreboard
+            ]
+    
+            )
+
+    def print_opening_bidding_round_statement(self, state: GameState):
+         max_cards = state.CARDS_PER_ROUND[state.round - 1]
+         print(f"ROUND {state.round} - Bidding Phase ({max_cards} cards per hand)\n")
+
+    def print_random_trump_confirmation(self, state: GameState, trump_card: TrumpStr):
+        print(f"Random trump card - {trump_card}")
+        print("Trump suit: ", state.trump_suit)
+
+    def print_trump_initials_error(self, choice_of_initials: str):
+        """Receives card initials and prints error statement"""
+        print(f"{choice_of_initials} has already been used and is no longer in the deck")
+
+    def print_chosen_card(self, chosen_card: CardInt):
+        print(chosen_card, "chosen card")
+
+    def print_initials_choice_error(self, choice_of_initials: str):
+        print(f"{choice_of_initials} is no longer in the deck")
+
+    def print_player_decides_trump(self, state):
+        print(f"""{player} determines trump for next round""")
 
 def table_str_creator(state: GameState) -> str: 
 

@@ -1,7 +1,7 @@
 from belief_model import BeliefModel
 from game_state import GameState
 from rollout_simulator import RolloutSimulator
-from Utils.card_tools import *
+from Utils.card_serialization import *
 from Utils.nom_rule_tools import calculate_correct_bid_score
 from Utils.types import *
 

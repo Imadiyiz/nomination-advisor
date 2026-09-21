@@ -2,7 +2,7 @@
 
 from enum import Enum
 
-from Utils.card_tools import SUITS_TO_SYMBOL, initials_to_id, get_suit_str, id_to_prose
+from Utils.card_serialization import SUITS_TO_SYMBOL, initials_to_id, get_suit_str, id_to_prose
 from Utils.cli_tools import clear_screen
 from Utils.types import CardInt, PlayerStr, TrumpStr
 
@@ -11,7 +11,7 @@ from .deck import Deck
 from .initial_trump_flow import InitialTrumpFlow
 from .iterative_trump_flow import IterativeTrumpFlow
 from .local_card_assignment import LocalCardAssignmentFlow
-from .player import Player
+from .human_player import Player
 from .player_setup_flow import PlayerSetupFlow
 from .playing_flow import PlayingFlow
 from .scoreboard import Scoreboard
@@ -26,16 +26,22 @@ VALID_CARD_INITIALS = {
     for rank in (2,3,4,5,6,7,8,9,10,'J','Q','K','A')
     for suit in "CDHS"
     }
+CARDS_PER_ROUND = (8,7,6,6,7,8)
 
 class Phase(Enum):
         PLAYER_SELECTION = "player_selection"
         HAND_ASSIGNMENT = 'hand_assignment'
-        TRUMP_SELECTION = "trump_selection"
+        INITIAL_TRUMP_SELECTION = "initial_trump_selection"
         TRUMP_REDECIDING = "trump_redeciding"
         BIDDING = "bidding"
         PLAYING = "playing"
         SCORING = "scoring"
         GAME_OVER = "game_over"
+
+class GameMode(Enum):
+    ASSISTANT = 'assistant'
+    SIM = 'simulation'
+    SINGLE_PLAYER = 'single_player'
 
 
 
@@ -45,27 +51,22 @@ class Game:
 
     Attributes:
         player_queue (list): A list which stores the order of which the players are playing
-        menu_options (dict): A dictionary which stores the current options for the menu
         round (int): An integer value of the current round the game is in
         cards_per_round (list): A ;ist of the maximum cards per round
         phase (str): A string which indicates the current action of the game object
     """
 
-    def __init__(self,*args, **kwargs):
+    def __init__(self, gamemode: str = ''):  # ACTION: Must validate mode is valid mode
         """
         When initialised, the game object should receive the player parameters
         """
-        self.menu_options = {
-            "S": "SHOW HAND",
-            "B": "BID" 
-        }
 
-        self.round = 1
-        self.cards_per_round = (1)#[8,7,6,6,7,8]
+
+        self.gamemode = gamemode
         self.phases = {
             Phase.PLAYER_SELECTION: self.handle_player_selection,
             Phase.HAND_ASSIGNMENT: self.handle_hand_assignment,
-            Phase.TRUMP_SELECTION: self.handle_trump_selection,
+            Phase.INITIAL_TRUMP_SELECTION: self.handle_initial_trump_selection,
             Phase.TRUMP_REDECIDING: self.handle_redeciding_trump,
             Phase.BIDDING: self.handle_bidding_phase,
             Phase.PLAYING: self.handle_playing_phase,
@@ -77,6 +78,8 @@ class Game:
         self.trump_suit = ''
 
         self.player_queue = [] #queue for playing during rounds
+
+        # THOUGHT: Requires Player class and Bot class, in order to make decisions, maps to PlayerStr though
 
     def start(self):
         clear_screen() 
@@ -94,9 +97,9 @@ class Game:
 
         #Generates objects for the game
         self.UIManager = UIManager()
-        self.trumpManager = TrumpManager(self.UIManager)
+        self.trumpManager = TrumpManager()
         self.playerSetupFlow = PlayerSetupFlow()
-        self.biddingFlow = BiddingFlow(self.player_queue)
+        self.biddingFlow = BiddingFlow()
         self.initialTrumpFlow = InitialTrumpFlow()
         self.localCardAssignmentFlow = LocalCardAssignmentFlow(VALID_CARD_INITIALS)
 
@@ -104,21 +107,20 @@ class Game:
         """
         Starts the game 
         """
-        while self.phase != Phase.GAME_OVER:
+        while self.phase != Phase.GAME_OVER:  # THOUGHT: Could change this to query gamestate object, 
+                # Don't know if that will smoothly reset things within the phase though, need to remove round from this class
                 _phase_handler = self.phases.get(self.phase)
                 if _phase_handler:
                     _phase_handler() # function from the dictionary is performed
                 else:
                     raise ValueError(f"Unknown game phase: {self.phase}") 
 
-        # What happens when the game is over
-        print("Game Over")
-        print("Final Scoreboard: ", self.scoreboard.display(round=False))
-        print(f"Winner: {self.scoreboard.get_game_winner()}")
+        # Game over, need to prompt a retry button
+        self.UIManager.game_over_message(state=self.game_state)
         
     def handle_player_selection(self): 
         """
-        Player selection logic and initialises the scoreboards as they rely on player selection
+        Player selection logic and gamestate
 
         """
         context = self.playerSetupFlow.run()
@@ -138,9 +140,6 @@ class Game:
                 opponent=opponents_flags[index])
             )
 
-        # Can initialise scoreboard now
-        self.scoreboard = Scoreboard(self.player_queue)
-
         # Can initialise the gamestate object now, as it requires the player queue to be initialised
         self.game_state = GameState(
             player_order=tuple(player.name for player in self.player_queue), 
@@ -151,6 +150,10 @@ class Game:
             total_scores={player.name: 0 for player in self.player_queue},
             bids={player.name: 0 for player in self.player_queue})
 
+        # ACTION: Remove scoreboard init 
+        # Can initialise scoreboard now
+        self.scoreboard = Scoreboard()
+
 
         self.phase = Phase.HAND_ASSIGNMENT
 
@@ -158,14 +161,19 @@ class Game:
         """
         Docstring for handle_hand_assignment
 
-        Handles hand assingment for both types of players
+        Handles hand assingment for both types of players, in assistant mode. 
+        Responsible for resetting the game state for the new round
         
         """
-        
-        #initialise objects and reset
-        max_cards = self.cards_per_round[self.round-1]
-        self.scoreboard.reset_round_scoreboard()
 
+        # Reset Deck
+        self.deck = Deck()
+
+        # After initial round reset for new round
+        if self.game_state.round > 1:
+            self.game_state = self.game_state.get_next_round_state()
+
+        # THOUGHT: Assistant only?
         for player in self.player_queue:
 
             # local players only
@@ -173,42 +181,49 @@ class Game:
                 self.localCardAssignmentFlow.generate_prompt(player)
                 
                 #iterate for amount of cards in hand for the current round
-                while len(self.game_state.hands[player.name]) < self.cards_per_round[self.round-1]:
+                while len(self.game_state.hands[player.name]) < CARDS_PER_ROUND[self.game_state.round-1]:
 
                     player_card_list = self.game_state.hands[player.name]
                     choice_of_initials = self.localCardAssignmentFlow.assign_card(
-                        player, max_cards, player_card_list
+                        player.name, self.game_state
                     )
                     
-                    # choice of initials has not been sanitised ANYMORE
                     if not self.deck.contains(initials_to_id(choice_of_initials)):
-                        print(f"{choice_of_initials} has already been used and is no longer in the deck")
+
+                        # ACTION: Assistant mode
+                        self.UIManager.print_trump_initials_error(choice_of_initials)
                         continue # loops until there is a valid card
 
                     chosen_card = self.deck.draw_specific_card(choice_of_initials)
-                    print(chosen_card, "chosen card")
-                    if chosen_card:
-                        self.game_state.hands[player.name].add(chosen_card)
-                    else:
-                        print(f"{choice_of_initials} is no longer in the deck")
-                        print(len(self.deck))
 
-        
-        if self.round == 1:
-            self.phase = Phase.TRUMP_SELECTION
+                    # ACTION: Remove chosen card print out
+                    self.UIManager.print_chosen_card(chosen_card)
+
+                    if not chosen_card:
+                        self.UIManager.print_initials_choice_error(choice_of_initials)
+                    else:
+                        self.game_state.hands[player.name].add(chosen_card)
+                        
+
+        # THOUGHT: This confuses me, I'm assuming that the trump is selected elsewhere asif it were selected in person,
+        # However, that won't always be the case as trump selection should be universal to adhere to sim logic
+        if self.game_state.round == 1:
+            self.phase = Phase.INITIAL_TRUMP_SELECTION
         else:
             self.phase = Phase.BIDDING
 
-    def handle_trump_selection(self):
+
+    def handle_initial_trump_selection(self):
         """
-        Docstring for trump_selection
+        Docstring for trump_selection. Repeats until a valid trump suit has been selected.
         
         """
 
         clear_screen() #2
-        max_cards =  self.cards_per_round[self.round-1]
-        print(f"ROUND {self.round} - Bidding Phase ({max_cards} cards per hand)\n")
 
+        # ACTION: Remove print statement opening round and bidding phase
+        self.UIManager.print_opening_bidding_round_statement(self.game_state)
+        
         context = self.initialTrumpFlow.run(VALID_CARD_INITIALS)
         manual_trump_generation = context['manual_trump_generation']
         trump_card_initials = context['trump_card_initials']
@@ -219,30 +234,40 @@ class Game:
 
         #   manual trump selection
         else:
-            if self.deck.contains(
-                card=initials_to_id(trump_card_initials)):
-                card = self.deck.draw_specific_card(trump_card_initials)
-            else:
+
+            # verify tc initials exist
+            if not trump_card_initials:
+                return 
+            
+            if not self.deck.contains(initials_to_id(trump_card_initials)):
                 return
             
-            if not card:
-                print("Invalid card")
+            selected_card = self.deck.draw_specific_card(trump_card_initials)
+            if not selected_card:
+                # Ok for simple print as it is assumed that
+                # manual trump selection will be done only in Assistant mode
+                self.UIManager.display_message("Invalid card")
                 return
         
-            self.game_state.trump_suit = get_suit_str(card)
+            self.game_state.trump_suit = get_suit_str(selected_card)
 
+        # Everything is valid hence move on to next phase
         self.phase = Phase.BIDDING
     
     def select_trump_automatically(self) -> CardInt:
-
-        clear_screen()
+        """
+        Selects trump card automatically while also outputting
+        information depending on the gamemode.
+        """
+        
         trump_card = self.deck.draw_random()
         #since deck is already shuffled, pick first card
-        # choose the trump after cards have been assinged to players
         self.game_state.trump_suit = get_suit_str(trump_card)
-        print(f"Random trump card - {id_to_prose(trump_card)}")
-        print("Trump suit: ", self.trump_suit)
 
+        if self.gamemode == 'assistant':
+            clear_screen()
+            self.UIManager.print_random_trump_confirmation(state=self.game_state,
+                                                         trump_card = id_to_prose(trump_card))
         return trump_card
     
 
@@ -250,26 +275,13 @@ class Game:
         """
         Bidding logic
         """
+        # THOUGHT: Why do we get next round state for the initial bidding phase
+        # shouldnt I check before enforcing this
 
-        # NOTE Should the game object keep the max cards variable
-        self.max_cards = self.cards_per_round[self.round-1]
-
-        #dealer shifts every time bidding starts
-        # Gamestate takes care of that now
-        
-        # Players still need to be told that they are handicapped  ## Fix
-        self.player_queue[-1].handicapped_bid = True
-        self.biddingManager.reset_bids(self.player_queue)
-        self.game_state.bids = {player.name: 0 for player in self.player_queue} # reset gamestate bids
-
-        #starts the bidding process
-        self.biddingFlow.run(
-            round_no=self.round,
-            max_cards=self.max_cards,
-            players = self.player_queue,
-            bidding_manager=self.biddingManager,
-            trump_suit=self.trump_suit,
-        )
+        #starts the bidding process and must update state
+        if self.gamemode == 'assistant':
+            print("Bidding Phase Commencing\n")  # FIx
+            self.state = self.biddingFlow.run(state=self.game_state)
 
         self.phase = Phase.PLAYING
 
@@ -277,11 +289,10 @@ class Game:
         """
         Playing logic
         """
-        cards = self.cards_per_round[self.round-1]
-        self.scoreboard.reset_round_scoreboard()
+        max_cards_this_round = CARDS_PER_ROUND[self.game_state.round-1]
 
-        for _ in range(cards):
-            self.start_round()
+        for _ in range(max_cards_this_round):
+            self.start_trick()
 
         self.phase = Phase.SCORING
 
@@ -294,7 +305,7 @@ class Game:
         self.iterativeTrumpFlow = IterativeTrumpFlow()
 
         chosen_player = self.trumpManager.decide_trump(
-            players=self.player_queue)
+            state=)
         context = self.iterativeTrumpFlow.run(chosen_player)
 
         self.trump_suit = context['trump_suit']
@@ -302,9 +313,6 @@ class Game:
         #reset players after selecting trump to ensure that round scores are valid
         for player in self.player_queue:
                 player.reset() 
-
-        # part of the rest is getting a new deck
-        self.deck = Deck()
     
         self.phase = Phase.HAND_ASSIGNMENT
 
@@ -312,34 +320,45 @@ class Game:
         """
         Scoring logic
         """
-        if self.round < 1:  # 6
-            self.round += 1
+        if self.game_state.round < 1:  # 6
+            self.game_state.round += 1
             #display total scoreboard
+
+            # ACTION: Remove print statement of score board before updating
             print("Scoreboard before ts", self.scoreboard.total_scoreboard)
             self.scoreboard.update_total_scoreboard(
                 player_list=self.player_queue,
-                max_cards=self.max_cards
+                max_cards=CARDS_PER_ROUND[self.game_state.round-1]
                 )
             clear_screen(5)
+
+            # Action: Remove total score output after round completion
             print("Total score: ",(self.scoreboard.display(round=False)))
             self.phase = Phase.TRUMP_REDECIDING
         else:
             self.phase = Phase.GAME_OVER
             return
 
-    def start_round(self):
+    def start_trick(self):
         """
-        Logic for the functionality of the playing round
+        Logic for the functionality of the playing each trick
         """
+
+        # Action: Remove table reset, should now be state reset round scores and trick 
         self.table.reset()
+
+        # ACtion: Remove reorder round scoreboard 
         self.scoreboard.reorder_round_scoreboard(
             player_queue=self.temp_player_queue
             )
+
+        # Probably needs state now
         self.playingFlow = PlayingFlow(
             self.table,
             self.scoreboard,
             VALID_CARD_INITIALS)
-        
+
+        # THOUGHT: Idk what temp_player_queue means
         for player in self.temp_player_queue:
 
             while True:
@@ -374,6 +393,7 @@ class Game:
                         continue
                     break 
 
+        # ACTION: Remove Score hand function
         self.score_hand()
           
             
@@ -402,39 +422,3 @@ class Game:
         
         if self.table.play_card_to_table(selected_card, player, self.trump_suit) == False:
             raise ValueError("unable to play card to table")
-
-        
-        
-    def score_hand(self):
-        """
-        Scores on a play by play basis (multiple times per round)
-        """
-
-        winner_card = self.table.verify_winner(trump_suit=self.trump_suit)
-        winning_player = winner_card.owner
-        print(f"\n{winning_player} is the winner with {winner_card}\n")
-        
-        self.scoreboard.update_round_scoreboard(
-            player_list=self.player_queue, 
-            winner_card=winner_card)
-    
-        # used for updating the winner order at the end of each hand
-        # effective a round_player_queue
-        self.temp_player_queue = self.playerStateManager.update_winner_order(
-            winner=winning_player, 
-            player_queue=self.player_queue)
-
-    def _materialise_played_card(self, player:Player, choice: str):
-        """
-        Turns a declared card into a real Card instance and assigns
-        the card owner to the player
-        choice is the initials for the card
-        """
-
-        if not self.deck.contains(initials_to_id(choice)):
-            return None
-        
-        card = self.deck.draw_specific_card(choice)
-
-        card.owner = player
-        return card

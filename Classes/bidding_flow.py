@@ -1,7 +1,6 @@
+from Classes.ui_manager import player_hand_str_creator
 from game_state import GameState
 from Utils.types import CardInt, PlayerStr, TrumpStr
-
-from Classes.ui_manager import player_hand_str_creator
 
 from .step_manager import *
 
@@ -11,34 +10,37 @@ class BiddingFlow:
     Handles the flow of steps to player bids. Accepts a state object and returns the updated gamestate truth.
     This includes the new bids
     """
-    def __init__(self, state: GameState):
-        
-        self.context = {
-            "": [],
-            }
+    def __init__(self):
         
         self.stepManager = StepManager()
-        self.player_queue = state.get_player_queue()
     
-    def run(self,
-            players: list[PlayerStr], 
-            state: GameState):
+    def run(self, state: GameState):
+
+        max_cards = state.CARDS_PER_ROUND[state.round - 1]
+        restriction = - 1
         
-        print("Bidding Phase Commencing\n")
-        
-        for i, player in enumerate(players):
+        for i, player in enumerate(state.player_order):
 
             is_handicapped = False
             if i == len(player) - 1:
                 is_handicapped = True
 
+            # Restricted bid validation
+            if sum(state.bids.values()) > max_cards:
+                restriction = -1
+            else:
+                restriction = max_cards - sum(state.bids.values())
+            
             new_state = self._run_single_player_bid(
                 player=player,
                 state = state,
-                is_handicapped = is_handicapped
+                is_handicapped = is_handicapped,
+                restriction=restriction
             )    
 
             state = new_state  # Update state for next player
+
+        return state # Post bidding state
 
 
     def _run_single_player_bid(self,

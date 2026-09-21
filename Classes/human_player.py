@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from Utils.types import CardInt, PlayerStr
-from Utils.card_tools import id_to_prose
+from Utils.card_serialization import id_to_prose
 
 
 @dataclass

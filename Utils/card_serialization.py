@@ -1,8 +1,10 @@
 from Utils.types import CardInt, TrumpStr
 from collections.abc import Iterable
 
-# format for standard english
 
+# Serialization and Deserilizstion of cards number form and prose form
+
+# format for standard english
 def format_string(s: str) -> str:
     """Formats irregular string into a lowercase string with uppercase starting character"""
     return s[0].upper() + s[1:].lower()

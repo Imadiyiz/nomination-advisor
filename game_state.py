@@ -1,8 +1,10 @@
 from dataclasses import dataclass, field
 
-from Utils.card_tools import *
+from Utils.card_serialization import *
 from Utils.nom_rule_tools import calculate_correct_bid_score
 from Utils.types import *
+
+import random
 
 # This GameState class is for showing what the gamestate is after actions occur
 
@@ -36,6 +38,7 @@ class GameState:
     _leader: PlayerStr | None = None
     round: int = 1
     game_over: bool = False
+    trump_decider: str = ''
 
     # Constants
     CARDS_PER_ROUND = (8,7,6,6,7,8)
@@ -43,7 +46,10 @@ class GameState:
     # must be used to avoid generating inaccurate worlds due to inaccurate ordering
     def _get_leader(self) -> str:
         """
-        Returns a valid leader given the current trick restraints
+        Returns a valid leader given the current trick restraints. The leader 
+        is the player who played the first card in the trick, or the first player
+        scheduled to play. This is needed as partially played tricks need to still be
+        analysed.
         """
 
         if self._leader:
@@ -59,14 +65,6 @@ class GameState:
         if leader not in self.player_order:
             raise RuntimeError("The player who played the first trump card has not been registered")
         return leader
-
-    def get_player_queue(self) -> list[PlayerStr]:
-        """Returns a list of the players in turn order"""
-        if not self._leader:
-            self._leader = self._get_leader()
-
-        leader_idx = self.player_order.index(self._leader)
-        return list(self.player_order[leader_idx:] + self.player_order[:leader_idx])
 
     def next_player(self) -> PlayerStr:
         """Determines next player to perform play a card. Based on the
@@ -120,7 +118,10 @@ class GameState:
     def apply_move(self, player: PlayerStr, card: CardInt) -> "GameState":
         """
         Returns a NEW updated GameState after applying move if the move is legal.
-        If the trick has concluded then the scores are updated accordingly
+        If the trick has concluded then the scores are updated accordingly. The new 
+        gamestate reflects the new leader and the new trick. If the round has concluded then the total scores are updated accordingly.
+        Additionally, if the game has concluded then the game_over attribute is set to True.
+        It is expected that the orchestrator will handle the game_over state.
         """
 
         # Initially there isn't a winner
@@ -207,8 +208,8 @@ class GameState:
 
         return new_total_scores
 
-    def _resolve_trick(
-            self, trick: tuple[tuple[PlayerStr, CardInt], ...]) -> PlayerStr:
+    def _resolve_trick(self,
+                       trick: tuple[tuple[PlayerStr, CardInt], ...]) -> PlayerStr:
         """ Returns player who wins the trick"""
 
         if not trick:
@@ -228,8 +229,67 @@ class GameState:
             (p, c) for p, c in trick if get_suit_str(c) == lead_suit]
         return max(lead_cards, key=lambda lc: get_rank(lc[1]))[0]
 
+    def _get_round_reset_state(self) -> "GameState":
+        """
+        Returns a new GameState with the round scores reset to 0 and the round incremented by 1.
+        This is used when a round has ended and the next round is starting.
+        """
+
+        new_round_scores = {player: 0 for player in self.player_order}
+        new_round = self.round + 1
+
+        return GameState(
+            hands=self.hands,
+            current_trick=(),
+            _leader=None,
+            trump_suit=self.trump_suit,
+            player_order=self.player_order,
+            round_scores=new_round_scores,
+            total_scores=dict(self.total_scores),
+            bids=dict(self.bids),
+            winner=None,
+            trick_completed=False,
+            round=new_round,
+            game_over=self.game_over
+        )
+    
+    def _rotate_player_order(self):
+        """
+        Rotates player order by moving the first player to the end of the tuple.
+        This is used when a round has ended and the "dealer" has moved one place.
+        NOTE: There isn't really a dealer in the game, it is just a placeholder, since the computer
+        does the actual dealing.
+        """
+
+        self.player_order = self.player_order[1:] + (self.player_order[0],)
+        
+    def get_next_round_state(self) -> "GameState":
+        """Mutates self and outputs new round state. Rotates player order, resets
+        round scores, resets trick, bids, leader and increments round number"""
 
 
+        # This is not correct it needs to be the round nom score, including bonuses
+        winning_score = max(self.round_scores.values())
+                
+        winning_players = [player for player in self.player_order
+            if final_scores[player] == winning_score]
 
-# TODO: How does the round score ever reset and how does GameState ever terminate, maybe orchestrator loops until gamestate is over
+        self.trump_decider = random.choice(winning_players)
+        
+
+
+        self._rotate_player_order()
+        self.round_scores = {player: 0 for player in self.player_order}
+        self.current_trick = ()
+        self._leader = None
+        self.round += 1
+        self.bids = {}
+
+        
+
+        return self
+        
+
+
+# TODO: How does the round score ever reset?
 # TODO: Refactor the scoreboard as it is the second source of truth, it is only useul for cli output and resettiing

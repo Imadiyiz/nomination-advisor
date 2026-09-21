@@ -3,7 +3,7 @@
 import random
 from dataclasses import dataclass
 
-from Utils.card_tools import *
+from Utils.card_serialization import *
 from Utils.types import *
 
 

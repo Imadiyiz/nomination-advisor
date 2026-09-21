@@ -5,7 +5,7 @@ from Classes.deck import Deck
 from game_state import GameState
 from hand_evaluator import HandEvaluator
 from rollout_simulator import RolloutSimulator
-from Utils.card_tools import *
+from Utils.card_serialization import *
 from Utils.hand_generators import *
 from Utils.types import *
 

@@ -2,7 +2,7 @@ import pytest
 
 from Classes.deck import Deck
 from Classes.game_manager import *
-from Classes.player import Player
+from Classes.human_player import Player
 from Classes.step import *
 
 

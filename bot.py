@@ -3,7 +3,7 @@ import random
 
 from belief_model import BeliefModel
 from heuristics import Heuristics
-from Utils.card_tools import SUIT_FROM_INITIAL, get_suit_str
+from Utils.card_serialization import SUIT_FROM_INITIAL, get_suit_str
 from Utils.nom_rule_tools import calculate_winning_card
 from Utils.types import CardInt, PlayerStr, TrumpStr
 

@@ -4,7 +4,7 @@ import random
 import pytest
 
 from Classes.bidding_manager import BiddingManager
-from Classes.player import Player
+from Classes.human_player import Player
 from Classes.ui_manager import UIManager
 
 

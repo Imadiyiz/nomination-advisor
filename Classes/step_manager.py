@@ -21,7 +21,7 @@ class StepManager:
                  step: Step,
                  prompt_args: dict = {},
                  validate_args: dict = {},
-                 feedback_args: dict = {}): 
+                 feedback_args: dict = {}) -> str: 
             """
             Controls flow of CLI steps taken for player setup phase
 

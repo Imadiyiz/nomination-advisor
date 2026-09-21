@@ -9,7 +9,8 @@ how the different systems within the project interact with each other.
 
 - GameState is the source of truth
 - State transitions produce new GameState objects
-- BotPlayer is responsible for decision-making
+- BotPlayer is responsible for CPU decision-making
+- HumanPlayer is responsible for Human decision-making
 - RolloutSimulator is responsible for simulation and does not take player input
 - BeliefModel represents incomplete information
 

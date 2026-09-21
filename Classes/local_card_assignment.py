@@ -20,8 +20,6 @@ class LocalCardAssignmentFlow:
                     state: GameState) -> str:
         """
         Logic for prompting the player to assign their card
-        
-        Requires the maximum amount of cards to be allocated
         Returns choice of initials as string
         """
             

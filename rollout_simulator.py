@@ -3,7 +3,7 @@ import random
 
 from bot import BotPlayer
 from game_state import GameState
-from Utils.card_tools import *
+from Utils.card_serialization import *
 from Utils.types import *
 
 
