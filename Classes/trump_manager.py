@@ -35,7 +35,7 @@ class TrumpManager:
         # Cons of player A choose trump and player B gets first play is what if it is a 3 way tie (extremely rare)
         
         if chosen_player is None:
-            raise Exception("Unable to find Trump Decider")
+            raise ValueError("Unable to find Trump Decider")
         
         return chosen_player
     

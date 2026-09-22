@@ -31,7 +31,7 @@ class RolloutSimulator:
             
             player = self.state.next_player()
             legal_moves = self.state.get_legal_moves(player)
-            if not tuple(legal_moves):
+            if not legal_moves:
                 raise ValueError("There is a duplicate card in play, please check assigned cards")
             move = random.choice(tuple(legal_moves))  # Intentionally random
 

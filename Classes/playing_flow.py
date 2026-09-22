@@ -1,11 +1,13 @@
-from Classes.scoreboard import Scoreboard
+from Classes.ui_manager import UIManager
 from Classes.ui_manager import (
     CLI_format_hand,
     player_hand_str_creator,
     table_str_creator,
+    scoreboard_display
 )
 from game_state import GameState
-from Utils.types import PlayerStr
+from Utils.types import CardInt, PlayerStr
+from Utils.card_serialization import initials_to_id
 
 from .step_manager import *
 
@@ -16,46 +18,43 @@ class PlayingFlow:
 
     Returns context
     """
-    def __init__(self, 
-                 scoreboard: Scoreboard,
-                 valid_card_initials: set):
-        
-        self.context = {
-            "player_results": [],
-            }
+    def __init__(self):
         
         self.stepManager = StepManager()
-        self.scoreboard = scoreboard
-        self.valid_card_initials = valid_card_initials
+        self.UIManager = UIManager()
     
-    def play_turn(self, player: PlayerStr, state: GameState):
+    def play_turn(self, player: PlayerStr, state: GameState) -> CardInt:
         """
-        Logic for prompting the player to play their cards
+        Logic for prompting the player to play their cards, loops until
+        valid move has been performed.
 
-        Returns context object as
-        {"players" : {"player" : "2"}, {"opponent" : "10D"}}
+        Returns Cardint e.g 50, 13
         """
 
-        if player != state.perspective:
-            return self._prompt_for_opponent_play_card(player, state)
-        else:
+        if player == state.perspective:
             return self._prompt_for_local_play_card(player, state)
-
+        else:
+            return self._prompt_for_opponent_play_card(player, state)
+            
                 
     def _prompt_for_local_play_card(self,
                                     player: PlayerStr,
-                                    state: GameState) -> int:
+                                    state: GameState) -> CardInt:
         """
         Private method which runs the prompt for local play card and returns index of selected card
         
         Args:
             player(Player): The player object which is playing the card
         
-        Returns
-            int: index of legal card played in hand
+        Returns:
+            card(CardInt): The card the player has decided to play
+            
         """
         table_str = table_str_creator(state)
-        expanded_player_hand_str = CLI_format_hand(state.hands[player])
+        expanded_player_hand_str = CLI_format_hand(
+            state.hands[player])
+        round_scoreboard = scoreboard_display(
+            state=state, round=False)
 
         result = self.stepManager.run_step(
                     step = PlayerPlayCardStep(),
@@ -64,17 +63,20 @@ class PlayingFlow:
                         "player_hand": state.hands[player],
                         "expanded_player_hand_str": expanded_player_hand_str,
                         "trump_suit": state.trump_suit,
-                        "scoreboard": self.scoreboard, 
-                        "table_str": table_str},
+                        "table_str": table_str,
+                        "round_scoreboard": round_scoreboard},
                     validate_args={"player": player}
                     )
 
         # clear_screen(0)
-        return result
+
+        # Get CardInt from the result
+        player_hand_list = list(state.hands[player])
+        return player_hand_list[int(result)]
 
     def _prompt_for_opponent_play_card(self,
                                        player:PlayerStr,
-                                       state: GameState) -> str:
+                                       state: GameState) -> CardInt:
         
         """
         Private method which runs the prompt for opponent play card 
@@ -89,6 +91,8 @@ class PlayingFlow:
         """
 
         table_str = table_str_creator(state)
+        round_scoreboard = scoreboard_display(state=state, 
+                                              round=False)
 
         while True:
             
@@ -101,11 +105,13 @@ class PlayingFlow:
                         "opponent_name": player,
                         "opponent_hand_str": opponent_hand_str,
                         "trump_suit": state.trump_suit,
-                        "scoreboard": self.scoreboard, 
-                        "table_str": table_str},
+                        "table_str": table_str,
+                        "round_scoreboard": round_scoreboard},
                     validate_args={"player": player}
                     )
+
             
             if result != 'BACK':
-                return result
+                return initials_to_id(result)
+            
             #clear_screen(0)

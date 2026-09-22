@@ -2,24 +2,29 @@
 
 from enum import Enum
 
-from Utils.card_serialization import SUITS_TO_SYMBOL, initials_to_id, get_suit_str, id_to_prose
+from game_state import GameState
+from Utils.card_serialization import (
+        SUITS_TO_SYMBOL,
+        get_suit_str,
+        id_to_initials,
+        id_to_prose,
+        initials_to_id,
+)
 from Utils.cli_tools import clear_screen
 from Utils.types import CardInt, PlayerStr, TrumpStr
 
 from .bidding_flow import BiddingFlow
 from .deck import Deck
+from .human_player import Player
 from .initial_trump_flow import InitialTrumpFlow
 from .iterative_trump_flow import IterativeTrumpFlow
 from .local_card_assignment import LocalCardAssignmentFlow
-from .human_player import Player
 from .player_setup_flow import PlayerSetupFlow
 from .playing_flow import PlayingFlow
 from .scoreboard import Scoreboard
 from .step import *
 from .trump_manager import TrumpManager
 from .ui_manager import UIManager
-
-from game_state import GameState
 
 VALID_CARD_INITIALS = {
     (f"{rank}{suit}")
@@ -75,7 +80,7 @@ class Game:
 
         #initial phase
         self.phase = Phase.PLAYER_SELECTION
-        self.trump_suit = ''
+
 
         self.player_queue = [] #queue for playing during rounds
 
@@ -144,7 +149,7 @@ class Game:
         self.game_state = GameState(
             player_order=tuple(player.name for player in self.player_queue), 
             hands={player.name: set(player.hand) for player in self.player_queue},
-            trump_suit=self.trump_suit,
+            trump_suit='',
             current_trick=(),
             round_scores={player.name: 0 for player in self.player_queue},
             total_scores={player.name: 0 for player in self.player_queue},
@@ -153,7 +158,6 @@ class Game:
         # ACTION: Remove scoreboard init 
         # Can initialise scoreboard now
         self.scoreboard = Scoreboard()
-
 
         self.phase = Phase.HAND_ASSIGNMENT
 
@@ -291,8 +295,10 @@ class Game:
         """
         max_cards_this_round = CARDS_PER_ROUND[self.game_state.round-1]
 
+        # Loop through the number of cards in the round, as each player will play one card per trick
+        # Assumes all the players start with the same amount of cards
         for _ in range(max_cards_this_round):
-            self.start_trick()
+            self.play_out_trick()
 
         self.phase = Phase.SCORING
 
@@ -304,15 +310,12 @@ class Game:
         # redecide trump
         self.iterativeTrumpFlow = IterativeTrumpFlow()
 
-        chosen_player = self.trumpManager.decide_trump(
-            state=)
+        chosen_player = self.trumpManager.decide_trump(state=self.state)
         context = self.iterativeTrumpFlow.run(chosen_player)
 
-        self.trump_suit = context['trump_suit']
+        self.game_state.trump_suit = context['trump_suit']
 
-        #reset players after selecting trump to ensure that round scores are valid
-        for player in self.player_queue:
-                player.reset() 
+        # ACTION: Do not reset here anymore, how can you decide trump without hand_assignment?
     
         self.phase = Phase.HAND_ASSIGNMENT
 
@@ -324,101 +327,52 @@ class Game:
             self.game_state.round += 1
             #display total scoreboard
 
-            # ACTION: Remove print statement of score board before updating
-            print("Scoreboard before ts", self.scoreboard.total_scoreboard)
-            self.scoreboard.update_total_scoreboard(
-                player_list=self.player_queue,
-                max_cards=CARDS_PER_ROUND[self.game_state.round-1]
-                )
+            # Total Score board is updated by itself now
             clear_screen(5)
 
-            # Action: Remove total score output after round completion
-            print("Total score: ",(self.scoreboard.display(round=False)))
-            self.phase = Phase.TRUMP_REDECIDING
+            self.UIManager.print_total_score(self.state)
+
+            # ACTION: Now hand_assignment
+            self.phase = Phase.HAND_ASSIGNMENT  
         else:
             self.phase = Phase.GAME_OVER
             return
 
-    def start_trick(self):
+    def play_out_trick(self):
         """
         Logic for the functionality of the playing each trick
         """
 
-        # Action: Remove table reset, should now be state reset round scores and trick 
-        self.table.reset()
-
-        # ACtion: Remove reorder round scoreboard 
-        self.scoreboard.reorder_round_scoreboard(
-            player_queue=self.temp_player_queue
-            )
-
         # Probably needs state now
-        self.playingFlow = PlayingFlow(
-            self.table,
-            self.scoreboard,
-            VALID_CARD_INITIALS)
+        self.playingFlow = PlayingFlow()
 
-        # THOUGHT: Idk what temp_player_queue means
-        for player in self.temp_player_queue:
+        # THOUGHT: only need this for assistant mode maybe single player too
 
-            while True:
+        player = self.game_state.next_player()
+        legal_moves = self.game_state.get_legal_moves(player)
 
-                # Will alter trump suit to include the symbol as well
-                choice = self.playingFlow.play_turn(
-                    player=player,
-                    trump_suit=f"{self.trump_suit} {SUITS_TO_SYMBOL[self.trump_suit]}")
-                
-                if player.opponent:
-                    print("choice", choice)
-                    selected_card = self._materialise_played_card(player, str(choice))
-                    if not selected_card:
-                        print(f"invalid card input, {selected_card} is not longer in the deck")
-                        continue
+        if not legal_moves:
+            raise ValueError("There is a duplicate card in play, please check assigned cards")
 
-                    print(f"{player} selected card", selected_card)
-                    self._remote_play_card(player, selected_card)
-                    break  # successful play
+        while True:
 
-                else:
-                    # local player
+            choice = self.playingFlow.play_turn(player, state=self.game_state)
 
-                    try: 
-                        selected_card = player.hand[int(choice)-1]
-                        print(f"{player} selected card", selected_card)
-                    except:
-                        print("Invalid Card Index")
-                        continue
-                
-                    if not self._local_play_card(player, selected_card):
-                        continue
-                    break 
-
-        # ACTION: Remove Score hand function
-        self.score_hand()
-          
+            self.UIManager.print_choice_made(choice)
             
+            if choice not in self.game_state.hands[player]:
+                self.UIManager.print_invalid_choice_not_in_hand(choice)
+                continue
 
-    def _local_play_card(self, player: PlayerStr, selected_card: CardInt):
-        """
-        Plays card to the table for local player and removes card from hand
+            if choice not in self.game_state.get_legal_moves(player):
+                self.UIManager.print_invalid_choice_not_legal(choice)
+                continue
 
-        returns False if unable to play the card
-        """
+            if player == self.game_state.perspective:
+                self.UIManager.print_perspective_choice_made(choice)
+            else:
+                self.UIManager.print_player_choice_made(player, choice)
 
-        if not self.table.play_card_to_table(
-                selected_card, player, self.trump_suit
-            ):
-                return None
-        
-        #after playing the card remove it from the player hand  ##Fix
-        self.game_state.hands[player].remove(selected_card)
-        return True
-
-
-    def _remote_play_card(self, player: Player, selected_card: Card):
-        """
-        Plays card to the table for remote player and removes it from the deck
-        """
-        
-        if self.table.play_card_to_table(selected_card, player, self.trump_suit) == False:
-            raise ValueError("unable to play card to table")
+            self.state = self.game_state.apply_move(player=player,
+                                        card=choice)
+            break  # successful play

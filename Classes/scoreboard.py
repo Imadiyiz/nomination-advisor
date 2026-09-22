@@ -18,3 +18,6 @@ class Scoreboard:
         for player in player_queue:
             temp_dict[player.name] = player.round_score
         self.round_scoreboard = temp_dict
+
+
+        # NOTE Get rid of scoreboard everywhere

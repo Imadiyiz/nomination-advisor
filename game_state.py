@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 from Utils.card_serialization import *
-from Utils.nom_rule_tools import calculate_correct_bid_score
+from Utils.nom_rule_tools import calculate_correct_bid_score, 
 from Utils.types import *
 
 import random
@@ -267,16 +267,7 @@ class GameState:
         """Mutates self and outputs new round state. Rotates player order, resets
         round scores, resets trick, bids, leader and increments round number"""
 
-
-        # This is not correct it needs to be the round nom score, including bonuses
-        winning_score = max(self.round_scores.values())
-                
-        winning_players = [player for player in self.player_order
-            if final_scores[player] == winning_score]
-
-        self.trump_decider = random.choice(winning_players)
-        
-
+        self.trump_decider = self._determine_trump_decider()
 
         self._rotate_player_order()
         self.round_scores = {player: 0 for player in self.player_order}
@@ -285,10 +276,27 @@ class GameState:
         self.round += 1
         self.bids = {}
 
-        
-
         return self
-        
+
+    def _determine_trump_decider(self) -> PlayerStr:
+        """Determines the trump decider based on the round nomination scores. 
+        Assumes bids are up to date. If multiple winners, randomly assign the trump
+        decider. Returns PlayerStr"""
+
+        temp_round_scores = dict(self.round_scores)
+
+        # Verify round nom scores
+        for player, score in temp_round_scores.items():
+            if self.bids[player] == score:
+                temp_round_scores[player] = calculate_correct_bid_score(score)
+
+        winning_score = max(temp_round_scores.values())
+                
+        winning_players = [player for player in self.player_order
+            if temp_round_scores[player] == winning_score]
+
+        return random.choice(winning_players)
+    
 
 
 # TODO: How does the round score ever reset?

@@ -34,39 +34,8 @@ class UIManager:
         else:
             print(f"Game Over!\n The winner is {winning_players[0]} with a score of {winning_score}!")
 
-        print("\nFinal Scoreboard: ", self.scoreboard_display(state=state, round=False))
+        print("\nFinal Scoreboard: ", scoreboard_display(state=state, round=False))
 
-    def scoreboard_display(self, state: GameState, round: bool = False) -> str:
-        """
-        Function for outputting the scores in the game
-
-        Args:
-            Round (bool): True by default and determines whether the display should be the 
-            round scoreboard or total scoreboard 
-
-        Returns:
-            List: Formatted and sorted version of the scoreboard for readability 
-        """
-
-        scoreboard = state.round_scores if round else state.total_scores
-
-        formatted_scoreboard = sorted(
-                    scoreboard.items(), 
-                    key= lambda x:x[1], #sort by the second element of each function
-                    reverse = True
-                )
-
-        return " | ".join([
-                f"{name} {score} ({state.bids[name]})" 
-                for name, score in formatted_scoreboard
-            ]
-    
-            ) if round else " | ".join([
-                f"{name} {score}" 
-                for name, score in formatted_scoreboard
-            ]
-    
-            )
 
     def print_opening_bidding_round_statement(self, state: GameState):
          max_cards = state.CARDS_PER_ROUND[state.round - 1]
@@ -86,8 +55,30 @@ class UIManager:
     def print_initials_choice_error(self, choice_of_initials: str):
         print(f"{choice_of_initials} is no longer in the deck")
 
-    def print_player_decides_trump(self, state):
+    def print_player_decides_trump(self, player: PlayerStr):
         print(f"""{player} determines trump for next round""")
+
+    def print_total_score(self, state: GameState):
+        """"""
+        print("Total score: ", scoreboard_display(state, round=False))
+
+    def print_choice_made(self, choice: CardInt):
+        print("choice", id_to_initials(choice))
+
+    def print_player_choice_made(self, player: PlayerStr, choice: CardInt):
+        print(f"{player} selected card", id_to_initials(choice))
+
+    def print_perspective_choice_made(self, choice: CardInt):
+        print("You selected card ", id_to_initials(choice))
+
+    def print_invalid_choice_not_in_deck(self, choice: CardInt):
+        print(f"invalid card input, {id_to_initials(choice)} is not longer in the deck")
+
+    def print_invalid_choice_not_in_hand(self, choice: CardInt):
+        print(f"Invalid card choice, {id_to_initials(choice)} is not in your hand")
+
+    def print_invalid_choice_not_legal(self, choice: CardInt):
+        print(f"Invalid card choice, {id_to_initials(choice)} is not a legal move")
 
 def table_str_creator(state: GameState) -> str: 
 
@@ -166,3 +157,35 @@ def CLI_format_hand(hand: set[CardInt], cols = 4) -> str:
             lines.append("    ".join(row))
         
         return "\n".join(lines) if lines else '(Hidden)'
+
+def scoreboard_display(state: GameState, round: bool = False) -> str:
+        """
+        Function for outputting the scores in the game
+
+        Args:
+            Round (bool): True by default and determines whether the display should be the 
+            round scoreboard or total scoreboard 
+
+        Returns:
+            List: Formatted and sorted version of the scoreboard for readability 
+        """
+
+        scoreboard = state.round_scores if round else state.total_scores
+
+        formatted_scoreboard = sorted(
+                    scoreboard.items(), 
+                    key= lambda x:x[1], #sort by the second element of each function
+                    reverse = True
+                )
+
+        return " | ".join([
+                f"{name} {score} ({state.bids[name]})" 
+                for name, score in formatted_scoreboard
+            ]
+    
+            ) if round else " | ".join([
+                f"{name} {score}" 
+                for name, score in formatted_scoreboard
+            ]
+    
+            )

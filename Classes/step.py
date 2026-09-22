@@ -1,7 +1,7 @@
 # contains variations of the Step class
 
 from Utils.cli_tools import *
-from ui_manager import CLI_format_hand
+from ui_manager import CLI_format_hand, scoreboard_display
 
 
 class Step:
@@ -315,7 +315,7 @@ class PlayerPlayCardStep(Step):
                                  "expanded_player_hand_str"
                                    "trump_suit",
                                    "table_str",
-                                   "scoreboard"}
+                                   "round_scoreboard"}
     
     validate_required_arguments = {"player"
     ""}
@@ -329,7 +329,7 @@ class PlayerPlayCardStep(Step):
         if missing:
             raise RuntimeError(f"Missing context: {missing}")
         
-        scoreboard = args['scoreboard']
+        round_scoreboard = args['scoreboard']
         player_hand = args['player_hand']
         expanded_player_hand_str = args['expanded_player_hand_str']
         player_name = args['player_name']
@@ -337,7 +337,7 @@ class PlayerPlayCardStep(Step):
         table_str = args['table']
 
         player_headline_string = f"▶\t {player_name} to play\t|\tTrump: {trump_suit}"
-        round_scoreboard_string = f"Round score: {scoreboard.display()}"
+        round_scoreboard_string = f"Round score: {round_scoreboard}"
         if len(player_hand) > 1:
             choose_card_string = f"Choose card [1-{len(player_hand)}] > "
         else:
@@ -403,7 +403,7 @@ class OpponentPlayCardStep(Step):
                                  "opponent_hand_str" 
                                    "trump_suit",
                                    "table",
-                                   "scoreboard",}
+                                   "round_scoreboard",}
     
     validate_required_arguments = {"valid_card_initials"}
 
@@ -415,14 +415,14 @@ class OpponentPlayCardStep(Step):
         if missing:
             raise RuntimeError(f"Missing context: {missing}")
         
-        scoreboard = args['scoreboard']
+        round_scoreboard = args['round_scoreboard']
         opponent_hand_str = args['opponent_hand_str']
         opponent_name = args['opponent_name']
         trump_suit = args['trump_suit']
         table_str = args['table_str']
         
         player_headline_string = f"▶\t{opponent_name} to play\t|\tTrump: {trump_suit}"
-        round_scoreboard_string = f"Round score: {scoreboard.display(round=True)}"
+        round_scoreboard_string = f"Round score: {round_scoreboard}"
         choose_card_string = f"Enter initials of card e.g. '7H' > "
         
         clear_screen() #3
