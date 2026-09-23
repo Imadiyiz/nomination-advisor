@@ -14,10 +14,12 @@ class BiddingFlow:
         
         self.stepManager = StepManager()
     
-    def run(self, state: GameState):
+    def run(self, state: GameState) -> GameState:
 
         max_cards = state.CARDS_PER_ROUND[state.round - 1]
         restriction = - 1
+
+        print("Bidding Phase Commencing\n")
         
         for i, player in enumerate(state.player_order):
 
@@ -48,7 +50,7 @@ class BiddingFlow:
                               state: GameState,
                               restriction: int = -1,
                               is_handicapped: bool = False
-                              ):
+                              ) -> GameState:
 
         while True:
             bid_value = self._prompt_for_bid(
@@ -77,12 +79,12 @@ class BiddingFlow:
                             state: GameState,
                             forbidden_bid: int,
                             is_handicapped: bool = False
-        ):
+        ) -> int:
         """
-        Private method which runs the prompt for bid and returns the value of the bid
+        Private method which runs the prompt for bid and returns the value of the bid made by the player.
         
 
-        Returns
+        Returns:
             int: Legal bid made by player
         """
         player_hand_str = player_hand_str_creator(player, state)

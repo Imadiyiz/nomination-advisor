@@ -1,33 +1,35 @@
 # Contents of the UIManager python file
 from game_state import GameState
-from Utils.card_serialization import id_to_prose, id_to_initials
-from Utils.types import PlayerStr, CardInt, TrumpStr
+from Utils.card_serialization import id_to_initials, id_to_prose
+from Utils.types import CardInt, PlayerStr, TrumpStr
 
+from Utils.constants import CARDS_PER_ROUND
 
 class UIManager:
     """
     Manages UI elements containing CLI and future GUI outputs
     """
 
-    def get_player_input(self, prompt: str) -> str:
+    @staticmethod
+    def get_custom_player_input(self, prompt: str) -> str:
         return input(prompt)
-    
-    def display_message(self, message:str):
+
+    @staticmethod
+    def display_custom_message(self, message:str):
         print(message)
 
-    def game_over_message(self, state: GameState):
+    @staticmethod
+    def print_game_over_message(winning_players: list[str],
+                                winning_score: int,
+                                state: GameState):
         """
         Displays the game over message with the final scores and winner
 
         Args:
-            state (GameState): The current game state object
+            winning_players (list[str]): The list of winning players.
+            winning_score (int): The winning score.
+            state (GameState): The current game state object.
         """
-
-        final_scores = state.total_scores
-        winning_score = max(final_scores.values())
-
-        winning_players = [player for player in state.player_order
-                           if final_scores[player] == winning_score]
 
         if len(winning_players) > 1:
             print(f"Game Over:\n There is a draw. The winners are {" ,".join(winning_players)} with a score of {winning_score}")
@@ -37,48 +39,78 @@ class UIManager:
         print("\nFinal Scoreboard: ", scoreboard_display(state=state, round=False))
 
 
-    def print_opening_bidding_round_statement(self, state: GameState):
-         max_cards = state.CARDS_PER_ROUND[state.round - 1]
-         print(f"ROUND {state.round} - Bidding Phase ({max_cards} cards per hand)\n")
+    @staticmethod
+    def print_opening_bidding_round_statement(round: int):
+         max_cards = CARDS_PER_ROUND[round - 1]
+         print(f"ROUND {round} - Bidding Phase ({max_cards} cards per hand)\n")
 
-    def print_random_trump_confirmation(self, state: GameState):
-        print("Random trump suit selected: ", state.trump_suit)
+    @staticmethod
+    def print_random_trump_confirmation(trump: TrumpStr):
+        print("Random trump suit selected: ", trump)
 
-    def print_trump_initials_error(self, choice_of_initials: str):
+    @staticmethod
+    def print_trump_initials_error(choice_of_initials: str):
         """Receives card initials and prints error statement"""
         print(f"{choice_of_initials} has already been used and is no longer in the deck")
 
-    def print_chosen_card(self, chosen_card: CardInt):
-        print(chosen_card, "chosen card")
+    @staticmethod
+    def print_chosen_card(chosen_card: CardInt):
+        print(id_to_initials(chosen_card), "chosen")
 
-    def print_initials_choice_error(self, choice_of_initials: str):
+    @staticmethod
+    def print_initials_choice_error(choice_of_initials: str):
         print(f"{choice_of_initials} is no longer in the deck")
 
-    def print_player_decides_trump(self, player: PlayerStr):
-        print(f"""{player} determines trump for next round""")
+    @staticmethod
+    def print_player_decides_trump(self,
+                                   player: PlayerStr,
+                                   perspective: PlayerStr = ''):
+        """Prints a statement indicating which player decides the trump for the next round.
 
-    def print_total_score(self, state: GameState):
-        """"""
+        Args:
+            player (PlayerStr): The player who decides the trump.
+            perspective (PlayerStr, optional): The perspective player. Defaults to ''.
+        """
+        if player:
+            print(f"{player} determines trump for next round")
+        elif perspective:
+            print("You determine trump for next round")
+
+    @staticmethod
+    def print_total_score(state: GameState): 
         print("Total score: ", scoreboard_display(state, round=False))
 
-    def print_choice_made(self, choice: CardInt):
-        print("choice", id_to_initials(choice))
+    @staticmethod
+    def print_choice_made(choice: CardInt, player: PlayerStr = '',
+                          perspective: PlayerStr = ''):
+        """Prints the card choice made by a player or the perspective player.
 
-    def print_player_choice_made(self, player: PlayerStr, choice: CardInt):
-        print(f"{player} selected card", id_to_initials(choice))
+        Args:
+            choice (CardInt): The card that was chosen.
+            player (PlayerStr, optional): The player who made the choice. Defaults to ''.
+            perspective (PlayerStr, optional): The perspective player who made the choice. Defaults to ''.
+        """
+        if player:
+            print(f"{player} selected card: ", id_to_initials(choice))
+        elif perspective:
+            print("You selected card: ", id_to_initials(choice))
+        else:
+            print("choice", id_to_initials(choice))
 
-    def print_perspective_choice_made(self, choice: CardInt):
-        print("You selected card ", id_to_initials(choice))
-
-    def print_invalid_choice_not_in_deck(self, choice: CardInt):
+    @staticmethod
+    def print_invalid_choice_not_in_deck(choice: CardInt):
         print(f"invalid card input, {id_to_initials(choice)} is not longer in the deck")
 
-    def print_invalid_choice_not_in_hand(self, choice: CardInt):
+    @staticmethod
+    def print_invalid_choice_not_in_hand(choice: CardInt):
         print(f"Invalid card choice, {id_to_initials(choice)} is not in your hand")
 
-    def print_invalid_choice_not_legal(self, choice: CardInt):
+    @staticmethod
+    def print_invalid_choice_not_legal(choice: CardInt):
         print(f"Invalid card choice, {id_to_initials(choice)} is not a legal move")
 
+    
+@staticmethod
 def table_str_creator(state: GameState) -> str: 
 
     if state.current_trick:
@@ -94,8 +126,12 @@ def table_str_creator(state: GameState) -> str:
         return f"Table:\n{string}"
     return "(Empty)" 
 
-
-def display_hand_str(player: PlayerStr, state: GameState):
+    
+@staticmethod
+def display_hand_str(
+                     player_hand: set[CardInt],
+                     max_cards: int,
+                     perspective: PlayerStr = '',):
         """
         Displays the user's hand depending on whether the player is an opponent
         
@@ -104,20 +140,18 @@ def display_hand_str(player: PlayerStr, state: GameState):
             max_cards(int): Maximum amount of cards possible for current round
         """
 
-        card_list = list(state.hands[player])
-        max_cards = state.CARDS_PER_ROUND[state.round - 1]
-
-        print(state.round, "ROUND NUMBER")
+        card_list = list(player_hand)
 
         if not card_list:
             return ['X' for _ in range(max_cards)]
 
         # Keeps opponent's hands hidden
-        if player == state.perspective:
+        if perspective:
             return [f"{id_to_prose(card)}" for card in card_list]
         else:
             return ['X' for _ in card_list]
 
+@staticmethod
 def player_hand_str_creator(player: PlayerStr, state: GameState) -> str:
 
     player_hand = state.hands[player]
@@ -136,6 +170,7 @@ def player_hand_str_creator(player: PlayerStr, state: GameState) -> str:
     return f"Current Hand:\n {hand_output}"
 
 
+@staticmethod
 def CLI_format_hand(hand: set[CardInt], cols = 4) -> str:
         """
         Formats hand into a columns for the CLI readable format
@@ -149,8 +184,6 @@ def CLI_format_hand(hand: set[CardInt], cols = 4) -> str:
 
             chunk = hand_list[i:i+cols]
             row = []
-
-
             for idx, card in enumerate(chunk, start=i):
                 card_string = id_to_prose(card)
                 if len(id_to_initials(card)) < 3:
@@ -162,6 +195,7 @@ def CLI_format_hand(hand: set[CardInt], cols = 4) -> str:
         
         return "\n".join(lines) if lines else '(Hidden)'
 
+@staticmethod
 def scoreboard_display(state: GameState, round: bool = False) -> str:
         """
         Function for outputting the scores in the game

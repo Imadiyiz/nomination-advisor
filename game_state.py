@@ -5,6 +5,8 @@ from Utils.card_serialization import *
 from Utils.nom_rule_tools import calculate_correct_bid_score
 from Utils.types import *
 
+from Classes.game_rules import GameRules
+
 # This GameState class is for showing what the gamestate is after actions occur
 
 # Can get orchestration from rollout round and iterate it 6 times
@@ -80,39 +82,12 @@ class GameState:
         return self.player_order[next_player_idx]
 
     def get_legal_moves(self, player: PlayerStr) -> set[CardInt]:
-        """
-        Function for identifing legal moves based on the player's known cards;
-        enforces follow-suit and respects trump rules
-        
-        :returns set of legal moves
-        """
+        """Returns the legal moves for a given player based on the current trick and their hand"""
 
-        player_hand = self.hands[player]
+        if player not in self.player_order:
+            raise ValueError(f"Player {player} is not registered in the game")
 
-        if not player_hand:
-            print("HANDS, ", self.hands.items())
-            raise ValueError(f"""
-        No Cards in {player}'s hand at all, may not be {player}'s turn.
-        DIagnosis:: 
-        Bids: {self.bids},
-        RS: {self.round_scores},
-        TS: {self.total_scores},
-        current_trick: {self.current_trick}""")
-
-        if not self.current_trick:
-            return set(player_hand)
-
-        lead_suit = get_suit_str(self.current_trick[0][1])
-        
-        follow_cards = {card for card in player_hand 
-                        if get_suit_str(card) == lead_suit
-        }
-        
-        if follow_cards:  # Can not play trumps if in possesion of follow card
-            return set(follow_cards) 
-        else:
-            # if no legal moves, any card can be discarded
-            return set(player_hand)
+        return GameRules.get_legal_moves(self.hands[player], self.current_trick)
     
     def apply_move(self, player: PlayerStr, card: CardInt) -> "GameState":
         """
@@ -131,13 +106,16 @@ class GameState:
         if not self.hands[player]:
             raise ValueError("No Cards in hand, can not apply move")
 
+        legal_moves = GameRules.get_legal_moves(
+            self.hands[player], self.current_trick)
+
         # Card must be in player posession and legal
-        if (card not in self.get_legal_moves(player) 
+        if (card not in legal_moves
             or card not in self.hands[player]):
             raise ValueError(f"""Illegal move attempted by {player}: {card}")
             Player's hand: {self.hands[player]}
             Current trick: {self.current_trick}
-            legal moves: {self.get_legal_moves(player)}
+            legal moves: {legal_moves}
             Check World Constraints""")
 
         # Declare new parameters for GameState instance being returned

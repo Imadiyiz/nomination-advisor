@@ -95,3 +95,12 @@ Refactoring Game_manager still, running into decisions that need to be made. I q
 23/09/26
 
 I have run into an issue with get_legal_moves, it works, however, it assumes that the player's cards are in the state.hands set, however, for opponent humans that is not the case. I will create a helper class which has the similar logic to the current get_legal_moves however, it must keep track of the suits played. Actually this is very similar to belief model. The issue of this is where is this going to be stored and how is it going to be keep in sync during the round and discarded at the end of the round.
+
+I want to add logging to gamestate, it could incorporate every action performed since I have created the actions dataclass.
+
+
+DECISION -> ACTION -> EXECUTION -> GAMESTATE
+
+This is the architecture I am trying to implement, I have made progress today but have lost focus and become veryy frustrated witb the task of incorporating the three game modes. Now there are two game modes where the player will be able to view bots play the game. Now that I think of it, sim is diffeent to single player, and the diffeerence is the verbpse natire of the two. Sim would only output the winners and the scoes, not what p2 bid on round 2.
+
+I am mid way through game_engine refactoring to round_manager. The actions are being abstracted into the actions file, wheer theu can be later seperated further by directory.

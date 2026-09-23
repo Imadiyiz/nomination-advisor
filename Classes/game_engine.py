@@ -1,5 +1,5 @@
 # Contents of the GameManager class
-
+# SELF.STATE ISSUE TODO:
 import random
 from enum import Enum
 
@@ -18,22 +18,15 @@ from Utils.types import CardInt, PlayerStr, TrumpStr
 from .bidding_flow import BiddingFlow
 from .deck import Deck
 from .human_player import HumanPlayer
-from .manual_trump_selection_flow import ManualTrumpSelectionFlow
-from .trump_selection_type_flow import TrumpSelectionTypeFlow
 from .iterative_trump_flow import IterativeTrumpFlow
-from .local_card_assignment import LocalCardAssignmentFlow
+from .local_card_assignment_flow import LocalCardAssignmentFlow
+from .manual_trump_selection_flow import ManualTrumpSelectionFlow
 from .player_setup_flow import PlayerSetupFlow
 from .playing_flow import PlayingFlow
 from .step import *
 from .trump_manager import TrumpManager
+from .trump_selection_type_flow import TrumpSelectionTypeFlow
 from .ui_manager import UIManager
-
-VALID_CARD_INITIALS = {
-    (f"{rank}{suit}")
-    for rank in (2,3,4,5,6,7,8,9,10,'J','Q','K','A')
-    for suit in "CDHS"
-    }
-CARDS_PER_ROUND = (1,2) # (8,7,6,6,7,8)
 
 class Phase(Enum):
         PLAYER_SELECTION = "player_selection"
@@ -45,14 +38,7 @@ class Phase(Enum):
         SCORING = "scoring"
         GAME_OVER = "game_over"
 
-class GameMode(Enum):
-    ASSISTANT = 'assistant'
-    SIM = 'simulation'
-    SINGLE_PLAYER = 'single_player'
-
-
-
-class Game:
+class GameEngine:
     """
     Class for managing the game state and orchestrating the gamee
 
@@ -62,13 +48,10 @@ class Game:
         phase (str): A string which indicates the current action of the game object
     """
 
-    def __init__(self, gamemode: GameMode = GameMode.ASSISTANT):  # ACTION: Must validate mode
+    def __init__(self):  # ACTION: Must validate mode
         """
         When initialised, the game object should receive the player parameters
         """
-
-
-        self.gamemode = gamemode
         self.phases = {
             Phase.PLAYER_SELECTION: self.handle_player_selection,
             Phase.HAND_ASSIGNMENT: self.handle_hand_assignment,
@@ -123,7 +106,7 @@ class Game:
                     raise ValueError(f"Unknown game phase: {self.phase}") 
 
         # Game over, need to prompt a retry button
-        self.UIManager.game_over_message(state=self.game_state)
+        self.UIManager.print_game_over_message(state=self.game_state)
         
     def handle_player_selection(self): 
         """
@@ -172,7 +155,7 @@ class Game:
         if self.game_state.round > 1:
             self.game_state = self.game_state.get_next_round_state()
 
-        # THOUGHT: Assistant only?
+        # THOUGHT: Assistant only? WHY LOOP IF YOU KNOW PERSPECTIVE
         for player in self.game_state.player_order:
 
             # local players only
@@ -219,7 +202,6 @@ class Game:
 
         clear_screen() #2
 
-        # ACTION: Remove print statement opening round and bidding phase
         self.UIManager.print_opening_bidding_round_statement(self.game_state)
         
         manual_trump_generation = self.trump_selection_type_flow.run()
@@ -248,7 +230,7 @@ class Game:
             clear_screen()
             self.UIManager.print_random_trump_confirmation(state=self.game_state)
     
-
+         *** # Currently at this part of the game engine, right after automatic trump selection, where I am converting it to round manager
     def handle_bidding_phase(self):
         """
         Bidding logic
@@ -258,7 +240,6 @@ class Game:
 
         #starts the bidding process and must update state
         if self.gamemode == GameMode.ASSISTANT:
-            print("Bidding Phase Commencing\n")  # FIx
             self.state = self.biddingFlow.run(state=self.game_state)
 
         self.phase = Phase.PLAYING

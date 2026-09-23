@@ -19,3 +19,4 @@ Currently the next player is the winner of the previous trick
 /// According to game rules, a player may bid 0, but cannot do so more than
 /// three rounds in a row. After three consecutive 0-bids, they must bid at
 /// least 1 in the next round.
+

@@ -1,6 +1,6 @@
 import pytest
 
-from Classes.game_manager import *
+from Classes.game_engine import *
 from Classes.human_player import HumanPlayer
 from Classes.step import *
 

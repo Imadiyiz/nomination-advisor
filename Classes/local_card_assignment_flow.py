@@ -17,24 +17,27 @@ class LocalCardAssignmentFlow:
         self.stepManager = StepManager()
         self.valid_card_initials = valid_card_initials
     
-    def assign_card(self, player: PlayerStr,
-                    state: GameState) -> str:
+    def assign_card(self,
+                    player_hand: set[CardInt],
+                    max_cards: int,
+                    perspective: PlayerStr = '',) -> str:
         """
         Logic for prompting the player to assign their card
         Returns choice of initials as string
         """
 
         player_hand_str = display_hand_str(
-            player = player, 
-            state = state
+            player_hand = player_hand, 
+            max_cards = max_cards,
+            perspective = perspective,
             )
         
         initials = self.stepManager.run_step(
                     step = IterableLocalAddCardStep(),
-                    prompt_args={"player": player,
-                                 "maximum_cards": state.CARDS_PER_ROUND[state.round - 1],
-                                 "player_card_list": state.hands[player],
-                                 "player_hand": state.hands[player], 
+                    prompt_args={"player": perspective,
+                                 "maximum_cards": max_cards,
+                                 "player_card_list": player_hand,
+                                 "player_hand": player_hand, 
                                  "player_hand_str": str(player_hand_str)},
                     validate_args={"valid_card_initials": self.valid_card_initials}
                     )

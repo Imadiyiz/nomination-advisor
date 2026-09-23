@@ -42,6 +42,12 @@ class BeliefModel:
         if card_suit != lead_suit:
             self.void_suits[player].add(lead_suit)
 
+    def observe_bid(self, player: PlayerStr, bid: int):
+        """
+        Updates beliefs after watching a bid
+        """
+
+
     def sample_world(self) -> dict[PlayerStr, set[CardInt]]:
         """
         Produce a hypothetical assignment of unknown cards
