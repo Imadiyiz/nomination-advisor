@@ -91,3 +91,7 @@ Currently refactoring game manager to incorporate game_state correctly, bumped i
 Refactoring Game_manager still, running into decisions that need to be made. I quickly justify a decision and then leave it, then I come back to it and wonder why I did it. I need to either write it down, or make it more explicit the reason as to why I am doing things.
 
  Still going through game_manager and I need to seperate core flow from assistant flow however, I have made progress. Very realistic for me to have a CPU playthrough as well as sim and Assistant. Assistant is obviously done, sim is also done, and single player would need slight configuration.
+
+23/09/26
+
+I have run into an issue with get_legal_moves, it works, however, it assumes that the player's cards are in the state.hands set, however, for opponent humans that is not the case. I will create a helper class which has the similar logic to the current get_legal_moves however, it must keep track of the suits played. Actually this is very similar to belief model. The issue of this is where is this going to be stored and how is it going to be keep in sync during the round and discarded at the end of the round.

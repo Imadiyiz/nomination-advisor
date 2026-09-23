@@ -1,9 +1,11 @@
 # Contents of the GameManager class
 
+import random
 from enum import Enum
 
 from game_state import GameState
 from Utils.card_serialization import (
+        SUITS,
         SUITS_TO_SYMBOL,
         get_suit_str,
         id_to_initials,
@@ -15,13 +17,13 @@ from Utils.types import CardInt, PlayerStr, TrumpStr
 
 from .bidding_flow import BiddingFlow
 from .deck import Deck
-from .human_player import Player
-from .initial_trump_flow import InitialTrumpFlow
+from .human_player import HumanPlayer
+from .manual_trump_selection_flow import ManualTrumpSelectionFlow
+from .trump_selection_type_flow import TrumpSelectionTypeFlow
 from .iterative_trump_flow import IterativeTrumpFlow
 from .local_card_assignment import LocalCardAssignmentFlow
 from .player_setup_flow import PlayerSetupFlow
 from .playing_flow import PlayingFlow
-from .scoreboard import Scoreboard
 from .step import *
 from .trump_manager import TrumpManager
 from .ui_manager import UIManager
@@ -31,7 +33,7 @@ VALID_CARD_INITIALS = {
     for rank in (2,3,4,5,6,7,8,9,10,'J','Q','K','A')
     for suit in "CDHS"
     }
-CARDS_PER_ROUND = (8,7,6,6,7,8)
+CARDS_PER_ROUND = (1,2) # (8,7,6,6,7,8)
 
 class Phase(Enum):
         PLAYER_SELECTION = "player_selection"
@@ -55,13 +57,12 @@ class Game:
     Class for managing the game state and orchestrating the gamee
 
     Attributes:
-        player_queue (list): A list which stores the order of which the players are playing
         round (int): An integer value of the current round the game is in
         cards_per_round (list): A ;ist of the maximum cards per round
         phase (str): A string which indicates the current action of the game object
     """
 
-    def __init__(self, gamemode: str = ''):  # ACTION: Must validate mode is valid mode
+    def __init__(self, gamemode: GameMode = GameMode.ASSISTANT):  # ACTION: Must validate mode
         """
         When initialised, the game object should receive the player parameters
         """
@@ -82,9 +83,9 @@ class Game:
         self.phase = Phase.PLAYER_SELECTION
 
 
-        self.player_queue = [] #queue for playing during rounds
+        self.player_objects = [] # Makes it clear whether a player is a human or robot
 
-        # THOUGHT: Requires Player class and Bot class, in order to make decisions, maps to PlayerStr though
+        # THOUGHT: Requires HumanPlayer class and Bot class, in order to make decisions, maps to PlayerStr though
 
     def start(self):
         clear_screen() 
@@ -105,7 +106,8 @@ class Game:
         self.trumpManager = TrumpManager()
         self.playerSetupFlow = PlayerSetupFlow()
         self.biddingFlow = BiddingFlow()
-        self.initialTrumpFlow = InitialTrumpFlow()
+        self.trump_selection_type_flow = TrumpSelectionTypeFlow()
+        self.manual_trump_selection_flow = ManualTrumpSelectionFlow()
         self.localCardAssignmentFlow = LocalCardAssignmentFlow(VALID_CARD_INITIALS)
 
     def run_game_phases(self):
@@ -132,32 +134,25 @@ class Game:
 
         #verified names list
         verified_names = self.playerSetupFlow.remove_duplicates(
-            input_players = [player['name'] 
-                             for player in context['player_names']]
+            input_players = context['player_names']
             )
 
-        opponents_flags = [player['opponent'] for player in context['player_names']]
+        perspective = context['perspective']
 
         # creating player queue
-        for index, name in enumerate(verified_names):
-            self.player_queue.append( Player(
-                name=name,
-                opponent=opponents_flags[index])
-            )
+        for name in verified_names:
+            self.player_objects.append(HumanPlayer(name))
 
         # Can initialise the gamestate object now, as it requires the player queue to be initialised
         self.game_state = GameState(
-            player_order=tuple(player.name for player in self.player_queue), 
-            hands={player.name: set(player.hand) for player in self.player_queue},
+            player_order=tuple(player for player in verified_names), 
+            hands={player: set() for player in verified_names},
             trump_suit='',
             current_trick=(),
-            round_scores={player.name: 0 for player in self.player_queue},
-            total_scores={player.name: 0 for player in self.player_queue},
-            bids={player.name: 0 for player in self.player_queue})
-
-        # ACTION: Remove scoreboard init 
-        # Can initialise scoreboard now
-        self.scoreboard = Scoreboard()
+            round_scores={player: 0 for player in verified_names},
+            total_scores={player: 0 for player in verified_names},
+            bids={player: 0 for player in verified_names},
+            perspective = perspective)
 
         self.phase = Phase.HAND_ASSIGNMENT
 
@@ -178,18 +173,17 @@ class Game:
             self.game_state = self.game_state.get_next_round_state()
 
         # THOUGHT: Assistant only?
-        for player in self.player_queue:
+        for player in self.game_state.player_order:
 
             # local players only
-            if player.opponent is False: 
+            if player == self.game_state.perspective: 
                 self.localCardAssignmentFlow.generate_prompt(player)
                 
                 #iterate for amount of cards in hand for the current round
-                while len(self.game_state.hands[player.name]) < CARDS_PER_ROUND[self.game_state.round-1]:
+                while len(self.game_state.hands[player]) < CARDS_PER_ROUND[self.game_state.round-1]:
 
-                    player_card_list = self.game_state.hands[player.name]
                     choice_of_initials = self.localCardAssignmentFlow.assign_card(
-                        player.name, self.game_state
+                        player, self.game_state
                     )
                     
                     if not self.deck.contains(initials_to_id(choice_of_initials)):
@@ -206,7 +200,7 @@ class Game:
                     if not chosen_card:
                         self.UIManager.print_initials_choice_error(choice_of_initials)
                     else:
-                        self.game_state.hands[player.name].add(chosen_card)
+                        self.game_state.hands[player].add(chosen_card)
                         
 
         # THOUGHT: This confuses me, I'm assuming that the trump is selected elsewhere asif it were selected in person,
@@ -214,7 +208,7 @@ class Game:
         if self.game_state.round == 1:
             self.phase = Phase.INITIAL_TRUMP_SELECTION
         else:
-            self.phase = Phase.BIDDING
+            self.phase = Phase.TRUMP_REDECIDING
 
 
     def handle_initial_trump_selection(self):
@@ -228,51 +222,31 @@ class Game:
         # ACTION: Remove print statement opening round and bidding phase
         self.UIManager.print_opening_bidding_round_statement(self.game_state)
         
-        context = self.initialTrumpFlow.run(VALID_CARD_INITIALS)
-        manual_trump_generation = context['manual_trump_generation']
-        trump_card_initials = context['trump_card_initials']
+        manual_trump_generation = self.trump_selection_type_flow.run()
 
         #   automatic trump generation
         if not manual_trump_generation:
-            card = self.select_trump_automatically()
+            self._select_trump_automatically()
 
         #   manual trump selection
         else:
-
-            # verify tc initials exist
-            if not trump_card_initials:
-                return 
-            
-            if not self.deck.contains(initials_to_id(trump_card_initials)):
-                return
-            
-            selected_card = self.deck.draw_specific_card(trump_card_initials)
-            if not selected_card:
-                # Ok for simple print as it is assumed that
-                # manual trump selection will be done only in Assistant mode
-                self.UIManager.display_message("Invalid card")
-                return
-        
-            self.game_state.trump_suit = get_suit_str(selected_card)
+            self._select_trump_manually()
 
         # Everything is valid hence move on to next phase
         self.phase = Phase.BIDDING
     
-    def select_trump_automatically(self) -> CardInt:
+    def _select_trump_automatically(self):  # THOUGHT: Could migrate to trump manager
         """
-        Selects trump card automatically while also outputting
-        information depending on the gamemode.
+        Selects trump card automatically, assigning it to game_state,
+        while also outputting information depending on the gamemode.
         """
-        
-        trump_card = self.deck.draw_random()
-        #since deck is already shuffled, pick first card
-        self.game_state.trump_suit = get_suit_str(trump_card)
+
+        self.game_state.trump_suit = random.choice(SUITS)
+
 
         if self.gamemode == 'assistant':
             clear_screen()
-            self.UIManager.print_random_trump_confirmation(state=self.game_state,
-                                                         trump_card = id_to_prose(trump_card))
-        return trump_card
+            self.UIManager.print_random_trump_confirmation(state=self.game_state)
     
 
     def handle_bidding_phase(self):
@@ -283,7 +257,7 @@ class Game:
         # shouldnt I check before enforcing this
 
         #starts the bidding process and must update state
-        if self.gamemode == 'assistant':
+        if self.gamemode == GameMode.ASSISTANT:
             print("Bidding Phase Commencing\n")  # FIx
             self.state = self.biddingFlow.run(state=self.game_state)
 
@@ -315,15 +289,13 @@ class Game:
 
         self.game_state.trump_suit = context['trump_suit']
 
-        # ACTION: Do not reset here anymore, how can you decide trump without hand_assignment?
-    
-        self.phase = Phase.HAND_ASSIGNMENT
+        self.phase = Phase.BIDDING
 
     def handle_scoring_phase(self):
         """
         Scoring logic
         """
-        if self.game_state.round < 1:  # 6
+        if self.game_state.round < 6:  # 6
             self.game_state.round += 1
             #display total scoreboard
 
@@ -347,7 +319,8 @@ class Game:
         self.playingFlow = PlayingFlow()
 
         # THOUGHT: only need this for assistant mode maybe single player too
-
+        # THOUFHT: Can not use get legal moves in ASsistant mode for non-perspective
+        # Players as it needs to know what their hands consist of.
         player = self.game_state.next_player()
         legal_moves = self.game_state.get_legal_moves(player)
 
@@ -376,3 +349,12 @@ class Game:
             self.state = self.game_state.apply_move(player=player,
                                         card=choice)
             break  # successful play
+
+    def _select_trump_manually(self):
+        """Assigns trump suit to game state based on user input from
+        manual trump selection flow"""
+
+        selected_trump_suit = self.manual_trump_selection_flow.run()
+
+
+        self.game_state.trump_suit = selected_trump_suit

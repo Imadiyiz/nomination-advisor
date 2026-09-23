@@ -43,11 +43,10 @@ SUIT_FROM_INITIAL = {
     "S": 3,
 }
 
-def get_suit_from_initial(initial:str) -> int:
+def get_suit_from_initial(initial:str) -> TrumpStr:
     if initial[0].upper() not in SUIT_FROM_INITIAL:
         raise ValueError(f"{initial[0]} is not a valid initial")
-
-    return SUIT_FROM_INITIAL[initial[0].upper()]
+    return SUITS[SUIT_FROM_INITIAL[initial[0].upper()]]
 
 def get_rank(card: CardInt) -> str:
         return RANKS[card % 13]

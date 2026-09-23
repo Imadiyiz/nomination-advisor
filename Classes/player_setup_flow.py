@@ -1,3 +1,5 @@
+from Utils.types import PlayerStr
+
 from .step_manager import *
 
 
@@ -9,7 +11,8 @@ class PlayerSetupFlow:
         
         self.context = {
             "num_players": 0, 
-            "player_names": []
+            "player_names": [],
+            "perspective": '',
             }
         
         self.stepManager = StepManager()
@@ -19,13 +22,12 @@ class PlayerSetupFlow:
 
         while True:
             print("ENTER THE FOLLOWING PLAYERS IN THE PLAYING ORDER")
-            result = self.stepManager.run_step(NumPlayerStep())
-            if result != 'BACK':
-                self.context['num_players'] = result
+            number_of_players = self.stepManager.run_step(NumPlayerStep())
+            if number_of_players != 'BACK':
                 break
 
         #step 2: iterate players
-        while len(self.context['player_names']) < self.context['num_players']:
+        while len(self.context['player_names']) < int(number_of_players):
             clear_screen()
             print(f"Configuring player {len(self.context['player_names']) + 1}")
 
@@ -44,18 +46,13 @@ class PlayerSetupFlow:
                 continue
 
             if is_opponent_response in ('y', ''):
-                is_opponent = True
-            else:
-                is_opponent = False
-                
-            self.context["player_names"].append({
-                "name": name, 
-                "opponent": is_opponent
-            })
+                self.context['perspective'] = name
+
+            self.context["player_names"].append(name)
             
         return self.context
     
-    def remove_duplicates(self, input_players: list):
+    def remove_duplicates(self, input_players: list[PlayerStr]):
 
         # Initialise the name count dictionary to determine whether a player_name is a duplicate
         names_count = {}

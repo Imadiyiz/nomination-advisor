@@ -1,10 +1,9 @@
+import random
 from dataclasses import dataclass, field
 
 from Utils.card_serialization import *
-from Utils.nom_rule_tools import calculate_correct_bid_score, 
+from Utils.nom_rule_tools import calculate_correct_bid_score
 from Utils.types import *
-
-import random
 
 # This GameState class is for showing what the gamestate is after actions occur
 
@@ -29,7 +28,6 @@ class GameState:
     total_scores: dict[PlayerStr, int]
     winner: PlayerStr | None = None            # Winner of the previous trick
     trick_completed: bool = False
-    perspective = PlayerStr  # Used during single player games, does not affect MC sim
     
 
     # Must use default_factory for when declaring mutable types
@@ -39,9 +37,10 @@ class GameState:
     round: int = 1
     game_over: bool = False
     trump_decider: str = ''
+    perspective: PlayerStr = '' # Used during single player games, does not affect MC sim
 
     # Constants
-    CARDS_PER_ROUND = (8,7,6,6,7,8)
+    CARDS_PER_ROUND = (1, 2)# (8,7,6,6,7,8)
 
     # must be used to avoid generating inaccurate worlds due to inaccurate ordering
     def _get_leader(self) -> str:
@@ -82,7 +81,7 @@ class GameState:
 
     def get_legal_moves(self, player: PlayerStr) -> set[CardInt]:
         """
-        Function for identifing legal moves given;
+        Function for identifing legal moves based on the player's known cards;
         enforces follow-suit and respects trump rules
         
         :returns set of legal moves
@@ -229,29 +228,6 @@ class GameState:
             (p, c) for p, c in trick if get_suit_str(c) == lead_suit]
         return max(lead_cards, key=lambda lc: get_rank(lc[1]))[0]
 
-    def _get_round_reset_state(self) -> "GameState":
-        """
-        Returns a new GameState with the round scores reset to 0 and the round incremented by 1.
-        This is used when a round has ended and the next round is starting.
-        """
-
-        new_round_scores = {player: 0 for player in self.player_order}
-        new_round = self.round + 1
-
-        return GameState(
-            hands=self.hands,
-            current_trick=(),
-            _leader=None,
-            trump_suit=self.trump_suit,
-            player_order=self.player_order,
-            round_scores=new_round_scores,
-            total_scores=dict(self.total_scores),
-            bids=dict(self.bids),
-            winner=None,
-            trick_completed=False,
-            round=new_round,
-            game_over=self.game_over
-        )
     
     def _rotate_player_order(self):
         """
@@ -267,6 +243,7 @@ class GameState:
         """Mutates self and outputs new round state. Rotates player order, resets
         round scores, resets trick, bids, leader and increments round number"""
 
+        # Uses latest round scores to determine trump, later rs are reset
         self.trump_decider = self._determine_trump_decider()
 
         self._rotate_player_order()

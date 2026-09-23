@@ -1,5 +1,6 @@
 from game_state import GameState
 from Utils.types import CardInt, PlayerStr
+from Classes.ui_manager import display_hand_str
 
 from .step_manager import *
 
@@ -22,12 +23,19 @@ class LocalCardAssignmentFlow:
         Logic for prompting the player to assign their card
         Returns choice of initials as string
         """
-            
+
+        player_hand_str = display_hand_str(
+            player = player, 
+            state = state
+            )
+        
         initials = self.stepManager.run_step(
                     step = IterableLocalAddCardStep(),
                     prompt_args={"player": player,
                                  "maximum_cards": state.CARDS_PER_ROUND[state.round - 1],
-                                 "player_card_list": state.hands[player]},
+                                 "player_card_list": state.hands[player],
+                                 "player_hand": state.hands[player], 
+                                 "player_hand_str": str(player_hand_str)},
                     validate_args={"valid_card_initials": self.valid_card_initials}
                     )
 

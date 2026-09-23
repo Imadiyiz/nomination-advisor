@@ -1,7 +1,12 @@
 # contains variations of the Step class
 
+from Classes.ui_manager import CLI_format_hand, scoreboard_display
+from Utils.card_serialization import (
+    SUITS,
+    get_suit_from_initial,
+    SUIT_FROM_INITIAL,
+)
 from Utils.cli_tools import *
-from ui_manager import CLI_format_hand, scoreboard_display
 
 
 class Step:
@@ -238,7 +243,7 @@ class IterativeTrumpSelectionStep(Step):
         if user_input.lower() == "b":
             return "BACK"
         
-        if user_input.upper() in (suits_map.keys()):
+        if user_input.upper() in suits_map:
             return user_input
         else:
             raise ValueError("\nEnter a valid option e.g. 'C' or 'H' ") 
@@ -262,13 +267,13 @@ class ManualTrumpStep(Step):
     Docstring for ManualTrumpStep
     """
     
-    validate_required_arguments = {"valid_card_initials"}
+    validate_required_arguments = {}
 
     def prompt(self,
                args: dict) -> str:
         
-        return (f"""Enter the initial trump card from the IRL game
-(Format: '10D' = 10 of Diamonds, 'KS' = King of Spades) """
+        return (f"""Enter the trump suit initial from the IRL game
+(Format: 'D' = Diamonds, 'S' = Spades) """
         )
 
     
@@ -281,21 +286,20 @@ class ManualTrumpStep(Step):
         if missing:
             raise RuntimeError(f"Missing context: {missing}")
         
-        card_initials = args['valid_card_initials']
         
         if user_input.lower() == "b":
             return "BACK"
         
         user_input = user_input.upper()
 
-        if user_input not in card_initials:
-            raise ValueError("\nMust enter a valid card initial e.g '7H'")
+        if user_input not in SUIT_FROM_INITIAL:
+            raise ValueError("\nMust enter a suit initial e.g 'H'")
         
-        if len(user_input) < 2 or len(user_input) > 3:
-            raise ValueError("\nInvalid card initial - must be 2-3 characters long")
+        if len(user_input) != 1:
+            raise ValueError("\nInvalid suit initial - must be singular character")
         
         if user_input == '':
-            raise ValueError("\nMust enter a value")
+            raise ValueError("\nMust enter an initial")
         
         return user_input
         
@@ -312,13 +316,12 @@ class PlayerPlayCardStep(Step):
     
     prompt_required_arguments = {"player_name",
                                  "player_hand",
-                                 "expanded_player_hand_str"
-                                   "trump_suit",
-                                   "table_str",
-                                   "round_scoreboard"}
+                                 "expanded_player_hand_str",
+                                 "trump_suit",
+                                 "table_str",
+                                 "round_scoreboard"}
     
-    validate_required_arguments = {"player"
-    ""}
+    validate_required_arguments = {"player"}
 
 
     def prompt(self,
@@ -329,12 +332,12 @@ class PlayerPlayCardStep(Step):
         if missing:
             raise RuntimeError(f"Missing context: {missing}")
         
-        round_scoreboard = args['scoreboard']
+        round_scoreboard = args['round_scoreboard']
         player_hand = args['player_hand']
         expanded_player_hand_str = args['expanded_player_hand_str']
         player_name = args['player_name']
         trump_suit = args['trump_suit']
-        table_str = args['table']
+        table_str = args['table_str']
 
         player_headline_string = f"▶\t {player_name} to play\t|\tTrump: {trump_suit}"
         round_scoreboard_string = f"Round score: {round_scoreboard}"
@@ -402,7 +405,7 @@ class OpponentPlayCardStep(Step):
     prompt_required_arguments = {"opponent_name",
                                  "opponent_hand_str" 
                                    "trump_suit",
-                                   "table",
+                                   "table_str",
                                    "round_scoreboard",}
     
     validate_required_arguments = {"valid_card_initials"}

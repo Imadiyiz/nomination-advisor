@@ -26,8 +26,10 @@ class RolloutSimulator:
         
         """
 
+        max_cards = self.state.CARDS_PER_ROUND[self.state.round - 1]
+
         # Loop through the number of cards in the round, as each player will play one card per trick
-        for _ in range(len(list(self.state.hands.values())[0])):  # Assumes all the players havve the same amount of cards
+        for _ in range(max_cards):  # Assumes all the players havve the same amount of cards
             
             player = self.state.next_player()
             legal_moves = self.state.get_legal_moves(player)
@@ -46,9 +48,10 @@ class RolloutSimulator:
         during the rollout, including perspective.
         
         """
+        max_cards = self.state.CARDS_PER_ROUND[self.state.round - 1]
 
         # Loop through the number of cards in the round, as each player will play one card per trick
-        for _ in range(len(list(self.state.hands.values())[0])):  # Assumes all the players havve the same amount of cards
+        for _ in range(max_cards):  # Assumes all the players havve the same amount of cards
 
             player = self.bot_players_map[self.state.next_player()]
             legal_moves = self.state.get_legal_moves(player.name)

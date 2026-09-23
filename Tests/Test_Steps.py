@@ -1,14 +1,13 @@
 import pytest
 
-from Classes.deck import Deck
 from Classes.game_manager import *
-from Classes.human_player import Player
+from Classes.human_player import HumanPlayer
 from Classes.step import *
 
 
 @pytest.fixture
 def player():
-    p = Player(name="Alice")
+    p = HumanPlayer(name="Alice")
     p.hand = [4, 44, 10]  # minimal stub
     p.opponent = False
     return p
@@ -21,14 +20,6 @@ def player_queue(player):
 @pytest.fixture
 def ui():
     return UIManager()
-
-@pytest.fixture
-def tb(ui):
-    return Table(ui)
-
-@pytest.fixture()
-def sb(player_queue):
-    return Scoreboard(players=player_queue)
 
 
 class Test_NumPlayerStep():

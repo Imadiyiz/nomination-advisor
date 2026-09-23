@@ -41,9 +41,8 @@ class UIManager:
          max_cards = state.CARDS_PER_ROUND[state.round - 1]
          print(f"ROUND {state.round} - Bidding Phase ({max_cards} cards per hand)\n")
 
-    def print_random_trump_confirmation(self, state: GameState, trump_card: TrumpStr):
-        print(f"Random trump card - {trump_card}")
-        print("Trump suit: ", state.trump_suit)
+    def print_random_trump_confirmation(self, state: GameState):
+        print("Random trump suit selected: ", state.trump_suit)
 
     def print_trump_initials_error(self, choice_of_initials: str):
         """Receives card initials and prints error statement"""
@@ -96,7 +95,7 @@ def table_str_creator(state: GameState) -> str:
     return "(Empty)" 
 
 
-def display_hand_str(self, card_list: list[CardInt], max_cards: int = 8): # currently the hands are empty
+def display_hand_str(player: PlayerStr, state: GameState):
         """
         Displays the user's hand depending on whether the player is an opponent
         
@@ -105,14 +104,19 @@ def display_hand_str(self, card_list: list[CardInt], max_cards: int = 8): # curr
             max_cards(int): Maximum amount of cards possible for current round
         """
 
+        card_list = list(state.hands[player])
+        max_cards = state.CARDS_PER_ROUND[state.round - 1]
+
+        print(state.round, "ROUND NUMBER")
+
         if not card_list:
             return ['X' for _ in range(max_cards)]
 
         # Keeps opponent's hands hidden
-        if self.opponent == False:
+        if player == state.perspective:
             return [f"{id_to_prose(card)}" for card in card_list]
         else:
-            return ['X' for _ in self.hand]
+            return ['X' for _ in card_list]
 
 def player_hand_str_creator(player: PlayerStr, state: GameState) -> str:
 
