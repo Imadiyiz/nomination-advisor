@@ -5,7 +5,6 @@ from Classes.iterative_trump_flow import IterativeTrumpFlow
 from Classes.local_card_assignment_flow import LocalCardAssignmentFlow
 from Classes.manual_trump_selection_flow import ManualTrumpSelectionFlow
 from Classes.player import Player
-self.iterativeTrumpFlow = IterativeTrumpFlow()
 from Classes.deck import Deck
 from Utils.cli_tools import clear_screen
 from Utils.constants import VALID_CARD_INITIALS, CARDS_PER_ROUND
@@ -114,20 +113,16 @@ def get_random_trump_selection(round: int) -> TrumpStr:
     UIManager().print_random_trump_confirmation(trump=random_trump)
     return random_trump
 
-def get_player_trump_selection(chosen_player: Player) -> TrumpStr:
+def get_bot_trump_selection(chosen_player: Player) -> TrumpStr:
     """
     Prompts the player to select a trump card.
 
     Args:
-        round (int): The current round number.
         chosen_player (Player): The player who is selecting the trump suit.
 
     Returns:
         TrumpStr: The selected trump suit.
     """
 
-    iterativeTrumpFlow = IterativeTrumpFlow()
-
     clear_screen() #2
-    trump_suit = iterativeTrumpFlow.run(player=chosen_player)['trump_suit']
-    return trump_suit
+    return chosen_player.choose_trump_suit()

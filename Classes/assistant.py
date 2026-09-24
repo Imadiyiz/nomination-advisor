@@ -18,7 +18,10 @@ class Assistant:
             void_suits={p: set() for p in player_list},
             unknown_cards=set(range(52)),
             hand_sizes={p: hand_size for p in player_list},
-            perspective_player=player.name
+            perspective_player=player.name,
+            bids={p: 0 for p in player_list}, 
+            tricks_won={p: 0 for p in player_list},
+            current_trick={p: None for p in player_list},
         )  
 
     def suggest_move(self, game_state: GameState) -> CardInt:

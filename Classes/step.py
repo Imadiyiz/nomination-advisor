@@ -2,9 +2,9 @@
 
 from Classes.ui_manager import CLI_format_hand, scoreboard_display
 from Utils.card_serialization import (
+    SUIT_FROM_INITIAL,
     SUITS,
     get_suit_from_initial,
-    SUIT_FROM_INITIAL,
 )
 from Utils.cli_tools import *
 
@@ -198,83 +198,25 @@ class TrumpSelectionStep(Step):
         if value == 'n':
             option = 'Automatic generation'
         return f'{option} option chosen'
-    
-
-class IterativeTrumpSelectionStep(Step):
-    """
-    Docstring for IterativeTrumpSelectionStep
-
-    Used after round 1
-    """
-
-    prompt_required_arguments = {"player", 
-                                 "suits_map"}
-    
-    validate_required_arguments = {"suits_map"}
-    
-    feedback_required_arguments = {"player",
-                                   "suits_map"}
-
-    def prompt(self,
-               args: dict) -> str:
         
-        #ensure the arguments passed suitable for the function
-        missing = self.prompt_required_arguments - args.keys()
-        if missing:
-            raise RuntimeError(f"Missing context: {missing}")
-
-        return """
-[C] Clubs
-[S] Spades
-[H] Hearts
-[D] Diamonds """
-
-    
-    def validate(self,
-                 user_input: str,
-                 args: dict):
-        #ensure the arguments passed suitable for the function
-        missing = self.validate_required_arguments - args.keys()
-        if missing:
-            raise RuntimeError(f"Missing context: {missing}")
-        
-        suits_map = args['suits_map']
-                
-        if user_input.lower() == "b":
-            return "BACK"
-        
-        if user_input.upper() in suits_map:
-            return user_input
-        else:
-            raise ValueError("\nEnter a valid option e.g. 'C' or 'H' ") 
-                
-    
-    def feedback(self, value, args: dict = {}) -> str:
-
-
-        #ensure the arguments passed suitable for the function
-        missing = self.validate_required_arguments - args.keys()
-        if missing:
-            raise RuntimeError(f"Missing context: {missing}")
-
-        suits_map = args['suits_map']
-        player = args['player']
-
-        return f'\n{player} selected {suits_map[value.upper()]} as trump '
         
 class ManualTrumpStep(Step):
     """
     Docstring for ManualTrumpStep
     """
     
-    validate_required_arguments = {}
+    validate_required_arguments = {'player'}
 
     def prompt(self,
                args: dict) -> str:
         
-        return (f"""Enter the trump suit initial from the IRL game
-(Format: 'D' = Diamonds, 'S' = Spades) """
-        )
+        return """
+[C] Clubs
+[S] Spades
+[H] Hearts
+[D] Diamonds 
+
+Enter trump suit initial: """
 
     
     def validate(self,
@@ -305,7 +247,7 @@ class ManualTrumpStep(Step):
         
     
     def feedback(self, value, args: dict = {}) -> str:
-        return ''
+        return f'\n{args["player"]} selected {get_suit_from_initial(value.upper())} as trump '
     
 class PlayerPlayCardStep(Step):
     """

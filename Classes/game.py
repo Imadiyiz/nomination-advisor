@@ -13,7 +13,7 @@ class Game:
         engine: GameEngine,
     ):
         self.mode = mode
-        self.engine = engine(mode)
+        self.engine = engine
 
     def start(self):
         self.engine.run()

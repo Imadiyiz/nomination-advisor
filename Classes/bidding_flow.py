@@ -3,6 +3,7 @@ from game_state import GameState
 from Utils.types import CardInt, PlayerStr, TrumpStr
 
 from .step_manager import *
+from Utils.constants import CARDS_PER_ROUND
 
 
 class BiddingFlow:
@@ -14,35 +15,44 @@ class BiddingFlow:
         
         self.stepManager = StepManager()
     
-    def run(self, state: GameState) -> GameState:
+    def run(self, max_cards: int, players_to_bid: set[PlayerStr], bids_total: int) -> GameState:
+        """Runs the bidding flow for players who need to use the CLI to place their bids.
 
-        max_cards = state.CARDS_PER_ROUND[state.round - 1]
+        Args:
+            max_cards (int): Maximum number of cards that can be bid in this round.
+            players_to_bid (set[PlayerStr]): Set of players who need to place bids.
+
+        Returns:
+            GameState: Updated game state after all players have placed their bids.
+        """
+
         restriction = - 1
 
         print("Bidding Phase Commencing\n")
         
-        for i, player in enumerate(state.player_order):
+        for i, player in enumerate(players_to_bid):
 
             is_handicapped = False
-            if i == len(player) - 1:
+            if i == len(players_to_bid) - 1:
                 is_handicapped = True
 
             # Restricted bid validation
-            if sum(state.bids.values()) > max_cards:
+            if bids_total > max_cards:
                 restriction = -1
             else:
-                restriction = max_cards - sum(state.bids.values())
+                restriction = max_cards - bids_total
             
-            new_state = self._run_single_player_bid(
+            bid = self._run_single_player_bid(
                 player=player,
                 state = state,
                 is_handicapped = is_handicapped,
                 restriction=restriction
             )    
 
-            state = new_state  # Update state for next player
 
-        return state # Post bidding state
+            bids_total += bid
+
+        return bid 
 
 
     def _run_single_player_bid(self,
@@ -50,7 +60,7 @@ class BiddingFlow:
                               state: GameState,
                               restriction: int = -1,
                               is_handicapped: bool = False
-                              ) -> GameState:
+                              ) -> int:
 
         while True:
             bid_value = self._prompt_for_bid(
@@ -70,7 +80,7 @@ class BiddingFlow:
             if 0 <= bid_value <= 8 and bid_value != restriction:
                 state.bids[player] = bid_value
                 print(f"{player} bid {bid_value}")
-                return state  # Update state
+                return bid_value  # Return the bid value instead of the state
         
             print("Invalid bid, try again")
 
@@ -92,7 +102,7 @@ class BiddingFlow:
         while True:
                 clear_screen()
                 print(
-f"""Round {state.round}: {state.CARDS_PER_ROUND[state.round - 1]} cards per hand""")
+f"""Round {state.round}: {CARDS_PER_ROUND[state.round - 1]} cards per hand""")
 
                 result = self.stepManager.run_step(
                     step = BiddingMenuStep(),

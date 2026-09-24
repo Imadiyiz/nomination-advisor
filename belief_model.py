@@ -1,11 +1,12 @@
 # contents of belief model python file 
 
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from Utils.card_serialization import *
 from Utils.types import *
 
+from collections import defaultdict
 
 # Purposefully decided not to add a score attribute to the belief model as I believe,
 # that the score shouldn't be bound to the belief model class as it would need update for each
@@ -14,13 +15,18 @@ from Utils.types import *
 class BeliefModel:
     """
     Player belief model
-    Represents what one player believes about the game
+    Represents what one player believes about the round
     """
 
     void_suits: dict[PlayerStr, set[str]]  # dict, player id, set(suit)
     unknown_cards: set[CardInt]      # cards not yet assigned
     hand_sizes: dict[PlayerStr, int]  # player -> cards remaining
     perspective_player: PlayerStr
+    bids: dict[PlayerStr, int]  # player -> bid
+    current_trick: tuple[tuple[PlayerStr, CardInt]] # list of (player, card) for the current trick
+    tricks_won: dict[PlayerStr, int] = field(default_factory=lambda: defaultdict(int))  # player -> tricks won
+    trump_suit: TrumpStr | None = None
+
 
     def observe_play(self,
                          player: PlayerStr,
@@ -46,6 +52,10 @@ class BeliefModel:
         """
         Updates beliefs after watching a bid
         """
+
+        # Currently, the belief model does not update based on bids.
+        # This can be extended in the future to incorporate bidding information.
+        pass
 
 
     def sample_world(self) -> dict[PlayerStr, set[CardInt]]:

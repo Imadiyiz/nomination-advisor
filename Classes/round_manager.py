@@ -6,7 +6,7 @@ from Tests.test_Steps import player
 from Utils.types import PlayerStr
 from Classes.player import Player
 from .local_card_assignment_flow import LocalCardAssignmentFlow
-from actions import get_human_hand_assignment, get_random_trump_selection, get_human_trump_selection, get_player_trump_selection    
+from actions import get_bot_trump_selection, get_human_hand_assignment, get_random_trump_selection, get_human_trump_selection, get_player_trump_selection    
 
 from Classes.deck import Deck
 from game_state import GameState
@@ -89,20 +89,27 @@ class RoundManager:
     def select_trump(self, state: GameState):
 
         """Handles the trump selection phase of the round."""
-        if self.gamemode == GameMode.ASSISTANT:
 
+        selected_trump = ''
+
+        # Trump selection logic based on game mode and round
+        if self.gamemode == GameMode.ASSISTANT:
             if state.round == 1:
-                get_random_trump_selection(round=state.round)
+                selected_trump = get_random_trump_selection(round=state.round)
 
             else:
                 # TRUMP REDECIDING PHASE
-                get_human_trump_selection(round=state.round)
+                selected_trump = get_human_trump_selection(round=state.round)
 
-        if self.gamemode == GameMode.SINGLE_PLAYER:
-            if state.round == 1:
-                get_random_trump_selection(round=state.round)
+        elif self.gamemode == GameMode.SINGLE_PLAYER:
+            if state.round == 1 :
+                selected_trump = get_random_trump_selection(round=state.round)
+            elif state.trump_decider and type(self.player_map[state.trump_decider]) == BOT:
+                selected_trump = get_bot_trump_selection(chosen_player=self.player_map[state.trump_decider])
             else:
-                get_player_trump_selection(round=state.round)
+                selected_trump = get_human_trump_selection(round=state.round)
+
+        state.trump_suit = selected_trump
 
     def run_bidding(self, state: GameState):
         """Handles the bidding phase of the round."""
