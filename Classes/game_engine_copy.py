@@ -27,7 +27,6 @@ from .player_setup_flow import PlayerSetupFlow
 from .playing_flow import PlayingFlow
 from .step import *
 from .trump_manager import TrumpManager
-from .trump_selection_type_flow import TrumpSelectionTypeFlow
 from .ui_manager import UIManager
 from .player import Player
 from Utils.constants import VALID_CARD_INITIALS
@@ -42,7 +41,7 @@ class Phase(Enum):
         SCORING = "scoring"
         GAME_OVER = "game_over"
 
-class GameEngine():
+class GameEngine:
 
     def __init__(
         self,
@@ -54,6 +53,7 @@ class GameEngine():
         self.state = state
         self.player_map = player_map
         self.round_manager = round_manager
+        self.mode = mode
 
     def run(self):
         while not self.state.game_over:

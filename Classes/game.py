@@ -1,9 +1,12 @@
-from Classes.game_engine import GameEngine
 from enum import Enum
+
+from Classes.game_engine_copy import GameEngine
+
 
 class GameMode(Enum):
     ASSISTANT = 'assistant'
     SINGLE_PLAYER = 'single_player'
+    SIMULATION = 'simulation'
 
 class Game:
 

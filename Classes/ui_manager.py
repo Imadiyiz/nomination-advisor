@@ -109,6 +109,14 @@ class UIManager:
     def print_invalid_choice_not_legal(choice: CardInt):
         print(f"Invalid card choice, {id_to_initials(choice)} is not a legal move")
 
+    @staticmethod
+    def print_bidding_phase_commencing(round: int):
+        print(f"Bidding Phase Commencing for Round {round}\n")
+
+    @staticmethod
+    def print_determine_initial_trump_suit():
+        print("Determine Initial Trump Suit")
+
     
 @staticmethod
 def table_str_creator(state: GameState) -> str: 

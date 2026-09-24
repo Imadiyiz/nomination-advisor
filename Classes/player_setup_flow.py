@@ -3,9 +3,9 @@ from Utils.types import PlayerStr
 from .step_manager import *
 
 
-class PlayerSetupFlow:
+class HumanPlayerSetupFlow:
     """
-    Handles the flow of steps to configure player selections
+    Handles the flow of steps to configure human player selections
     """
     def __init__(self):
         
@@ -21,7 +21,7 @@ class PlayerSetupFlow:
         #step 1: number of players
 
         while True:
-            print("ENTER THE FOLLOWING PLAYERS IN THE PLAYING ORDER")
+            print("ENTER THE FOLLOWING PLAYERS IN THE PLAYING ORDER // PRINT")
             number_of_players = self.stepManager.run_step(NumPlayerStep())
             if number_of_players != 'BACK':
                 break
@@ -29,7 +29,7 @@ class PlayerSetupFlow:
         #step 2: iterate players
         while len(self.context['player_names']) < int(number_of_players):
             clear_screen()
-            print(f"Configuring player {len(self.context['player_names']) + 1}")
+            print(f"Configuring player {len(self.context['player_names']) + 1} // PRINT")
 
             # runs the player name step and returns a string
             name = self.stepManager.run_step(PlayerNameStep())

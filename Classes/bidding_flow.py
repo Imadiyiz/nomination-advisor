@@ -6,7 +6,7 @@ from .step_manager import *
 from Utils.constants import CARDS_PER_ROUND
 
 
-class BiddingFlow:
+class ManualBiddingFlow:
     """
     Handles the flow of steps to player bids. Accepts a state object and returns the updated gamestate truth.
     This includes the new bids
@@ -15,74 +15,47 @@ class BiddingFlow:
         
         self.stepManager = StepManager()
     
-    def run(self, max_cards: int, players_to_bid: set[PlayerStr], bids_total: int) -> GameState:
+    def run(self,
+            player: PlayerStr,
+            state: GameState,
+            restricted_bid: int) -> int:
         """Runs the bidding flow for players who need to use the CLI to place their bids.
+        Assumes that the restricted bid has been set correctly if applicable.
 
         Args:
-            max_cards (int): Maximum number of cards that can be bid in this round.
-            players_to_bid (set[PlayerStr]): Set of players who need to place bids.
+            restricted_bid (int, optional): The restricted bid value, if any. Defaults to -1.
+            player (PlayerStr): The player who needs to place a bid.
+            restricted_bid (int, optional): The restricted bid value, if any. Defaults to -1.
 
         Returns:
-            GameState: Updated game state after all players have placed their bids.
+            int: The bid placed by the player.
         """
 
-        restriction = - 1
-
-        print("Bidding Phase Commencing\n")
-        
-        for i, player in enumerate(players_to_bid):
-
-            is_handicapped = False
-            if i == len(players_to_bid) - 1:
-                is_handicapped = True
-
-            # Restricted bid validation
-            if bids_total > max_cards:
-                restriction = -1
-            else:
-                restriction = max_cards - bids_total
-            
-            bid = self._run_single_player_bid(
-                player=player,
-                state = state,
-                is_handicapped = is_handicapped,
-                restriction=restriction
-            )    
+        # Determine if the player is handicapped based on the restricted bid.
+        is_handicapped = restricted_bid != -1
 
 
-            bids_total += bid
-
-        return bid 
-
-
-    def _run_single_player_bid(self,
-                              player: PlayerStr,
-                              state: GameState,
-                              restriction: int = -1,
-                              is_handicapped: bool = False
-                              ) -> int:
-
+        # Prompt the player for their bid until a valid bid is received.
         while True:
-            bid_value = self._prompt_for_bid(
-                player=player, 
-                state = state,
-                forbidden_bid=restriction,
-                is_handicapped=is_handicapped
-                )
-            
-            if not bid_value and bid_value != 0:
-                raise ValueError("no bid value received")
-            
-            if bid_value == "BACK":
-                continue
+                bid_value = self._prompt_for_bid(
+                    player=player, 
+                    state = state,
+                    forbidden_bid=restricted_bid,
+                    is_handicapped=is_handicapped
+                    )
+                
+                if not bid_value and bid_value != 0:
+                    raise ValueError("no bid value received")
+                
+                if bid_value == "BACK":
+                    continue
 
-            # Ensure the bid is valid
-            if 0 <= bid_value <= 8 and bid_value != restriction:
-                state.bids[player] = bid_value
-                print(f"{player} bid {bid_value}")
-                return bid_value  # Return the bid value instead of the state
-        
-            print("Invalid bid, try again")
+                # Ensure the bid is valid
+                if 0 <= bid_value <= 8 and bid_value != restricted_bid:
+                    print(f"{player} bid {bid_value} // PRINT STATEMENT")
+                    return bid_value  # Return the bid value instead of the state
+            
+                print("Invalid bid, try again // PRINT STATEMENT")
 
     def _prompt_for_bid(self,
                             player: PlayerStr,

@@ -216,33 +216,6 @@ class GameEngine:
 
         # Everything is valid hence move on to next phase
         self.phase = Phase.BIDDING
-    
-    def _select_trump_automatically(self):  # THOUGHT: Could migrate to trump manager
-        """
-        Selects trump card automatically, assigning it to game_state,
-        while also outputting information depending on the gamemode.
-        """
-
-        self.game_state.trump_suit = random.choice(SUITS)
-
-
-        if self.gamemode == 'assistant':
-            clear_screen()
-            self.UIManager.print_random_trump_confirmation(state=self.game_state)
-    
-         *** # Currently at this part of the game engine, right after automatic trump selection, where I am converting it to round manager
-    def handle_bidding_phase(self):
-        """
-        Bidding logic
-        """
-        # THOUGHT: Why do we get next round state for the initial bidding phase
-        # shouldnt I check before enforcing this
-
-        #starts the bidding process and must update state
-        if self.gamemode == GameMode.ASSISTANT:
-            self.state = self.biddingFlow.run(state=self.game_state)
-
-        self.phase = Phase.PLAYING
 
     def handle_playing_phase(self):
         """

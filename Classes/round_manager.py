@@ -6,12 +6,16 @@ from Tests.test_Steps import player
 from Utils.types import PlayerStr
 from Classes.player import Player
 from .local_card_assignment_flow import LocalCardAssignmentFlow
-from actions import get_bot_trump_selection, get_human_hand_assignment, get_random_trump_selection, get_human_trump_selection, get_player_trump_selection    
+from actions import (
+    get_bot_trump_selection,
+    get_human_hand_assignment, 
+    get_random_trump_selection, 
+    get_human_trump_selection, 
+    get_human_bid)
 
 from Classes.deck import Deck
 from game_state import GameState
-from .bidding_flow import BiddingFlow
-from .iterative_trump_flow import IterativeTrumpFlow
+from .bidding_flow import ManualBiddingFlow
 from .manual_trump_selection_flow import ManualTrumpSelectionFlow
 from .player_setup_flow import PlayerSetupFlow
 from .playing_flow import PlayingFlow
@@ -30,8 +34,7 @@ class RoundManager:
             gamemode (GameMode): The current game mode.
         """
         self.deck = None
-        self.bidding_flow = BiddingFlow()
-        self.iterative_trump_flow = IterativeTrumpFlow()
+        self.manual_bidding_flow = ManualBiddingFlow()
         self.manual_trump_selection_flow = ManualTrumpSelectionFlow()
         self.player_setup_flow = PlayerSetupFlow()
         self.playing_flow = PlayingFlow()
@@ -72,7 +75,8 @@ class RoundManager:
                 deck=self.deck,
             )
 
-        elif self.gamemode == GameMode.SINGLE_PLAYER:
+        elif (self.gamemode == GameMode.SINGLE_PLAYER or 
+              self.gamemode == GameMode.SIMULATION):
 
             # Automatically assign hands to players based on the game mode and player type
             for player in state.player_order:
@@ -86,36 +90,48 @@ class RoundManager:
             
 
 
-    def select_trump(self, state: GameState):
+    def select_trump(self, state: GameState) -> None:
 
         """Handles the trump selection phase of the round."""
 
         selected_trump = ''
 
         # Trump selection logic based on game mode and round
-        if self.gamemode == GameMode.ASSISTANT:
-            if state.round == 1:
-                selected_trump = get_random_trump_selection(round=state.round)
 
-            else:
-                # TRUMP REDECIDING PHASE
-                selected_trump = get_human_trump_selection(round=state.round)
-
-        elif self.gamemode == GameMode.SINGLE_PLAYER:
-            if state.round == 1 :
-                selected_trump = get_random_trump_selection(round=state.round)
-            elif state.trump_decider and type(self.player_map[state.trump_decider]) == BOT:
-                selected_trump = get_bot_trump_selection(chosen_player=self.player_map[state.trump_decider])
-            else:
-                selected_trump = get_human_trump_selection(round=state.round)
-
+        # Always randomise the trump selection for the first round
+        if state.round == 1:
+            selected_trump = get_random_trump_selection(round=state.round)
+        elif (self.gamemode == GameMode.SINGLE_PLAYER and 
+            state.trump_decider == state.perspective) or (
+            self.gamemode == GameMode.ASSISTANT):
+            selected_trump = get_human_trump_selection(round=state.round,
+                                                        player_name=state.trump_decider)
+        else:
+            selected_trump = get_bot_trump_selection(
+                chosen_player=self.player_map[state.trump_decider])
         state.trump_suit = selected_trump
 
     def run_bidding(self, state: GameState):
         """Handles the bidding phase of the round."""
-        # Implementation for bidding goes here
-        pass
 
+
+        for player in state.player_order:
+
+            restricted_bid = self._get_restricted_bid(state.bids, CARDS_PER_ROUND[state.round])
+
+            # Handle bidding for the current player based on the game mode and player type.
+            if self.gamemode == GameMode.ASSISTANT or \
+            (self.gamemode == GameMode.SINGLE_PLAYER and player == state.perspective):
+                bid = get_human_bid(round=state.round,
+                                    player_name=player,
+                                    state=state,
+                                    restricted_bid=restricted_bid)
+            else:
+                bid = self.player_map[player].choose_bid()
+
+            state.bids[player] = bid
+
+    
     def play_round(self, state: GameState):
 
         """Handles the playing phase of the round, where players play their cards."""
@@ -142,6 +158,8 @@ class RoundManager:
 
         """Plays out a single trick within the round."""
 
+        self.playingFlow = PlayingFlow()
+
         for player in self.state.player_order:
             player = self.state.next_player()
 
@@ -152,3 +170,14 @@ class RoundManager:
                 player=player,
                 card=action,
             )
+
+    def _get_restricted_bid(self, bids: dict[PlayerStr, int], max_cards: int) -> int:
+        """Determines the restricted bid for the current player based on the game rules.
+        Should have probably gone in biddingManager but it is sufficient here for now."""
+
+        bid_total = sum(bids.values())
+        if len(bids) == len(self.state.player_order) - 1:
+            restricted_bid = max_cards - bid_total
+        else:
+            restricted_bid = -1
+        return restricted_bid

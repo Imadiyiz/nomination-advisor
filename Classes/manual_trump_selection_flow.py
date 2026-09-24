@@ -1,4 +1,5 @@
 from Utils.card_serialization import get_suit_from_initial
+from Utils.types import PlayerStr
 
 from .step_manager import *
 
@@ -13,9 +14,9 @@ class ManualTrumpSelectionFlow:
         
         self.stepManager = StepManager()
     
-    def run(self):
+    def run(self, player_name: PlayerStr):
 
-        validate_args = {}
+        validate_args = {'player': player_name}
         
         # Results are already sanitised
         result = self.stepManager.run_step(

@@ -209,8 +209,10 @@ class ManualTrumpStep(Step):
 
     def prompt(self,
                args: dict) -> str:
+
+        player = args['player']        
+        return f""" {player} is deciding the trump suit.
         
-        return """
 [C] Clubs
 [S] Spades
 [H] Hearts

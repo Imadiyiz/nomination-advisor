@@ -1,13 +1,12 @@
-from Classes.ui_manager import UIManager
 from Classes.ui_manager import (
     CLI_format_hand,
     player_hand_str_creator,
+    scoreboard_display,
     table_str_creator,
-    scoreboard_display
 )
 from game_state import GameState
-from Utils.types import CardInt, PlayerStr
 from Utils.card_serialization import initials_to_id
+from Utils.types import CardInt, PlayerStr
 
 from .step_manager import *
 
@@ -21,8 +20,7 @@ class PlayingFlow:
     def __init__(self):
         
         self.stepManager = StepManager()
-        self.UIManager = UIManager()
-    
+
     def play_turn(self, player: PlayerStr, state: GameState) -> CardInt:
         """
         Logic for prompting the player to play their cards, loops until

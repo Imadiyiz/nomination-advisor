@@ -104,3 +104,139 @@ DECISION -> ACTION -> EXECUTION -> GAMESTATE
 This is the architecture I am trying to implement, I have made progress today but have lost focus and become veryy frustrated witb the task of incorporating the three game modes. Now there are two game modes where the player will be able to view bots play the game. Now that I think of it, sim is diffeent to single player, and the diffeerence is the verbpse natire of the two. Sim would only output the winners and the scoes, not what p2 bid on round 2.
 
 I am mid way through game_engine refactoring to round_manager. The actions are being abstracted into the actions file, wheer theu can be later seperated further by directory.
+
+24/09/26
+
+VERBOSE LIST
+
+SIM NOTHING VERBOSE
+
+ASSISTANT EVERYTHING VERBOSE AND SINGLE PLAYER EVERYTHING VERBOSE
+
+They are not the same
+
+FLOW
+
+FB = Feedback
+RT = Retrace (Must be able to go back and edit valid answers)
+WLC = Welcome
+E = Enter (So that player can acknowledge they are happy with their previous input)
+
+ASSISTANT
+
+WLC TO GAME 
+HOW MANY PLAYERS SETUP (RT)
+FB
+LOOP PLAYER.LEN TIMES
+    PLAYER X NAME (RT)
+    FB
+    PERSPECTIVE PLAYER? (RT)
+    FB
+E
+
+STATEMENT ASSIGN CARDS
+LOOP MAX_CARD TIMES
+    ASSIGN CARD TO PERSPECTIVE HAND (RT)
+    FB
+E
+
+RANDOM TRUMP ASSIGNED
+E
+
+STATEMENT BIDDING ROUND
+LOOP PLAYER.LEN TIMES
+    PLAYER BID AMOUNT? (RT)
+    FB
+E
+
+STATEMENT PLAY ROUND
+
+SHOW MENU ETC (SAME FLOW AS CURRENTLY IMPLEMENTED)
+
+LOOP MAX_CARDS TIMES
+    PERSPECTIVE SELECTS INDEX OF CARD THEY WANT TO PLAY
+    FB
+    PLAYER TYPES INITIALS OF CARD THEY WANT TO PLAY (RT)
+    FB
+    MENU/TRICK UPDATES
+    E
+
+ROUND SCORES DISPLAYED
+TOTAL SCORES DISPLAYED
+E
+
+TRUMP DECIDED
+FB
+TRUMP SELECTION  # Should not be able to change trump once chosen
+FB
+
+LOOP BACK TO BIDDING ROUND UNTIL 6 ROUNDS HAVE COMPLETED
+
+END CREDITS AND ASK TO SEND BACK TO MAIN MENU
+
+
+**SINGLE_PLAYER**
+
+WLC TO GAME 
+HOW MANY PLAYERS SETUP (RT)
+FB
+LOOP PLAYER.LEN TIMES
+    BOT X NAME (RT)
+    FB
+    BOT TYPE (RT)
+    FB
+    PERSPECTIVE PLAYER? (RT)
+    FB
+E
+
+STATEMENT ASSIGN CARDS
+ASSIGN RANDOM CARDS TO ALL PLAYERS
+FB PERSPECTIVE HAND
+E
+
+
+RANDOM TRUMP ASSIGNED
+E
+
+STATEMENT BIDDING ROUND
+LOOP PLAYER.LEN TIMES
+    PLAYER BID AMOUNT? (RT)
+    FB
+    PERSPECTIVE BID? # No BACKTRACKING
+    FB
+E
+
+STATEMENT PLAY ROUND
+
+SHOW MENU ETC (SAME FLOW AS CURRENTLY IMPLEMENTED)
+
+LOOP MAX_CARDS TIMES
+    PERSPECTIVE SELECTS INDEX OF CARD THEY WANT TO PLAY
+    FB
+    BOT PLAYS THEIR CARD
+    FB
+    MENU/TRICK UPDATES
+    E
+
+ROUND SCORES DISPLAYED
+TOTAL SCORES DISPLAYED
+E
+
+TRUMP DECIDER
+FB
+TRUMP SELECTION  # Should not be able to change trump once chosen
+FB
+
+LOOP BACK TO BIDDING ROUND UNTIL 6 ROUNDS HAVE COMPLETED
+
+END CREDITS AND ASK TO SEND BACK TO MAIN MENU
+
+
+**SIM**
+
+ASSIGN BOTS AND THEIR TYPES FROM SCRIPT
+
+ONLY OUTPUT SCORES
+
+
+
