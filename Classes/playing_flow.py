@@ -11,7 +11,7 @@ from Utils.types import CardInt, PlayerStr
 from .step_manager import *
 
 
-class PlayingFlow:
+class HumanPlayingFlow:
     """
     Handles the flow of steps to play cards
 
@@ -24,7 +24,8 @@ class PlayingFlow:
     def play_turn(self, player: PlayerStr, state: GameState) -> CardInt:
         """
         Logic for prompting the player to play their cards, loops until
-        valid move has been performed.
+        valid move has been performed. Diverts to different methods based on whether the player
+        is local or an opponent.
 
         Returns Cardint e.g 50, 13
         """

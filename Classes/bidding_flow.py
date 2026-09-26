@@ -23,9 +23,9 @@ class ManualBiddingFlow:
         Assumes that the restricted bid has been set correctly if applicable.
 
         Args:
-            restricted_bid (int, optional): The restricted bid value, if any. Defaults to -1.
             player (PlayerStr): The player who needs to place a bid.
-            restricted_bid (int, optional): The restricted bid value, if any. Defaults to -1.
+            state (GameState): The current state of the game.
+            restricted_bid (int): The restricted bid value, if any.
 
         Returns:
             int: The bid placed by the player.
@@ -33,7 +33,6 @@ class ManualBiddingFlow:
 
         # Determine if the player is handicapped based on the restricted bid.
         is_handicapped = restricted_bid != -1
-
 
         # Prompt the player for their bid until a valid bid is received.
         while True:
@@ -52,7 +51,6 @@ class ManualBiddingFlow:
 
                 # Ensure the bid is valid
                 if 0 <= bid_value <= 8 and bid_value != restricted_bid:
-                    print(f"{player} bid {bid_value} // PRINT STATEMENT")
                     return bid_value  # Return the bid value instead of the state
             
                 print("Invalid bid, try again // PRINT STATEMENT")

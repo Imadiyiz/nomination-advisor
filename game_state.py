@@ -1,11 +1,10 @@
 import random
 from dataclasses import dataclass, field
 
+from Classes.game_rules import GameRules
 from Utils.card_serialization import *
 from Utils.nom_rule_tools import calculate_correct_bid_score
 from Utils.types import *
-
-from Classes.game_rules import GameRules
 
 # This GameState class is for showing what the gamestate is after actions occur
 

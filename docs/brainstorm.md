@@ -240,3 +240,7 @@ ONLY OUTPUT SCORES
 
 
 
+26/10/26
+
+I am fixing RoundManager, and I'm on the playing phase. I think a better way of handling the phases through RoundManager would be to have biddingManagers or TrumpManagers etc, as they are helpful. Therefore I could have if gamemode.Assistant, do_assistant_trump_phase, where each gamemode variant takes a TrumpPhase parent class and uses their own logic to perform the trump phase. Would make debugging the CLI outputs cleaner. 
+    I also thought about the belief model and wondered whether the observe play was even called. I do not believe it is ever called so it has no effect on the sampled worlds. Therefore, the simulations I was performing before will not be correct.

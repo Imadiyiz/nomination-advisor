@@ -62,7 +62,7 @@ class UIManager:
         print(f"{choice_of_initials} is no longer in the deck")
 
     @staticmethod
-    def print_player_decides_trump(self,
+    def print_player_is_trump_decider(
                                    player: PlayerStr,
                                    perspective: PlayerStr = ''):
         """Prints a statement indicating which player decides the trump for the next round.
@@ -77,11 +77,15 @@ class UIManager:
             print("You determine trump for next round")
 
     @staticmethod
+    def print_bot_bid_turn(player: PlayerStr):
+        print(f"{player}'s turn to bid: ")
+
+    @staticmethod
     def print_total_score(state: GameState): 
         print("Total score: ", scoreboard_display(state, round=False))
 
     @staticmethod
-    def print_choice_made(choice: CardInt, player: PlayerStr = '',
+    def print_player_card_selection(choice: CardInt, player: PlayerStr = '',
                           perspective: PlayerStr = ''):
         """Prints the card choice made by a player or the perspective player.
 
@@ -108,14 +112,30 @@ class UIManager:
     @staticmethod
     def print_invalid_choice_not_legal(choice: CardInt):
         print(f"Invalid card choice, {id_to_initials(choice)} is not a legal move")
+    
+    @staticmethod
+    def print_playing_phase_commencing(round: int):
+        print(f"Playing Phase Commencing for Round {round}\n")
+    
+    @staticmethod
+    def print__random_hands_assignment_commencing(round: int):
+        print(f"random hands assignment commencing for Round {round}\n")
 
     @staticmethod
-    def print_bidding_phase_commencing(round: int):
-        print(f"Bidding Phase Commencing for Round {round}\n")
+    def print_trump_phase_commencing(round: int):
+        print(f"Trump Phase Commencing for Round {round}\n")
+
+    @staticmethod
+    def print_player_selects_trump(player: PlayerStr, trump: str):
+        print(f"Trump selected: {trump}")
 
     @staticmethod
     def print_determine_initial_trump_suit():
         print("Determine Initial Trump Suit")
+
+    @staticmethod
+    def print_chosen_bid(player: PlayerStr, bid: int):
+        print(f"{player} chose bid: {bid}")
 
     
 @staticmethod

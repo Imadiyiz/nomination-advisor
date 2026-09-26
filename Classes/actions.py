@@ -8,6 +8,7 @@ from Classes.bidding_flow import ManualBiddingFlow
 from Classes.deck import Deck
 from Classes.local_card_assignment_flow import LocalCardAssignmentFlow
 from Classes.manual_trump_selection_flow import ManualTrumpSelectionFlow
+from Classes.playing_flow import HumanPlayingFlow
 from Classes.player import Player
 from Classes.ui_manager import UIManager
 from game_state import GameState
@@ -54,6 +55,7 @@ class HandAssignmentAction:
 
 ActionT = BidAction | TrumpAction | PlayCardAction | HandAssignmentAction
 
+# Provider functions for human and random actions in the game.
 
 def get_human_hand_assignment(perspective: PlayerStr, 
                               cards_this_round: int, 
@@ -70,6 +72,7 @@ def get_human_hand_assignment(perspective: PlayerStr,
     Returns:
         HandAssignmentAction: The action representing the set of cards assigned to the player. (Sanitized and validated against the deck)
     """
+
     local_card_assignment_flow = LocalCardAssignmentFlow(valid_card_initials=VALID_CARD_INITIALS)
     local_card_assignment_flow.generate_prompt(perspective)
 
@@ -111,11 +114,10 @@ def get_human_trump_selection(round: int, player_name: PlayerStr) -> TrumpAction
     """
 
     clear_screen() #2
-    UIManager().print_opening_bidding_round_statement(round = round)
     trump_suit = ManualTrumpSelectionFlow().run(player_name=player_name)
     return TrumpAction(trump=trump_suit)
 
-def get_random_trump_selection(round: int) -> TrumpAction:
+def get_random_trump_selection() -> TrumpAction:
     """
     Selects a trump suit randomly.
 
@@ -126,7 +128,6 @@ def get_random_trump_selection(round: int) -> TrumpAction:
         TrumpAction: The randomly selected trump suit.
     """
     clear_screen() #2
-    UIManager().print_opening_bidding_round_statement(round=round)
     random_trump = random.choice(['Clubs', 'Diamonds', 'Hearts', 'Spades'])
     UIManager().print_random_trump_confirmation(trump=random_trump)
     return TrumpAction(trump=random_trump)
@@ -146,9 +147,9 @@ def get_bot_trump_selection(chosen_player: Player) -> TrumpAction:
     trump_suit = chosen_player.choose_trump_suit()
     return TrumpAction(trump=trump_suit)
 
-def get_human_bid(round: int, player_name: PlayerStr, state: GameState, restricted_bid: int) -> BidAction:
+def get_human_bid(player_name: PlayerStr, state: GameState, restricted_bid: int) -> BidAction:
     """
-    Prompts the human player to place a bid.
+    Prompts the human player to place a bid. Also res
 
     Args:
         round (int): The current round number.
@@ -160,7 +161,59 @@ def get_human_bid(round: int, player_name: PlayerStr, state: GameState, restrict
         BidAction: The bid placed by the human player.
     """
 
-    clear_screen() #2
-    UIManager().print_bidding_phase_commencing(round=round)
+    clear_screen() #
     bid = ManualBiddingFlow().run(player=player_name, state=state, restricted_bid=restricted_bid)
+    UIManager().print_chosen_bid(player=player_name, bid=bid)
     return BidAction(bid=bid)
+
+def get_random_hand_assignment(round: int, deck: Deck) -> HandAssignmentAction:
+    """
+    Assigns a random hand to a player from the given deck.
+
+    Args:
+        round (int): The current round number.
+        deck (Deck): The deck from which to draw cards.
+
+    Returns:
+        HandAssignmentAction: The randomly assigned hand.
+    """
+
+    hand_sample = random.sample(
+        population=deck.cards,
+        k=CARDS_PER_ROUND[round],
+    )
+    deck.remove_cards(set(hand_sample))
+    return HandAssignmentAction(hand=set(hand_sample))
+
+def get_bot_bid(player: Player) -> BidAction:
+    """
+    Automatically generates a bid for the bot player.
+
+    Args:
+        player (Player): The bot player who is placing the bid.
+
+    Returns:
+        BidAction: The bid chosen by the bot player.
+    """
+
+    clear_screen() #2
+    bid = player.choose_bid()
+    return BidAction(bid=bid)
+
+def get_human_card(player_name: PlayerStr, state: GameState, perspective: PlayerStr = '') -> PlayCardAction:
+    """
+    Prompts the human player to select a card to play. Outputs the selection to the UI.
+
+    Args:
+        player_name (PlayerStr): The name of the player selecting the card.
+        state (GameState): The current state of the game.
+        perspective (PlayerStr, optional): The perspective player. Defaults to ''.
+
+    Returns:
+        PlayCardAction: The card selected by the human player.
+    """
+
+    clear_screen()
+    card = HumanPlayingFlow().play_turn(player=player_name, state=state)
+    UIManager().print_player_card_selection(choice=card, player=player_name, perspective=perspective)
+    return PlayCardAction(card=card)
