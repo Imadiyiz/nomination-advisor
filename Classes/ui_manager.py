@@ -5,6 +5,8 @@ from Utils.types import CardInt, PlayerStr, TrumpStr
 
 from Utils.constants import CARDS_PER_ROUND
 
+from Utils.cli_tools import clear_screen
+
 class UIManager:
     """
     Manages UI elements containing CLI and future GUI outputs
@@ -82,6 +84,7 @@ class UIManager:
 
     @staticmethod
     def print_total_score(state: GameState): 
+        clear_screen(5)
         print("Total score: ", scoreboard_display(state, round=False))
 
     @staticmethod
@@ -136,7 +139,6 @@ class UIManager:
     @staticmethod
     def print_chosen_bid(player: PlayerStr, bid: int):
         print(f"{player} chose bid: {bid}")
-
     
 @staticmethod
 def table_str_creator(state: GameState) -> str: 

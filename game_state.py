@@ -20,25 +20,25 @@ class GameState:
     Attributes:
         
     """
+    player_order: tuple[PlayerStr, ...]   # fixed initial seating order
     
-    hands: dict[PlayerStr, set[CardInt]]           # player_id -> cards.initials
-    current_trick: tuple[tuple[PlayerStr, CardInt], ...]        # (player_id, card)
-    trump_suit: TrumpStr
-    player_order: tuple[PlayerStr, ...]   # fixed seating order
-    round_scores: dict[PlayerStr, int]
-    total_scores: dict[PlayerStr, int]
+    # Must use default_factory for when declaring mutable types
+    hands: dict[PlayerStr, set[CardInt]] = field(default_factory = dict)
+    current_trick: tuple[tuple[PlayerStr, CardInt], ...]  = ((, ),)
+    round_scores: dict[PlayerStr, int] = field(default_factory=dict)
+    total_scores: dict[PlayerStr, int] = field(default_factory=dict)
+    bids: dict[PlayerStr, int]  = field(default_factory=dict)      # Don't always have bids assigned and 
     winner: PlayerStr | None = None            # Winner of the previous trick
     trick_completed: bool = False
-    
 
-    # Must use default_factory for when declaring mutable types
-    bids: dict[PlayerStr, int]  = field(default_factory=dict)      # Don't always have bids assigned and 
-    # Private attribute
-    _leader: PlayerStr | None = None
     round: int = 1
     game_over: bool = False
     trump_decider: str = ''
+    trump_suit: TrumpStr | None = None
     perspective: PlayerStr = '' # Used during single player games, does not affect MC sim
+
+    # Private attribute
+    _leader: PlayerStr | None = None
 
     # Constants
     CARDS_PER_ROUND = (1, 2)# (8,7,6,6,7,8)

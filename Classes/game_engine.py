@@ -303,12 +303,3 @@ class GameEngine:
             self.state = self.game_state.apply_move(player=player,
                                         card=choice)
             break  # successful play
-
-    def _select_trump_manually(self):
-        """Assigns trump suit to game state based on user input from
-        manual trump selection flow"""
-
-        selected_trump_suit = self.manual_trump_selection_flow.run()
-
-
-        self.game_state.trump_suit = selected_trump_suit

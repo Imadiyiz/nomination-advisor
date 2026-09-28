@@ -1,10 +1,11 @@
 # Contents of the Player class python file
 
 from dataclasses import dataclass
+from player import Player
 
 
 @dataclass
-class HumanPlayer:
+class PerspectivePlayer(Player):
     """
     Handles the hand functionality of players.
     Players are able to collect hands and play cards.

@@ -200,14 +200,13 @@ def get_bot_bid(player: Player) -> BidAction:
     bid = player.choose_bid()
     return BidAction(bid=bid)
 
-def get_human_card(player_name: PlayerStr, state: GameState, perspective: PlayerStr = '') -> PlayCardAction:
+def get_human_card(player_name: PlayerStr, state: GameState) -> PlayCardAction:
     """
     Prompts the human player to select a card to play. Outputs the selection to the UI.
 
     Args:
         player_name (PlayerStr): The name of the player selecting the card.
         state (GameState): The current state of the game.
-        perspective (PlayerStr, optional): The perspective player. Defaults to ''.
 
     Returns:
         PlayCardAction: The card selected by the human player.
@@ -215,5 +214,5 @@ def get_human_card(player_name: PlayerStr, state: GameState, perspective: Player
 
     clear_screen()
     card = HumanPlayingFlow().play_turn(player=player_name, state=state)
-    UIManager().print_player_card_selection(choice=card, player=player_name, perspective=perspective)
+    UIManager().print_player_card_selection(choice=card, player=player_name, perspective=state.perspective)
     return PlayCardAction(card=card)

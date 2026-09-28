@@ -2,7 +2,7 @@
 
 import random
 from enum import Enum
-from game import GameMode
+from Classes.game import GameMode
 
 from game_state import GameState
 from round_manager import RoundManager
@@ -16,19 +16,9 @@ from Utils.card_serialization import (
 )
 from Utils.cli_tools import clear_screen
 from Utils.types import CardInt, PlayerStr, TrumpStr
-
-from .bidding_flow import BiddingFlow
-from .deck import Deck
-from .human_player import HumanPlayer
-from .iterative_trump_flow import IterativeTrumpFlow
-from .local_card_assignment_flow import LocalCardAssignmentFlow
-from .manual_trump_selection_flow import ManualTrumpSelectionFlow
-from .player_setup_flow import PlayerSetupFlow
-from .playing_flow import PlayingFlow
 from .step import *
-from .trump_manager import TrumpManager
-from .ui_manager import UIManager
 from .player import Player
+from .human_player import PerspectivePlayer
 from Utils.constants import VALID_CARD_INITIALS
 
 class Phase(Enum):
@@ -46,14 +36,13 @@ class GameEngine:
     def __init__(
         self,
         state: GameState,
-        player_map: dict[PlayerStr, Player],
-        round_manager: RoundManager,
         mode: GameMode,
+        player_map: dict[PlayerStr, Player] = {},
     ):
         self.state = state
-        self.player_map = player_map
-        self.round_manager = round_manager
-        self.mode = mode
+        self.round_manager = RoundManager(
+             player_map=player_map,
+             gamemode=mode)
 
     def run(self):
         while not self.state.game_over:
