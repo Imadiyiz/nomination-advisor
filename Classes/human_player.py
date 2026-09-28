@@ -1,7 +1,7 @@
 # Contents of the Player class python file
 
 from dataclasses import dataclass
-from player import Player
+from Classes.player import Player
 
 
 @dataclass

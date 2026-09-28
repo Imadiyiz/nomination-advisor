@@ -24,7 +24,7 @@ class GameState:
     
     # Must use default_factory for when declaring mutable types
     hands: dict[PlayerStr, set[CardInt]] = field(default_factory = dict)
-    current_trick: tuple[tuple[PlayerStr, CardInt], ...]  = ((, ),)
+    current_trick: tuple[tuple[PlayerStr, CardInt], ...]  = ()
     round_scores: dict[PlayerStr, int] = field(default_factory=dict)
     total_scores: dict[PlayerStr, int] = field(default_factory=dict)
     bids: dict[PlayerStr, int]  = field(default_factory=dict)      # Don't always have bids assigned and 

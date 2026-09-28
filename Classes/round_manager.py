@@ -2,7 +2,7 @@ from Classes.game import GameMode
 from Classes.ui_manager import UIManager
 from Utils.types import PlayerStr
 from Classes.player import Player
-from actions import (
+from Classes.actions import (
     get_bot_trump_selection,
     get_human_hand_assignment, 
     get_random_trump_selection, 
@@ -59,13 +59,13 @@ class RoundManager:
         # ASSISTANT MODE HANDLING
         if self.gamemode == GameMode.ASSISTANT:
 
-            # Assign human hand for the perspective player
-            self.deck.remove_cards(self.state.hands[self.state.perspective])
             self.state.hands[self.state.perspective] = get_human_hand_assignment(
                 perspective=self.state.perspective,
                 cards_this_round=CARDS_PER_ROUND[self.state.round],
-                deck=self.deck,
-            ).hand
+                deck=self.deck).hand
+                        # Assign human hand for the perspective player
+                        
+            self.deck.remove_cards(self.state.hands[self.state.perspective])
             return 
         
         if self.gamemode == GameMode.SINGLE_PLAYER:

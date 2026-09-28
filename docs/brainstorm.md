@@ -246,3 +246,5 @@ I am fixing RoundManager, and I'm on the playing phase. I think a better way of 
     I also thought about the belief model and wondered whether the observe play was even called. I do not believe it is ever called so it has no effect on the sampled worlds. Therefore, the simulations I was performing before will not be correct.
 
 28/10/26
+
+Need to setup hands, bids, etc post initialisation as they are currently empty and provind key errors.
