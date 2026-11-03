@@ -1,21 +1,21 @@
-from Classes.game import GameMode
-from Classes.ui_manager import UIManager
-from Utils.types import PlayerStr
-from Classes.player import Player
 from Classes.actions import (
-    get_bot_trump_selection,
-    get_human_hand_assignment, 
-    get_random_trump_selection, 
-    get_human_trump_selection, 
-    get_human_bid,
-    get_random_hand_assignment,
     get_bot_bid,
+    get_bot_trump_selection,
+    get_human_bid,
     get_human_card,
+    get_human_hand_assignment,
+    get_human_trump_selection,
+    get_random_hand_assignment,
+    get_random_trump_selection,
 )
-
 from Classes.deck import Deck
+from Classes.game import GameMode
+from Classes.player import Player
+from Classes.ui_manager import UIManager
 from game_state import GameState
 from Utils.constants import CARDS_PER_ROUND
+from Utils.types import PlayerStr
+
 
 class RoundManager:
     """Manages the flow of a round in the game. Responsible for handling player setup, 
@@ -59,17 +59,16 @@ class RoundManager:
         # ASSISTANT MODE HANDLING
         if self.gamemode == GameMode.ASSISTANT:
 
+            # Assign human hand for the perspective player
             self.state.hands[self.state.perspective] = get_human_hand_assignment(
                 perspective=self.state.perspective,
                 cards_this_round=CARDS_PER_ROUND[self.state.round],
-                deck=self.deck).hand
-                        # Assign human hand for the perspective player
-                        
+                deck=self.deck).hand         
             self.deck.remove_cards(self.state.hands[self.state.perspective])
             return 
         
         if self.gamemode == GameMode.SINGLE_PLAYER:
-            self.ui_manager.print__random_hands_assignment_commencing(round=self.state.round)
+            self.ui_manager.print_random_hands_assignment_commencing(round=self.state.round)
         
         # For both single player and sim modes, assign random hands to all players
         for player in self.state.player_order:
@@ -141,7 +140,7 @@ class RoundManager:
         # Loop through the number of cards in the round, as each player will play one card per trick
         # Assumes all the players start with the same amount of cards
         for _ in range(max_cards_this_round):
-            self._play_trick(state = self.state)
+            self._play_trick()
 
     def score_round(self):
         """Calculates and updates scores based on the results of the round."""
@@ -176,9 +175,13 @@ class RoundManager:
             elif self.gamemode == GameMode.ASSISTANT:
                 card_selected = get_human_card(player_name=player, state=self.state).card
 
+            else:
+                raise ValueError(f"Unsupported game mode: {self.gamemode}")
 
             # Apply move for player regardless of gamemode
-            self.state = self.state.apply_move(player=player, card=card_selected)
+            self.state = self.state.apply_move(
+                player=player,
+                card=card_selected)
 
     def _get_restricted_bid(self, bids: dict[PlayerStr, int], max_cards: int, player_amount: int) -> int:
         """Determines the restricted bid for the current player based on the game rules.

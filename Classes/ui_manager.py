@@ -13,11 +13,11 @@ class UIManager:
     """
 
     @staticmethod
-    def get_custom_player_input(self, prompt: str) -> str:
+    def get_custom_player_input(prompt: str) -> str:
         return input(prompt)
 
     @staticmethod
-    def display_custom_message(self, message:str):
+    def display_custom_message(message:str):
         print(message)
 
     @staticmethod
@@ -121,7 +121,7 @@ class UIManager:
         print(f"Playing Phase Commencing for Round {round}\n")
     
     @staticmethod
-    def print__random_hands_assignment_commencing(round: int):
+    def print_random_hands_assignment_commencing(round: int):
         print(f"random hands assignment commencing for Round {round}\n")
 
     @staticmethod
@@ -184,8 +184,11 @@ def display_hand_str(
 @staticmethod
 def player_hand_str_creator(player: PlayerStr, state: GameState) -> str:
 
-    player_hand = state.hands[player]
-    max_cards = state.CARDS_PER_ROUND[state.round]
+    if player in state.hands:
+        player_hand = state.hands[player]
+    else:
+        player_hand = set()
+    max_cards = CARDS_PER_ROUND[state.round]
     hand_output = []
 
     if not player_hand:

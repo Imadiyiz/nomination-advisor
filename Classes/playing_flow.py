@@ -31,12 +31,12 @@ class HumanPlayingFlow:
         """
 
         if player == state.perspective:
-            return self._prompt_for_local_play_card(player, state)
+            return self._prompt_for_perspective_play_card(player, state)
         else:
             return self._prompt_for_opponent_play_card(player, state)
             
                 
-    def _prompt_for_local_play_card(self,
+    def _prompt_for_perspective_play_card(self,
                                     player: PlayerStr,
                                     state: GameState) -> CardInt:
         """

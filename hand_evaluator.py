@@ -23,7 +23,10 @@ class HandEvaluator:
             void_suits = {p: set() for p in self.state.player_order},
             unknown_cards = VALID_CARD_IDS - self.state.hands[self.perspective],
             hand_sizes={p: len(self.state.hands[p]) for p in self.state.player_order},
-            perspective_player=self.perspective            
+            perspective_player=self.perspective,
+            bids=dict(self.state.bids),
+            current_trick=tuple(self.state.current_trick),
+            trump_suit=str(self.state.trump_suit)           
         )
 
     def _get_determinised_state(self) -> GameState:
@@ -231,6 +234,9 @@ class HandEvaluator:
         banned_bid = -1
         hand_size = len(simulator.state.hands[self.perspective])
         player_amount = len(simulator.bot_players_map.values())
+
+        if simulator.state.trump_suit is None:
+            raise ValueError("Trump suit must be defined before initializing strong card bids.")
 
         for i, bot in enumerate(simulator.bot_players_map.values()):
             if i == player_amount - 1:

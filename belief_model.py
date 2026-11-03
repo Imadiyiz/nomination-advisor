@@ -23,7 +23,7 @@ class BeliefModel:
     hand_sizes: dict[PlayerStr, int]  # player -> cards remaining
     perspective_player: PlayerStr
     bids: dict[PlayerStr, int]  # player -> bid
-    current_trick: tuple[tuple[PlayerStr, CardInt]] # list of (player, card) for the current trick
+    current_trick: tuple[tuple[PlayerStr, CardInt], ...] # list of (player, card) for the current trick
     tricks_won: dict[PlayerStr, int] = field(default_factory=lambda: defaultdict(int))  # player -> tricks won
     trump_suit: TrumpStr | None = None
 
@@ -99,7 +99,7 @@ class BeliefModel:
 
                     constraints[player] = len(possible_cards)
                     
-                player_to_sample = min(sorted(constraints, key=constraints.get))  
+                player_to_sample = min(constraints, key=lambda p: constraints[p])
 
                 possible_cards = [
                             c for c in remaining_cards

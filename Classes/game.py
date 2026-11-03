@@ -11,7 +11,9 @@ class Game:
 
         # If perspective is not assigned, it is blank
         self.engine = GameEngine(
-            state=GameState(player_order=player_names, perspective='Mike'),
+            state=GameState(
+                player_order=player_names,
+                perspective='Mike'),
             mode=mode)
 
     def start(self):

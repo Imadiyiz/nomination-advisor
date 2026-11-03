@@ -86,6 +86,7 @@ def get_human_hand_assignment(perspective: PlayerStr,
         )
 
         if not deck.contains(initials_to_id(choice_of_initials)):
+                print(f"Card {choice_of_initials} is not in the deck. ERROR")
                 UIManager().print_trump_initials_error(choice_of_initials)
                 continue # loops until there is a valid card
 
@@ -93,7 +94,7 @@ def get_human_hand_assignment(perspective: PlayerStr,
         selected_card = initials_to_id(choice_of_initials)
         UIManager().print_chosen_card(selected_card)
 
-        if not selected_card:
+        if selected_card is None: 
             UIManager().print_initials_choice_error(choice_of_initials)
         else:
             current_hand.add(selected_card)
