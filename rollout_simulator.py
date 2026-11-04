@@ -1,6 +1,7 @@
 import copy
 import random
 
+from Utils.constants import CARDS_PER_ROUND
 from bot import BotPlayer
 from game_state import GameState
 from Utils.card_serialization import *
@@ -26,7 +27,7 @@ class RolloutSimulator:
         
         """
 
-        max_cards = self.state.CARDS_PER_ROUND[self.state.round - 1]
+        max_cards = CARDS_PER_ROUND[self.state.round - 1]
 
         # Loop through the number of cards in the round, as each player will play one card per trick
         for _ in range(max_cards):  # Assumes all the players havve the same amount of cards
@@ -48,7 +49,7 @@ class RolloutSimulator:
         during the rollout, including perspective.
         
         """
-        max_cards = self.state.CARDS_PER_ROUND[self.state.round - 1]
+        max_cards = CARDS_PER_ROUND[self.state.round - 1]
 
         # Loop through the number of cards in the round, as each player will play one card per trick
         for _ in range(max_cards):  # Assumes all the players havve the same amount of cards

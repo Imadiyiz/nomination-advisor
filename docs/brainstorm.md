@@ -255,4 +255,10 @@ Need to assign hands for test
 
 03/11/26
 
-2c does not work for initial choice, think its because it is the 0 id
+2c does not work for initial choice, think its because it is the 0 id (fixed)
+
+04/11/26
+
+Need to output the round score after each round along with total score.
+Display final trick so it is obvious who won
+Second round still only has one card to choose from then out of range error in 2nd round

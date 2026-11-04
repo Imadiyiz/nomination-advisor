@@ -25,7 +25,7 @@ class GameState:
     # Must use default_factory for when declaring mutable types
     hands: dict[PlayerStr, set[CardInt]] = field(default_factory = dict)
     current_trick: tuple[tuple[PlayerStr, CardInt], ...]  = ()
-    round_scores: dict[PlayerStr, int] = field(default_factory=dict)
+    trick_scores: dict[PlayerStr, int] = field(default_factory=dict)
     total_scores: dict[PlayerStr, int] = field(default_factory=dict)
     bids: dict[PlayerStr, int]  = field(default_factory=dict)      # Don't always have bids assigned and 
     winner: PlayerStr | None = None            # Winner of the previous trick
@@ -40,8 +40,12 @@ class GameState:
     # Private attribute
     _leader: PlayerStr | None = None
 
-    # Constants
-    CARDS_PER_ROUND = (1, 2)# (8,7,6,6,7,8)
+    def __post_init__(self):
+        # Ensure that all players have an entry in hands,  and total_scores
+        for player in self.player_order:
+            self.hands.setdefault(player, set())
+            self.total_scores.setdefault(player, 0)
+            self.trick_scores.setdefault(player, 0)
 
     # must be used to avoid generating inaccurate worlds due to inaccurate ordering
     def _get_leader(self) -> str:
@@ -122,8 +126,9 @@ class GameState:
             p: (cards - {card}) if p == player else cards
             for p, cards in self.hands.items()
         }
-        new_round_scores = dict(self.round_scores)
+
         new_trick = tuple(self.current_trick + ((player, card),))
+        new_trick_scores = dict(self.trick_scores)
         new_leader = str(self._leader)
         new_total_scores = dict(self.total_scores)
         new_round = int(self.round)
@@ -132,13 +137,12 @@ class GameState:
         # if trick complete, resolve it
         if len(new_trick) == len(self.player_order):
             winner = self._resolve_trick(new_trick)
-            new_round_scores[winner] += 1
+            new_trick_scores[winner] += 1
             new_trick = ()
             new_leader = winner
             new_total_scores = self._calculate_new_total_score(
-                new_hands, new_round_scores)
+                new_hands, new_trick_scores)
             new_trick_completed = True
-            new_round += 1
 
             if new_round > 6:
                 new_game_over = True
@@ -150,21 +154,21 @@ class GameState:
             _leader=new_leader,
             trump_suit=self.trump_suit,
             player_order= self.player_order,
-            round_scores=new_round_scores,
             total_scores=new_total_scores,
             bids=dict(self.bids), 
             winner = winner,
             trick_completed = new_trick_completed,
+            trick_scores = new_trick_scores,
             round = new_round,
             game_over = new_game_over,
         )
 
     def _calculate_new_total_score(self,
         new_hands: dict[PlayerStr, set[CardInt]],
-        new_round_scores: dict[PlayerStr, int]) -> dict[PlayerStr, int]:
+        new_trick_scores: dict[PlayerStr, int]) -> dict[PlayerStr, int]:
         """Calcalates the new total score if round has ended and there are valid
         bids available. Returns orignal total scores if this is the case.
-        Receives new hands dictionary and the latest round score"""
+        Receives new hands dictionary and the latest trick score"""
 
         # Only update total score if round has finished
         if sum([len(hand) for hand in new_hands.values()]) != 0:
@@ -175,8 +179,8 @@ class GameState:
             return dict(self.total_scores)
 
         # Update new total scores depending on whether the player satisifed their bid
-        new_total_scores = self.total_scores
-        for player, tricks_won in new_round_scores.items():
+        new_total_scores = dict(self.total_scores)
+        for player, tricks_won in new_trick_scores.items():
             if tricks_won == self.bids[player]:
                 new_total_scores[player] += calculate_correct_bid_score(tricks_won)
             else:
@@ -217,14 +221,13 @@ class GameState:
         self.player_order = self.player_order[1:] + (self.player_order[0],)
         
     def get_next_round_state(self) -> "GameState":
-        """Mutates self and outputs new round state. Rotates player order, resets
-        round scores, resets trick, bids, leader and increments round number"""
+        """Mutates self and outputs new round state. Rotates player order, resets trick, bids, leader and increments round"""
 
-        # Uses latest round scores to determine trump, later rs are reset
+        # Uses latest trick scores to determine trump, later ts are reset
         self.trump_decider = self._determine_trump_decider()
 
         self._rotate_player_order()
-        self.round_scores = {player: 0 for player in self.player_order}
+        self.trick_scores = {player: 0 for player in self.player_order}
         self.current_trick = ()
         self._leader = None
         self.round += 1
@@ -237,17 +240,20 @@ class GameState:
         Assumes bids are up to date. If multiple winners, randomly assign the trump
         decider. Returns PlayerStr"""
 
-        temp_round_scores = dict(self.round_scores)
+        ts = dict(self.trick_scores)
+        round_scores = dict(ts)
 
-        # Verify round nom scores
-        for player, score in temp_round_scores.items():
+        print("Bidsx", self.bids)
+
+        # Verify trick scores
+        for player, score in ts.items():
             if self.bids[player] == score:
-                temp_round_scores[player] = calculate_correct_bid_score(score)
+                round_scores[player] = calculate_correct_bid_score(score)
 
-        winning_score = max(temp_round_scores.values())
+        winning_score = max(round_scores.values())
                 
         winning_players = [player for player in self.player_order
-            if temp_round_scores[player] == winning_score]
+            if round_scores[player] == winning_score]
 
         return random.choice(winning_players)
     

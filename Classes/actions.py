@@ -102,12 +102,11 @@ def get_human_hand_assignment(perspective: PlayerStr,
 
     return HandAssignmentAction(hand=current_hand)
 
-def get_human_trump_selection(round: int, player_name: PlayerStr) -> TrumpAction:
+def get_human_trump_selection(player_name: PlayerStr) -> TrumpAction:
     """
     Prompts the human player to select a trump card.
 
     Args:
-        round (int): The current round number.
         player_name (PlayerStr): The name of the player selecting the trump suit.
 
     Returns:
@@ -121,9 +120,6 @@ def get_human_trump_selection(round: int, player_name: PlayerStr) -> TrumpAction
 def get_random_trump_selection() -> TrumpAction:
     """
     Selects a trump suit randomly.
-
-    Args:
-        round (int): The current round number.
 
     Returns:
         TrumpAction: The randomly selected trump suit.
@@ -150,11 +146,13 @@ def get_bot_trump_selection(chosen_player: Player) -> TrumpAction:
 
 def get_human_bid(player_name: PlayerStr, state: GameState, restricted_bid: int) -> BidAction:
     """
-    Prompts the human player to place a bid. Also res
+    Prompts the human player to place a bid. Also restricts the bid based on the game rules.
 
     Args:
-        round (int): The current round number.
+        round (int): The current round number, 1-indexed. This is used to determine the number of cards per round and any restrictions on bidding.
         player_name (PlayerStr): The name of the player placing the bid.
+        state (GameState): The current state of the game.
+        restricted_bid (int): The restricted bid value, if any.
         state (GameState): The current state of the game.
         restricted_bid (int): The restricted bid value, if any.
 
@@ -172,7 +170,7 @@ def get_random_hand_assignment(round: int, deck: Deck) -> HandAssignmentAction:
     Assigns a random hand to a player from the given deck.
 
     Args:
-        round (int): The current round number.
+        round (int): The current round number, 1-indexed.
         deck (Deck): The deck from which to draw cards.
 
     Returns:
@@ -181,7 +179,7 @@ def get_random_hand_assignment(round: int, deck: Deck) -> HandAssignmentAction:
 
     hand_sample = random.sample(
         population=deck.cards,
-        k=CARDS_PER_ROUND[round],
+        k=CARDS_PER_ROUND[round-1],
     )
     deck.remove_cards(set(hand_sample))
     return HandAssignmentAction(hand=set(hand_sample))
@@ -201,19 +199,23 @@ def get_bot_bid(player: Player) -> BidAction:
     bid = player.choose_bid()
     return BidAction(bid=bid)
 
-def get_human_card(player_name: PlayerStr, state: GameState) -> PlayCardAction:
+def get_human_card(player_name: PlayerStr, 
+                   state: GameState, deck_valid_initials: set[str]) -> PlayCardAction:
     """
     Prompts the human player to select a card to play. Outputs the selection to the UI.
 
     Args:
         player_name (PlayerStr): The name of the player selecting the card.
         state (GameState): The current state of the game.
+        deck_valid_initials (set[str]): The set of valid card initials for the deck.
 
     Returns:
         PlayCardAction: The card selected by the human player.
     """
 
     clear_screen()
-    card = HumanPlayingFlow().play_turn(player=player_name, state=state)
+    card = HumanPlayingFlow().play_turn(player=player_name,
+                                        deck_valid_initials=deck_valid_initials,
+                                        state=state)
     UIManager().print_player_card_selection(choice=card, player=player_name, perspective=state.perspective)
     return PlayCardAction(card=card)

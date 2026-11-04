@@ -49,6 +49,6 @@ class GameEngine:
             self.run_round()
 
     def run_round(self):
-        self.round_manager.run(self.state)
+        self.state = self.round_manager.run(self.state)
 
 

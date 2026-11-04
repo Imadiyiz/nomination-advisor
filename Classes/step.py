@@ -255,7 +255,7 @@ class PlayerPlayCardStep(Step):
     """
     Docstring for PlayerPlayCard
 
-    Local player playing
+    Local player playing a card for the current trick
     """
     
     prompt_required_arguments = {"player_name",
@@ -263,9 +263,9 @@ class PlayerPlayCardStep(Step):
                                  "expanded_player_hand_str",
                                  "trump_suit",
                                  "table_str",
-                                 "round_scoreboard"}
+                                 "trick_totals_scoreboard"}
     
-    validate_required_arguments = {"player"}
+    validate_required_arguments = {"player_hand"}
 
 
     def prompt(self,
@@ -276,7 +276,7 @@ class PlayerPlayCardStep(Step):
         if missing:
             raise RuntimeError(f"Missing context: {missing}")
         
-        round_scoreboard = args['round_scoreboard']
+        trick_totals_scoreboard = args['trick_totals_scoreboard']
         player_hand = args['player_hand']
         expanded_player_hand_str = args['expanded_player_hand_str']
         player_name = args['player_name']
@@ -284,7 +284,7 @@ class PlayerPlayCardStep(Step):
         table_str = args['table_str']
 
         player_headline_string = f"▶\t {player_name} to play\t|\tTrump: {trump_suit}"
-        round_scoreboard_string = f"Round score: {round_scoreboard}"
+        trick_totals_scoreboard_string = f"Trick Totals: {trick_totals_scoreboard}"
         if len(player_hand) > 1:
             choose_card_string = f"Choose card [1-{len(player_hand)}] > "
         else:
@@ -295,7 +295,7 @@ class PlayerPlayCardStep(Step):
                 player_headline_string,
                 "\n", 
                 "\n", 
-                round_scoreboard_string, 
+                trick_totals_scoreboard_string, 
                 "\n",
                 "\n",
                 table_str,
@@ -304,8 +304,7 @@ class PlayerPlayCardStep(Step):
                 "\n",
                 "\n",
                 choose_card_string
-            ]
-            )
+            ])
         )
 
     
@@ -341,16 +340,18 @@ class PlayerPlayCardStep(Step):
     
 class OpponentPlayCardStep(Step):
     """
-    Docstring for OpponentPlayCardStep
+    Step class for handling the opponent's play card action.
 
-    Opponent player playing
+    This step is responsible for prompting the opponent player to play a card for the current trick,
+    validating the input, and returning the selected card's initials.
     """
     
     prompt_required_arguments = {"opponent_name",
-                                 "opponent_hand_str" 
+                                 "opponent_hand_str",
                                    "trump_suit",
                                    "table_str",
-                                   "round_scoreboard",}
+                                   "trick_totals_scoreboard",
+                                   }
     
     validate_required_arguments = {"valid_card_initials"}
 
@@ -362,14 +363,14 @@ class OpponentPlayCardStep(Step):
         if missing:
             raise RuntimeError(f"Missing context: {missing}")
         
-        round_scoreboard = args['round_scoreboard']
+        trick_totals_scoreboard = args['trick_totals_scoreboard']
         opponent_hand_str = args['opponent_hand_str']
         opponent_name = args['opponent_name']
         trump_suit = args['trump_suit']
         table_str = args['table_str']
         
-        player_headline_string = f"▶\t{opponent_name} to play\t|\tTrump: {trump_suit}"
-        round_scoreboard_string = f"Round score: {round_scoreboard}"
+        player_headline_string = f"▶\t{opponent_name} to play a card\t|\tTrump: {trump_suit}"
+        trick_totals_scoreboard_string = f"Trick Totals: {trick_totals_scoreboard}"
         choose_card_string = f"Enter initials of card e.g. '7H' > "
         
         clear_screen() #3
@@ -378,7 +379,7 @@ class OpponentPlayCardStep(Step):
                 player_headline_string,
                 "\n", 
                 "\n", 
-                round_scoreboard_string, 
+                trick_totals_scoreboard_string, 
                 "\n",
                 "\n",
                 table_str,

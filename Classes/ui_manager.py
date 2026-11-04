@@ -83,9 +83,16 @@ class UIManager:
         print(f"{player}'s turn to bid: ")
 
     @staticmethod
-    def print_total_score(state: GameState): 
-        clear_screen(5)
-        print("Total score: ", scoreboard_display(state, round=False))
+    def print_total_score(state: GameState, difference: dict[PlayerStr, int]): 
+        clear_screen(3)
+
+        if difference is None:
+            raise ValueError("Difference must be provided for total scores display.")
+        
+        print("Total score: ", scoreboard_display(state, 
+                                                  round=False,
+                                                  difference=difference))
+        
 
     @staticmethod
     def print_player_card_selection(choice: CardInt, player: PlayerStr = '',
@@ -149,10 +156,10 @@ def table_str_creator(state: GameState) -> str:
         string = ""
 
         for player, card in _reversed_stack:
-            if len(id_to_initials(card)) >= 3:
-                    string += f"{id_to_prose(card)}   ~  {player}\n"
+            if len(id_to_prose(card)) >= 4:
+                    string += f"{id_to_prose(card)}     ~    {player}\n"
             else:
-                    string += f" {id_to_prose(card)}   ~  {player}\n"
+                    string += f" {id_to_prose(card)}     ~    {player}\n"
         return f"Table:\n{string}"
     return "(Empty)" 
 
@@ -188,7 +195,7 @@ def player_hand_str_creator(player: PlayerStr, state: GameState) -> str:
         player_hand = state.hands[player]
     else:
         player_hand = set()
-    max_cards = CARDS_PER_ROUND[state.round]
+    max_cards = CARDS_PER_ROUND[state.round-1]
     hand_output = []
 
     if not player_hand:
@@ -229,19 +236,23 @@ def CLI_format_hand(hand: set[CardInt], cols = 4) -> str:
         return "\n".join(lines) if lines else '(Hidden)'
 
 @staticmethod
-def scoreboard_display(state: GameState, round: bool = False) -> str:
+def scoreboard_display(state: GameState, 
+                       round: bool = False,
+                       difference: dict[PlayerStr, int] | None = None) -> str:
         """
         Function for outputting the scores in the game
 
         Args:
-            Round (bool): True by default and determines whether the display should be the 
-            round scoreboard or total scoreboard 
+            state (GameState): The current game state containing scores and bids
+            round (bool): True if displaying the current round's trick scores, False for total scores
 
         Returns:
-            List: Formatted and sorted version of the scoreboard for readability 
+            str: Formatted and sorted version of the scoreboard for readability 
         """
-
-        scoreboard = state.round_scores if round else state.total_scores
+        if difference is None and round is False:
+            raise ValueError("Difference must be provided if not displaying round scores.")
+        
+        scoreboard = state.trick_scores if round else state.total_scores
 
         formatted_scoreboard = sorted(
                     scoreboard.items(), 
@@ -249,14 +260,16 @@ def scoreboard_display(state: GameState, round: bool = False) -> str:
                     reverse = True
                 )
 
-        return " | ".join([
-                f"{name} {score} ({state.bids[name]})" 
+        if round:
+            return " | ".join(
+                f"{name} {score} ({state.bids[name]})"
                 for name, score in formatted_scoreboard
-            ]
-    
-            ) if round else " | ".join([
-                f"{name} {score}" 
-                for name, score in formatted_scoreboard
-            ]
-    
             )
+
+        if difference is None:
+            raise ValueError("Difference must be provided for total scores display.")
+        
+        return " | ".join(
+            f"{name} {score} (+{difference[name]})"
+            for name, score in formatted_scoreboard
+        )

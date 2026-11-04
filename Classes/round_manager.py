@@ -13,8 +13,10 @@ from Classes.game import GameMode
 from Classes.player import Player
 from Classes.ui_manager import UIManager
 from game_state import GameState
+from Utils.card_serialization import id_to_initials
 from Utils.constants import CARDS_PER_ROUND
 from Utils.types import PlayerStr
+from Utils.nom_rule_tools import calculate_total_score_difference
 
 
 class RoundManager:
@@ -40,8 +42,9 @@ class RoundManager:
         self.select_trump()
         self.run_bidding()
         self.play_round()
-        # self.score_round(state) This is already performed in the state, the state after play_round is the latest round score
-        self.start_next_round()
+        self.end_round()
+
+        return self.state # Return the updated game state after completing the round
 
     def setup_round(self):
         """Sets up the round by initializing hands, player order, and other necessary state.
@@ -51,6 +54,7 @@ class RoundManager:
         """
 
         self._reset_deck()
+        self.original_total_scores = dict(self.state.total_scores)
 
         # After initial round, reset for new round
         if self.state.round > 1:
@@ -62,7 +66,7 @@ class RoundManager:
             # Assign human hand for the perspective player
             self.state.hands[self.state.perspective] = get_human_hand_assignment(
                 perspective=self.state.perspective,
-                cards_this_round=CARDS_PER_ROUND[self.state.round],
+                cards_this_round=CARDS_PER_ROUND[self.state.round-1],
                 deck=self.deck).hand         
             self.deck.remove_cards(self.state.hands[self.state.perspective])
             return 
@@ -92,8 +96,7 @@ class RoundManager:
         elif (self.gamemode == GameMode.SINGLE_PLAYER and 
             self.state.trump_decider == self.state.perspective) or (
             self.gamemode == GameMode.ASSISTANT):
-            selected_trump = get_human_trump_selection(round=self.state.round,
-                                                        player_name=self.state.trump_decider).trump
+            selected_trump = get_human_trump_selection(player_name=self.state.trump_decider).trump
         else:
             selected_trump = get_bot_trump_selection(
                 chosen_player=self.player_map[self.state.trump_decider]).trump
@@ -110,7 +113,7 @@ class RoundManager:
 
         for player in self.state.player_order:
             restricted_bid = self._get_restricted_bid(self.state.bids,
-                                                      CARDS_PER_ROUND[self.state.round],
+                                                      CARDS_PER_ROUND[self.state.round-1],
                                                       player_amount=len(self.state.player_order))
 
             if self.gamemode == GameMode.SIMULATION:
@@ -135,22 +138,23 @@ class RoundManager:
 
         """Handles the playing phase of the round, where players play their cards."""
 
-        max_cards_this_round = CARDS_PER_ROUND[self.state.round]
+        max_cards_this_round = CARDS_PER_ROUND[self.state.round-1]
 
         # Loop through the number of cards in the round, as each player will play one card per trick
         # Assumes all the players start with the same amount of cards
         for _ in range(max_cards_this_round):
             self._play_trick()
 
-    def score_round(self):
-        """Calculates and updates scores based on the results of the round."""
-        # Implementation for scoring the round goes here
-        pass
+    def end_round(self):
+        """Ends round and outputs feedback to the user, such as the total score and any relevant round summary."""
+        total_score_difference = calculate_total_score_difference(self.original_total_scores, self.state.total_scores)
+        
+        if not total_score_difference:
+            raise ValueError("Total score difference could not be calculated.")
+        
+        self.ui_manager.print_total_score(self.state,
+                                          difference = total_score_difference)
 
-    def start_next_round(self):
-        """Prepares the game state for the next round."""
-        self.ui_manager.print_total_score(self.state)
-        self.state = self.state.get_next_round_state()
 
     def _play_trick(self) -> None:
 
@@ -165,18 +169,31 @@ class RoundManager:
             
             elif self.gamemode == GameMode.SINGLE_PLAYER:
                 if player == self.state.perspective:
-                    card_selected = get_human_card(player_name=player,
-                                                state=self.state).card
+                    card_selected = get_human_card(
+                                                player_name=player,
+                                                state=self.state,
+                                                deck_valid_initials={id_to_initials(card) for card in self.deck.cards}
+                                                ).card
                 else:
                     card_selected = self.player_map[player].choose_card()
                     self.ui_manager.print_player_card_selection(choice=card_selected,
                                                                 player=player)
                           
             elif self.gamemode == GameMode.ASSISTANT:
-                card_selected = get_human_card(player_name=player, state=self.state).card
+                card_selected = get_human_card(player_name=player, 
+                                                state=self.state,
+                                                deck_valid_initials={id_to_initials(card) for card in self.deck.cards}
+                                                ).card
 
             else:
                 raise ValueError(f"Unsupported game mode: {self.gamemode}")
+
+            # Must add card to player's hand in the state before applying the move
+            # Only need to do this for non-perspective players in assistant mode
+
+            if self.gamemode == GameMode.ASSISTANT and player != self.state.perspective:
+                self.state.hands[player].add(card_selected)
+                self.deck.remove_cards({card_selected})
 
             # Apply move for player regardless of gamemode
             self.state = self.state.apply_move(
